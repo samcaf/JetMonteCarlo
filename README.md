@@ -127,7 +127,7 @@ xs       = testInt.bins[1:]
 This gives us precisely the integrals we expect:
 
 <p align="center">
-    <img src="https://github.com/samcaf/JetMonteCarlo/blob/main/plots/tests/basic_tests/integrators/simple_int_display.png" alt="simple_int" width="500">
+    <img src="https://github.com/samcaf/JetMonteCarlo/blob/main/doc_figures/simple_int_display.png" alt="simple_int" width="500">
 </p>
 
 
@@ -141,7 +141,7 @@ Our procedures are able to numerically reproduce the analytic expressions for mo
 Here is an [example](https://github.com/samcaf/JetMonteCarlo/blob/main/jetmontecarlo/tests/pdf_tests/test_fixedcoupcritpdf.py) in which we use Monte Carlo integration to reproduce the probability distribution for the energy and angle of emissions within a groomed gluon jet:
 
 <p align="center">
-    <img src="https://github.com/samcaf/JetMonteCarlo/blob/main/plots/tests/critical_pdfs/LL_pdf_display.png" alt="LL_pdf" width="700">
+    <img src="https://github.com/samcaf/JetMonteCarlo/blob/main/doc_figures/LL_pdf_display.png" alt="LL_pdf" width="700">
 </p>
 
 ### <a name="basic-parton-shower"></a> Basic Parton Showering
@@ -166,13 +166,13 @@ jet.has_showered = True
 
 The soul of the parton shower is in the ```angularity_shower``` method. This can be roughly described with the following code flowchart:
 <p align="center">
-    <img src="https://github.com/samcaf/JetMonteCarlo/blob/main/jetmontecarlo/utils/partonshower_codeflow.png" alt="ps_codeflow" width="700">
+    <img src="https://github.com/samcaf/JetMonteCarlo/blob/main/jetmontecarlo/doc_figures/shower_codeflow.png" alt="ps_codeflow" width="700">
 </p>
 
-Here is a characterisctic [visualization](https://github.com/samcaf/JetMonteCarlo/blob/main/jetmontecarlo/tests/partonshower_tests/test_showervis.py) of the corresponding tree of showered partons in our jet, with a green cone to indicate the jet cone and green lines and dots to indicate final state partons with no further splittings:
+Here is a characterisctic [visualization](https://github.com/samcaf/JetMonteCarlo/blob/main/jetmontecarlo/doc_figures/test_showervis.py) of the corresponding tree of showered partons in our jet, with a green cone to indicate the jet cone and green lines and dots to indicate final state partons with no further splittings:
 
 <p align="center">
-<img src="https://github.com/samcaf/JetMonteCarlo/blob/main/plots/tests/partonshower/visualization/vis3.png" alt="shower_vis" class="centerImage" width="500"/>
+<img src="https://github.com/samcaf/JetMonteCarlo/blob/main/doc_figures/partonshower_vis.png" alt="shower_vis" class="centerImage" width="500"/>
 </p>
 
 After producing a set of parton showers representing jets at leading logarithmic or higher levels of accuracy, we are ready to calculate the distributions of jet substructure observables.
@@ -180,7 +180,7 @@ Our [simplest example](https://github.com/samcaf/JetMonteCarlo/blob/main/jetmont
 Here is an example showing that our parton shower accurately reproduces quark jet angularities at leading logarithmic accuracy:
 
 <p align="center">
-    <img src="https://github.com/samcaf/JetMonteCarlo/blob/main/plots/tests/partonshower/LL/LL_partonshower_display.png" alt="LL_partonshower" width="700">
+    <img src="https://github.com/samcaf/JetMonteCarlo/blob/main/doc_figures/LL_partonshower_display.png" alt="LL_partonshower" width="700">
 </p>
 
 
