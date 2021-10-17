@@ -166,13 +166,13 @@ jet.has_showered = True
 
 The soul of the parton shower is in the ```angularity_shower``` method. This can be roughly described with the following code flowchart:
 <p align="center">
-    <img src="https://github.com/samcaf/JetMonteCarlo/blob/main/jetmontecarlo/doc_figures/shower_codeflow.png" alt="ps_codeflow" width="700">
+    <img src="https://github.com/samcaf/JetMonteCarlo/blob/main/jetmontecarlo/doc_figures/shower_codeflow.pdf" alt="ps_codeflow" width="700">
 </p>
 
 Here is a characterisctic [visualization](https://github.com/samcaf/JetMonteCarlo/blob/main/jetmontecarlo/doc_figures/test_showervis.py) of the corresponding tree of showered partons in our jet, with a green cone to indicate the jet cone and green lines and dots to indicate final state partons with no further splittings:
 
 <p align="center">
-<img src="https://github.com/samcaf/JetMonteCarlo/blob/main/doc_figures/partonshower_vis.pdf" alt="shower_vis" class="centerImage" width="500"/>
+<img src="https://github.com/samcaf/JetMonteCarlo/blob/main/doc_figures/partonshower_vis.png" alt="shower_vis" class="centerImage" width="500"/>
 </p>
 
 After producing a set of parton showers representing jets at leading logarithmic or higher levels of accuracy, we are ready to calculate the distributions of jet substructure observables.
