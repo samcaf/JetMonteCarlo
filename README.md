@@ -166,7 +166,7 @@ jet.has_showered = True
 
 The soul of the parton shower is in the ```angularity_shower``` method. This can be roughly described with the following code flowchart:
 <p align="center">
-    <img src="https://github.com/samcaf/JetMonteCarlo/blob/main/jetmontecarlo/doc_figures/shower_codeflow.png" alt="ps_codeflow" width="700">
+    <img src="https://github.com/samcaf/JetMonteCarlo/blob/main/doc_figures/shower_codeflow.png" alt="ps_codeflow" width="700">
 </p>
 
 Here is a characterisctic [visualization](https://github.com/samcaf/JetMonteCarlo/blob/main/jetmontecarlo/doc_figures/test_showervis.py) of the corresponding tree of showered partons in our jet, with a green cone to indicate the jet cone and green lines and dots to indicate final state partons with no further splittings:
