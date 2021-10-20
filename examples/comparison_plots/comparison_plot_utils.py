@@ -59,18 +59,6 @@ if BIN_SPACE == 'log':
 assert(BIN_SPACE in ['lin', 'log']), \
 "'bin_space' must be 'lin' or 'log', but is" + BIN_SPACE
 
-###########################################
-# Misc. Utilities
-###########################################
-def get_ps_ECFs(jet_list, emission_type, z_cut, beta, few_emissions=True):
-    """Returns a set of ECFs associated with a list of jets, and
-    with a certain emission type.
-    """
-    ecfs = getECFs_groomed(jet_list, z_cut=z_cut, beta=beta, f=F_SOFT,
-                           acc=ACC, emission_type=emission_type,
-                           few_emissions=few_emissions)
-    return ecfs
-
 def dilog(x): return spence(1.-x)
 
 ###########################################

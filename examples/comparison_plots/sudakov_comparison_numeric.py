@@ -92,10 +92,10 @@ def ps_correlations(beta):
         ps_file += '_rc_LL_fewem.npz'
     else:
         ps_file += '_' + OBS_ACC
-        # if few_emissions:
+        # if few_pres:
         ps_file += '_fewem.npz'
         # else:
-        #     ps_file += '_manyem.npz'
+        #     ps_file += '_manypres.npz'
 
     ps_data = np.load(ps_sample_folder / ps_file, allow_pickle=True)
 

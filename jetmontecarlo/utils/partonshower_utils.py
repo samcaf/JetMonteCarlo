@@ -501,8 +501,8 @@ def getECFs_ungroomed(jet_list, beta=2.,
 
 def getECFs_rss(jet_list, z_cut, beta=2., f=1.,
                 obs_acc='LL', emission_type='precritsub',
-                n_emissions=1, few_emissions=False,
-                verbose=1):
+                n_emissions=1, few_pres=True,
+                rescale_hard=True, verbose=1):
     """Retrieves a list of groomed jet energy correlation functions from a
     list of *ungroomed* jets.
     In particular, ungroomed jets do not record "types" of emissions, so in
@@ -539,8 +539,12 @@ def getECFs_rss(jet_list, z_cut, beta=2., f=1.,
         Number of emissions used to calculate ECF.
         Example: n_emissions = 1 calculates the contributionn from the leading
                  emission only
-    few_emissions : bool
-        .
+    few_pres : bool
+        Encodes how many emissions contribute to computations of pre-critical
+        groomed energy.
+    rescale hard : bool
+        Determines whether rescaling of the harder branch of the jet, due
+        to RSS grooming with f=/=1, is taken into account.
     verbose : int
         Determines the verbosity of the messages returned by the code.
 
@@ -550,14 +554,22 @@ def getECFs_rss(jet_list, z_cut, beta=2., f=1.,
         List of floats corresponding to groomed jet ECFs for each jet in
         the jet_list
     """
+    # Returning ungroomed observables if there is no grooming
     if z_cut == 0:
         return getECFs_ungroomed(jet_list, beta=beta, obs_acc=obs_acc,
                                  n_emissions=n_emissions, verbose=verbose)
 
+    # Ensuring that the value of f is not small enough that the harder
+    # branch is groomed before the softer branch
+    assert f > 1/3, "f = " + str(f) + " is less than 1/3, and the grooming\
+                    may groom away harder branches first. This is not\
+                    accounted for in the parton shower utility code!"
+
+
     all_ecfs = []
 
-    # Preparing calculation of critical angularity
-    def ang_crit(z, theta, z_cut):
+    # Preparing calculation of critical ecf:
+    def ecf_crit(z, theta, z_cut):
         if obs_acc == 'LL':
             return (z - f*z_cut) * theta**beta * (1. - (1.-f)*z_cut)
         return (z - f*z_cut) * theta**beta * (1. - z - (1.-f)*z_cut)
@@ -578,6 +590,10 @@ def getECFs_rss(jet_list, z_cut, beta=2., f=1.,
         z_pres = [1e-100]
         c_subs = [1e-100]
 
+        # Setting up the amount to which the hard branch is affected/rescaled
+        # due to the grooming procedure if f=/=1
+        hard_branch_scale = 1.
+
         for mother in jet.partons:
             daughter1 = mother.daughter1
             daughter2 = mother.daughter2
@@ -594,30 +610,43 @@ def getECFs_rss(jet_list, z_cut, beta=2., f=1.,
             #         daughter2.momentum.mag()/jet.momentum.mag())
             # ---------------
             # This is an effect which contributes at higher accuracy;
-            # to compare to lower order theory we will use the uncommented
-            # code above
+            # to compare to lower order theory calculations, we will use
+            # the uncommented code above.
 
-            # Finding the remaining z_cut available for a critical emission
-            if few_emissions:
+            # Finding the remaining z_cut available for a critical emission,
+            # and the energy fraction groomed from the harder branch
+            if few_pres:
                 cutoff_zcut = this_zcut - max(z_pres)
+                hard_branch_scale = 1-(1-f)*max(z_pres)/f
             else:
                 cutoff_zcut = this_zcut - sum(z_pres)
+                hard_branch_scale = np.prod([1-(1-f)*zp/f for zp in z_pres])
 
             # If the emission is soft enough to be groomed (pre-critical):
-            if 'precrit' in emission_type and use_precrit and z < cutoff_zcut:
+            valid_precrit = (z<this_zcut) if few_pres else (z<cutoff_zcut)
+            if 'precrit' in emission_type and use_precrit and valid_precrit:
                 z_pres.append(z)
 
-            # If the emission is the first to survive grooming (critical):
+            # Otherwise, if we are considering critical emissions and
+            # the emission is the first to survive grooming (critical):
             elif 'crit' in emission_type and z >= cutoff_zcut > 0.:
-                c_crit = ang_crit(z, theta, cutoff_zcut)
+                # Finding the ecf of the critical emission
+                c_crit = ecf_crit(z, theta, cutoff_zcut)
 
+                # Rescaling contributions from each emission to the observable
+                # due to previous grooming of the hard branch
+                c_crit *= hard_branch_scale**2.
+
+                # Moving on to subsequent emissions
                 theta_crit = theta
                 this_zcut = 0.
                 use_precrit = False
 
             # If we have already had a critical emission:
             elif 'sub' in emission_type and this_zcut == 0.:
-                c_subs.append(ang_crit(z, theta, z_cut=0.))
+                c_sub = ecf_crit(z, theta, z_cut=0.)
+                c_sub *= hard_branch_scale**2.
+                c_subs.append()
 
         c_list = c_subs
         c_list.append(c_crit)
@@ -774,7 +803,7 @@ def getECFs(jet_list, groomer=None, **params)
 def save_shower_correlations(jet_list, file_path,
                              z_cuts=[.05, .1, .2], beta=2.,
                              beta_sd=0., f_soft=1.,
-                             obs_acc='LL', few_emissions=True,
+                             obs_acc='LL', few_pres=True,
                              fixed_coupling=True,
                              verbose=1):
     # Setting up lists of observables
@@ -801,7 +830,7 @@ def save_shower_correlations(jet_list, file_path,
                   'beta' : beta,
                   'f' : f_soft,
                   'obs_acc' : obs_acc,
-                  'few_emissions' : few_emissions,
+                  'few_pres' : few_pres,
                   'verbose' : verbose}
         crit_c1s = getECFs_rss(**params, emission_type='crit')
         precrit_c1s = getECFs_rss(**params, emission_type='precrit')
