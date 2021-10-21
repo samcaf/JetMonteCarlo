@@ -12,6 +12,39 @@ from jetmontecarlo.analytics.radiators_fixedcoupling import *
 from jetmontecarlo.analytics.sudakovFactors_fixedcoupling import *
 
 ###########################################
+# Notes:
+###########################################
+# =====================================
+# To Do
+# =====================================
+# ------------------------------------
+# Physics
+# ------------------------------------
+# Run with fixed coupling, LL, with 5e6
+# Run with running coupling, LL, with 5e6
+# Run with running coupling, MLL, with 5e6
+
+# ------------------------------------
+# Code
+# ------------------------------------
+# Fix presence of BETA in this file --
+# should be an easy to modify switch
+
+# =====================================
+# Done:
+# =====================================
+# ------------------------------------
+# Physics
+# ------------------------------------
+# Run with fixed coupling, LL, with 1e6
+    # Subsequent emissions not behaving well -- not strictly increasing cdf
+    # interpolation function
+
+# ------------------------------------
+# Code
+# ------------------------------------
+
+###########################################
 # Definitions and Parameters
 ###########################################
 # ------------------------------------
@@ -22,12 +55,18 @@ OBS_ACC = 'LL' if FIXED_COUPLING else 'MLL'
 
 ANGULAR_ORDERING = False
 
+# ------------------------------------
 # Jet and grooming parameters
+# ------------------------------------
 Z_CUTS = [.05, .1, .2]
 Z_CUT = .1
+
 BETA = 2
 BETAS = [1, 2, 3, 4]
-F_SOFT = .55
+
+F_SOFT = 1
+Z_CUTS = [F_SOFT * zc for zc in Z_CUTS]
+
 JET_TYPE = 'quark'
 
 # ------------------------------------
@@ -66,7 +105,7 @@ else:
     plot_label = '_rc_num_'+str(OBS_ACC)
 
 plot_label += '_showerbeta'+str(SHOWER_BETA)
-if F_SOFT!=1.:
+if F_SOFT:
     plot_label += '_f{}'.format(F_SOFT)
 
 # ------------------------------------
@@ -76,8 +115,7 @@ ps_sample_folder = Path("jetmontecarlo/utils/samples/shower_correlations/")
 
 def ps_correlations(beta):
     ps_file = 'shower_{:.0e}_c1_'.format(NUM_SHOWER_EVENTS)+str(beta)
-    if F_SOFT!=1.:
-        ps_file = ps_file + '_f{}'.format(F_SOFT)
+    ps_file += '_f{}'.format(F_SOFT)
     if ANGULAR_ORDERING:
         ps_file += '_angord'
     if FIXED_COUPLING and SHOWER_CUTOFF == 1e-20:
@@ -422,14 +460,12 @@ def compare_sub():
     this_plot_label += '_{:.0e}shower'.format(SHOWER_CUTOFF)
 
     fig_pdf.savefig(JET_TYPE+'_ungroomed_'+BIN_SPACE+'_pdf_comp'
-                    +'_beta'+str(BETA)
                     +'_{:.0e}showers_{:.0e}mc'.format(
                         NUM_SHOWER_EVENTS, NUM_MC_EVENTS)
                     +str(this_plot_label)
                     +'.pdf',
                     format='pdf')
     fig_cdf.savefig(JET_TYPE+'_ungroomed_'+BIN_SPACE+'_cdf_comp'
-                    +'_beta'+str(BETA)
                     +'_{:.0e}showers_{:.0e}mc'.format(
                         NUM_SHOWER_EVENTS,  NUM_MC_EVENTS)
                     +str(this_plot_label)
@@ -579,7 +615,7 @@ def compare_crit_and_sub():
 ###########################################
 # Pre + Critical Emissions
 ###########################################
-def plot_mc_pre_and_crit(axes_pdf, axes_cdf, z_cut, beta = BETA, icol=0,
+def plot_mc_pre_and_crit(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
                          load=LOAD_MC_EVENTS):
     sud_integrator = integrator()
     sud_integrator.setLastBinBndCondition([1., 'minus'])

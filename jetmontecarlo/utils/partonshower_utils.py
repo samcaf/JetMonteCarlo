@@ -646,7 +646,7 @@ def getECFs_rss(jet_list, z_cut, beta=2., f=1.,
             elif 'sub' in emission_type and this_zcut == 0.:
                 c_sub = ecf_crit(z, theta, z_cut=0.)
                 c_sub *= hard_branch_scale**2.
-                c_subs.append()
+                c_subs.append(c_sub)
 
         c_list = c_subs
         c_list.append(c_crit)
@@ -790,7 +790,7 @@ def getECFs_softdrop(jet_list, z_cut, beta=2., beta_sd=0.,
 
     return all_ecfs
 
-def getECFs(jet_list, groomer=None, **params)
+def getECFs(jet_list, params, groomer=None):
     if groomer is None:
         return getECFs_ungroomed(jet_list, **params)
     elif groomer == 'RSS':

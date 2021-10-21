@@ -35,14 +35,13 @@ class parton_shower():
 
         return shower_folder / showerfile
 
-    def correlation_path(self, beta, obs_acc, few_emissions,
+    def correlation_path(self, beta, obs_acc, few_pres,
                          f_soft=1., angular_ordered=False, info=None):
         # Preparing filename
         ps_sample_folder = Path("jetmontecarlo/utils/samples/shower_correlations/")
         ps_file = 'shower_{:.0e}_c1_'.format(self.num_events)+str(beta)
 
-        if f_soft!=1.:
-            ps_file = ps_file + '_f{}'.format(f_soft)
+        ps_file = ps_file + '_f{}'.format(f_soft)
 
         # Angular ordering descriptor
         if angular_ordered:
@@ -66,10 +65,10 @@ class parton_shower():
             ps_file += '_rc_LL_fewem'
         else:
             ps_file += '_' + obs_acc
-            # if few_emissions:
+            # if few_pres:
             ps_file += '_fewem'
             # else:
-            #     ps_file += '_manyem.npz'
+            #     ps_file += '_manypres.npz'
 
         if info is not None:
             ps_file += '_' + info
@@ -105,20 +104,20 @@ class parton_shower():
         if self.verbose > 0:
             print("Parton shower events loaded!")
 
-    def save_correlations(self, beta, obs_acc, few_emissions=True, f_soft=1.):
+    def save_correlations(self, beta, obs_acc, few_pres=True, f_soft=1.):
         if isinstance(beta, list):
             for b in beta:
-                self.save_correlations(b, obs_acc, few_emissions, f_soft=f_soft)
+                self.save_correlations(b, obs_acc, few_pres, f_soft=f_soft)
         else:
             file_path = self.correlation_path(beta, obs_acc,
-                                              few_emissions, f_soft=f_soft)
+                                              few_pres, f_soft=f_soft)
             if self.verbose > 0:
                 print("Saving shower correlations to {}...".format(str(file_path)))
             save_shower_correlations(self.jet_list,
                                      file_path,
                                      beta=beta, obs_acc=obs_acc,
                                      f_soft=f_soft,
-                                     few_emissions=few_emissions,
+                                     few_pres=few_pres,
                                      fixed_coupling=self.fixed_coupling,
                                      verbose=self.verbose)
 

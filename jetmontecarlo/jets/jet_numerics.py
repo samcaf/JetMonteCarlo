@@ -285,9 +285,6 @@ def gen_crit_sub_num_rad(rad_sampler,
     rad_sampler : sampler
         A sampler class which has sampled over the phase space
         of a certain type of emission.
-    emission_type : str
-        The type of emission whose phase space we have sampled.
-        Must be 'sub' or 'pre'.
     jet_type : str
         The type of jet. Must be 'quark' or 'gluon'.
     accuracy : str
@@ -296,9 +293,6 @@ def gen_crit_sub_num_rad(rad_sampler,
     fixed_coupling : bool
         A boolean  which determines whether the radiator is calculated
         using fixed coupling (True) or running coupling (False).
-    save : bool
-        A boolean which determines whether the radiator information,
-        and the corresponding interpolation function, are saved.
 
     Returns
     -------
@@ -451,23 +445,6 @@ def get_numerical_radiator_2d(num_samples, emission_type,
                +'_samples.py'
     file = open(fileName, 'rb')
     return dill.load(file)
-
-###########################################
-# Sudakov Exponent Calculations:
-###########################################
-# ------------------------------------
-# Sampling for Sudakov Exponents:
-# ------------------------------------
-def gen_sudakov_samples(emission_type, num_samples,
-                        save=True):
-    """Generates and optionally saves a ...
-    GENERATE DOCBLOCK!!!"""
-    pass
-
-def get_sudakov_samples(emission_type, num_samples):
-    """Loads a pre-generated...
-    GENERATE DOCBLOCK!!!"""
-    pass
 
 # ------------------------------------
 # Generation of Sudakov Exponents:
