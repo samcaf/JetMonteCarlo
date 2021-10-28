@@ -29,7 +29,7 @@ path_append PYTHONPATH $PWD
 # -------------------------
 # log file preparation:
 # -------------------------
-LOG_FILE="./examples/logs/example_workflow.log"
+LOG_FILE="./examples/logs/fc_ll_workflow.log"
 > $LOG_FILE
 exec >> $LOG_FILE 2>&1
 
@@ -37,15 +37,17 @@ exec >> $LOG_FILE 2>&1
 # Cluster preparation:
 # -------------------------
 # Slurm options for running in cluster:
-# SBATCH -o log_workflow-%j.out --exclusive
+# SBATCH -o fc_ll-%j.out --exclusive
 
+module load anaconda/2021b
+# pip install --user pynverse
 
 
 ###################################
 # Beginning to log workflow
 ###################################
 printf "# ============================
-Date: "`date '+%F'`"-("`date '+%T'`")
+# Date: "`date '+%F'`"-("`date '+%T'`")
 # ============================"
 
 printf "

@@ -29,7 +29,7 @@ path_append PYTHONPATH $PWD
 # -------------------------
 # log file preparation:
 # -------------------------
-LOG_FILE="./examples/logs/example_workflow.log"
+LOG_FILE="./examples/logs/rc_mll_workflow.log"
 > $LOG_FILE
 exec >> $LOG_FILE 2>&1
 
@@ -37,8 +37,10 @@ exec >> $LOG_FILE 2>&1
 # Cluster preparation:
 # -------------------------
 # Slurm options for running in cluster:
-# SBATCH -o log_workflow-%j.out --exclusive
+# SBATCH -o rc_mll-%j.out --exclusive
 
+module load anaconda/2021b
+# pip install --user pynverse
 
 
 ###################################
