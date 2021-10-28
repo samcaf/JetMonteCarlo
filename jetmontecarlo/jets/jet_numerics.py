@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import numpy as np
 import dill
 from scipy.interpolate import griddata, interp2d, NearestNDInterpolator
@@ -31,13 +32,15 @@ def lin_log_mixed_list(lower_bound, upper_bound, num_bins):
 # # TODO: Change line 102, 355, 376, 414 to acc=accuracy
 
 ###########################################
-# Radiator Numerical Calculations:
+# Numerical Radiator Calculations:
 ###########################################
 # ------------------------------------
 # Radiator Generation:
 # ------------------------------------
 def gen_numerical_radiator(rad_sampler, emission_type,
-                           jet_type='quark', accuracy='LL',
+                           jet_type='quark',
+                           obs_accuracy='LL',
+                           splitfn_accuracy='LL',
                            beta = None,
                            bin_space='lin', epsilon=None,
                            fixed_coupling=True,
@@ -60,8 +63,11 @@ def gen_numerical_radiator(rad_sampler, emission_type,
         Must be 'crit', 'sub', or 'pre'.
     jet_type : str
         The type of jet. Must be 'quark' or 'gluon'.
-    accuracy : str
+    obs_accuracy : str
         The accuracy at which we calculate the relevant observable.
+        Must be 'LL' or 'MLL'.
+    splitfn_accuracy : str
+        The accuracy at which we calculate the relevant splitting function.
         Must be 'LL' or 'MLL'.
     fixed_coupling : bool
         A boolean  which determines whether the radiator is calculated
@@ -100,7 +106,7 @@ def gen_numerical_radiator(rad_sampler, emission_type,
     elif emission_type == 'sub':
         z = samples[:, 0]
         theta = samples[:, 1]
-        obs = C_ungroomed(z, theta, beta, acc='LL')
+        obs = C_ungroomed(z, theta, beta, acc=obs_accuracy)
     else:
         raise AssertionError("Invalid emission type. Emission must be "
                              + "'crit', 'sub', or 'pre', but is"
@@ -110,7 +116,7 @@ def gen_numerical_radiator(rad_sampler, emission_type,
     rad_integrator.setBins(num_bins, samples, bin_space)
     weights = radiatorWeight(z, theta, jet_type,
                              fixedcoupling=fixed_coupling,
-                             acc=accuracy)
+                             acc=splitfn_accuracy)
     jacs = rad_sampler.jacobians
     area = rad_sampler.area
 
@@ -163,15 +169,17 @@ def gen_numerical_radiator(rad_sampler, emission_type,
             extra_info += 'zc_' + str(rad_sampler.zc)
         elif beta is not None:
             extra_info += 'beta_' + str(beta) + '_'
-        filename = 'radiator_'+jet_type+'_'+emission_type+'_'\
-                   +accuracy+'_'+str(len(samples))+extra_info\
+        filename = 'radiator_'+jet_type+'_'+emission_type\
+                   +'_obs'+obs_accuracy+'_splitfn'+splitfn_accuracy\
+                   +'_'+str(len(samples))+extra_info\
                    +'_samples.py'
         rad_integrator.saveInterpolatingFn(filename)
 
     return rad_integrator.interpFn
 
 def gen_pre_num_rad(rad_sampler, crit_rad_sampler,
-                    jet_type='quark', accuracy='LL',
+                    jet_type='quark',
+                    obs_accuracy='LL', splitfn_accuracy='LL',
                     bin_space='lin', epsilon=1e-15,
                     fixed_coupling=True,
                     num_bins=100):
@@ -179,7 +187,13 @@ def gen_pre_num_rad(rad_sampler, crit_rad_sampler,
     and returns the associated numerically integrated pre-critical
     radiator (dependent on two parameters).
 
-    Saves the radiator and the associated interpolation
+    More precisely, the pre-critical radiator may be used to find
+    the conditional cumulative distribution for the energy fraction z_pre
+    of an emission which occurs before a `critical' emission at angle
+    theta_crit:
+    Sigma(z_pre | theta_crit) = exp[-R(z_pre, theta_crit)]
+
+    gen_pre_num_rad also saves the radiator and the associated interpolation
     function.
 
     Parameters
@@ -232,7 +246,7 @@ def gen_pre_num_rad(rad_sampler, crit_rad_sampler,
 
     weights = radiatorWeight(z_em, theta_crit, jet_type,
                              fixedcoupling=fixed_coupling,
-                             acc=accuracy)
+                             acc=splitfn_accuracy)
 
     # Accounting for the additional integration over critical energy fractions
     if bin_space == 'lin':
@@ -267,7 +281,8 @@ def gen_pre_num_rad(rad_sampler, crit_rad_sampler,
     return rad_integrator.interpFn
 
 def gen_crit_sub_num_rad(rad_sampler,
-                         jet_type='quark', accuracy='LL',
+                         jet_type='quark',
+                         obs_accuracy='LL', splitfn_accuracy='LL',
                          beta=2., epsilon=1e-15,
                          bin_space='log',
                          fixed_coupling=True,
@@ -339,7 +354,7 @@ def gen_crit_sub_num_rad(rad_sampler,
         if bin_space == 'log':
             jacs = np.array(jacs) * theta_crit
 
-        obs = C_ungroomed(z_em, theta_em, beta, acc=accuracy)
+        obs = C_ungroomed(z_em, theta_em, beta, acc=obs_accuracy)
 
         # Weights, binned observables, and area
         rad_integrator.setBins(num_bins, obs, bin_space,
@@ -347,7 +362,7 @@ def gen_crit_sub_num_rad(rad_sampler,
 
         weights = radiatorWeight(z_em, theta_em, jet_type,
                                  fixedcoupling=fixed_coupling,
-                                 acc=accuracy)
+                                 acc=splitfn_accuracy)
 
         # Performing integration
         rad_integrator.setDensity(obs, weights * jacs, area)
@@ -361,7 +376,7 @@ def gen_crit_sub_num_rad(rad_sampler,
         radiator = np.append(radiator, 0)
         # radiator_error = np.append(radiator_error, 0)
         xs = np.append(xs, C_ungroomed_max(beta, radius=theta_crit,
-                                           acc=accuracy))
+                                           acc=obs_accuracy))
 
         # Saving the function/radiator values, bin edges, and theta value
         rads_all.append(np.array(radiator))
@@ -379,73 +394,57 @@ def gen_crit_sub_num_rad(rad_sampler,
 
     def bounded_rad_fn(x, theta):
         # Subsequent emission boundaries
-        bnds = (x <= C_ungroomed_max(beta, radius=theta, acc=accuracy))
+        bnds = (x <= C_ungroomed_max(beta, radius=theta, acc=obs_accuracy))
         rad = ((0 <= x) * bnds * (0 <= theta)
                * unbounded_rad_fn(x, theta))
         return rad
 
     return bounded_rad_fn
 
-def get_numerical_radiator(num_samples, emission_type,
-                           jet_type='quark', accuracy='LL',
-                           beta = None,
-                           fixed_coupling=True):
-    """Loads a pre-generated numerically integrated radiator,
-    and a corresponding interpolation function.
-    """
-    if fixed_coupling:
-        extra_info = 'fc_'
-    else:
-        extra_info = 'rc_'
-    if beta is not None:
-        extra_info += 'beta_' + str(beta) + '_'
-    filename = 'radiator_'+jet_type+'_'+emission_type+'_'\
-               +accuracy+'_'+str(num_samples)+extra_info\
-               +'_samples.py'
-    file = open(fileName, 'rb')
-    return dill.load(file)
+###########################################
+# Splitting Functions:
+###########################################
+# Generation of Normalizing Factors for Splitting Functions:
+def gen_normalized_splitting(num_samples, z_cut,
+                             jet_type='quark', accuracy='LL',
+                             fixed_coupling=True,
+                             bin_space='lin', epsilon=1e-15, num_bins=100):
+    # Preparing a list of thetas, and normalizations which will depend on theta
+    theta_calc_list, norms = lin_log_mixed_list(epsilon, 1., num_bins), []
 
-def get_numerical_radiator(num_samples, emission_type,
-                           jet_type='quark', accuracy='LL',
-                           beta = None,
-                           fixed_coupling=True):
-    """Loads a pre-generated numerically integrated radiator,
-    and a corresponding interpolation function.
-    GENERATE DOCBLOCK!!
-    """
-    if fixed_coupling:
-        extra_info = 'fc_'
-    else:
-        extra_info = 'rc_'
-    if beta is not None:
-        extra_info += 'beta_' + str(beta) + '_'
-    filename = 'radiator_'+jet_type+'_'+emission_type+'_'\
-               +accuracy+'_'+str(num_samples)+extra_info\
-               +'_samples.py'
-    file = open(fileName, 'rb')
-    return dill.load(file)
+    for _, theta in enumerate(theta_calc_list):
+        # Preparing the weight we want to normalize
+        def weight(z):
+            if fixed_coupling:
+                alpha = alpha_fixed
+            else:
+                alpha = alpha_s(z, theta)
+            return alpha * splittingFn(z, jet_type, accuracy)
+        # Finding the normalization factor
+        n, _, _ = integrate_1d(weight, [z_cut, 1./2.],
+                               bin_space=bin_space, epsilon=epsilon,
+                               num_samples=num_samples)
+        norms.append(n)
+
+    # Making an interpolating function for the splitting fn normalization
+    normalization = interpolate.interp1d(x=theta_calc_list,
+                                         y=norms,
+                                         fill_value="extrapolate")
+
+    def normed_splitting_fn(z, theta):
+        if fixed_coupling:
+            alpha = alpha_fixed
+        else:
+            alpha = alpha_s(z, theta)
+        splitfn =  alpha*splittingFn(z, jet_type, accuracy)/normalization(theta)
+        return splitfn * (z_cut < z) * (z < 1./2.)
+
+    return normed_splitting_fn
 
 
-def get_numerical_radiator_2d(num_samples, emission_type,
-                              jet_type='quark', accuracy='LL',
-                              beta = None,
-                              fixed_coupling=True):
-    """Loads a pre-generated numerically integrated radiator,
-    and a corresponding interpolation function.
-    GENERATE DOCBLOCK!!
-    """
-    if fixed_coupling:
-        extra_info = 'fc_'
-    else:
-        extra_info = 'rc_'
-    if beta is not None:
-        extra_info += 'beta_' + str(beta) + '_'
-    filename = 'radiator_'+jet_type+'_'+emission_type+'_'\
-               +accuracy+'_'+str(num_samples)+extra_info\
-               +'_samples.py'
-    file = open(fileName, 'rb')
-    return dill.load(file)
-
+###########################################
+# Unused:
+###########################################
 # ------------------------------------
 # Generation of Sudakov Exponents:
 # ------------------------------------
@@ -505,45 +504,6 @@ def gen_sudakov_exponent(beta, f, crit_sampler, theta_crits,
         pass
 
     return pdf, pdf_error, cdf, cdf_error, cdf_integrator.bins
-
-# ------------------------------------
-# Generation of Normalizing Factors for Splitting Functions:
-# ------------------------------------
-def gen_normalized_splitting(num_samples, z_cut,
-                             jet_type='quark', accuracy='LL',
-                             fixed_coupling=True,
-                             bin_space='lin', epsilon=1e-15, num_bins=100):
-    # Preparing a list of thetas, and normalizations which will depend on theta
-    theta_calc_list, norms = lin_log_mixed_list(epsilon, 1., num_bins), []
-
-    for _, theta in enumerate(theta_calc_list):
-        # Preparing the weight we want to normalize
-        def weight(z):
-            if fixed_coupling:
-                alpha = alpha_fixed
-            else:
-                alpha = alpha_s(z, theta)
-            return alpha * splittingFn(z, jet_type, accuracy)
-        # Finding the normalization factor
-        n, _, _ = integrate_1d(weight, [z_cut, 1./2.],
-                               bin_space=bin_space, epsilon=epsilon,
-                               num_samples=num_samples)
-        norms.append(n)
-
-    # Making an interpolating function for the splitting fn normalization
-    normalization = interpolate.interp1d(x=theta_calc_list,
-                                         y=norms,
-                                         fill_value="extrapolate")
-
-    def normed_splitting_fn(z, theta):
-        if fixed_coupling:
-            alpha = alpha_fixed
-        else:
-            alpha = alpha_s(z, theta)
-        splitfn =  alpha*splittingFn(z, jet_type, accuracy)/normalization(theta)
-        return splitfn * (z_cut < z) * (z < 1./2.)
-
-    return normed_splitting_fn
 
 # ------------------------------------
 # Full Monte Carlo Integration

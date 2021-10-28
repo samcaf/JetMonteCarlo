@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from scipy.special import spence
 
 # Local utilities
@@ -126,7 +127,9 @@ def get_axes(title_info, ratio_plot=False, ylim=ylim_2):
 def plot_crit_approx(axespdf, axescdf, z_cut, beta=BETA,
                      icol=-1, label='Analytic',
                      multiple_em=False):
-    """Plot the critical emission analytic result."""
+    """Plot an approximation to the critical emission
+    analytic result.
+    """
     # Preparing the bins
     if BIN_SPACE == 'lin':
         bins = np.linspace(0, .5, 100)

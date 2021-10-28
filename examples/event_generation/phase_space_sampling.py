@@ -1,155 +1,9 @@
+from __future__ import absolute_import
 import dill as pickle
-from pathlib import Path
 
 # Local utilities for numerics
 from jetmontecarlo.jets.jet_numerics import *
-
-###########################################
-# Notes:
-###########################################
-# To Do
-# Run with running coupling, MLL, with 5e6
-
-# Done:
-# Run with fixed coupling, LL, with 1e6
-# Run with running coupling, LL, with 1e6
-    # crit and pre-crit rads suspiciously fast, probably true of fc too
-
-###########################################
-# Definitions and Parameters
-###########################################
-# =====================================
-# Physics Inputs
-# =====================================
-FIXED_COUPLING = True
-ACC = 'LL'
-if FIXED_COUPLING:
-    ACC = 'LL'
-
-# ------------------------------------
-# Jet and grooming parameters
-# ------------------------------------
-# A wide range of z_cuts;
-# These are really the allowed values of f*z_cut in our calculations:
-Z_CUTS = [.05, .075, .1, .15, .2]
-BETAS = [1./2., 1., 2., 3., 4.]
-JET_TYPE = 'quark'
-
-# =====================================
-# Monte Carlo parameters
-# =====================================
-# ------------------------------------
-# MC Event Parameters
-# ------------------------------------
-# Number of generated events
-NUM_MC_EVENTS = int(5e6)
-
-# MC Sampling Switches:
-LOAD_MC_EVENTS = False
-# Default True: phase space doesn't change, only weights do
-SAVE_MC_EVENTS = True
-
-# MC Radiator Switches:
-LOAD_MC_RADS = False
-# Default False, to generate radiators with the correct parameters
-SAVE_MC_RADS = True
-
-# MC Splitting Function Switches:
-LOAD_SPLITTING_FNS = False
-# Default False, to generate splitting functions with the correct parameters
-SAVE_SPLITTING_FNS = True
-
-# Number of bins for integration of radiators and splitting functions:
-NUM_RAD_BINS = int(1e4)
-NUM_SPLITFN_BINS = int(1e4)
-
-# ------------------------------------
-# Sampling/Integration Parameters
-# ------------------------------------
-EPSILON = 1e-15
-BIN_SPACE = 'log'
-
-# ------------------------------------
-# Emissions to Generate
-# ------------------------------------
-COMPARE_CRIT = True
-MAKE_CRIT_RAD = True
-COMPARE_CRIT_AND_SUB = True
-COMPARE_PRE_AND_CRIT = True
-COMPARE_ALL = True
-COMPARE_UNGROOMED = True and not\
-                    True in [COMPARE_CRIT, COMPARE_CRIT_AND_SUB,
-                             COMPARE_PRE_AND_CRIT, COMPARE_ALL]
-
-###########################################
-# Setting Up Event Generation:
-###########################################
-# =====================================
-# MC Filenames
-# =====================================
-# Sampler files
-critfile = 'crit_samplers_{}_{:.0e}.pkl'.format(BIN_SPACE, NUM_MC_EVENTS)
-prefile = 'pre_samplers_{}_{:.0e}.pkl'.format(BIN_SPACE, NUM_MC_EVENTS)
-subfile = 'sub_samplers_{}_{:.0e}.pkl'.format(BIN_SPACE, NUM_MC_EVENTS)
-
-# Radiator files
-critradfile = 'crit_{}_rads_{:.0e}events_{:.0e}bins.pkl'.format(BIN_SPACE,
-                                                             NUM_MC_EVENTS,
-                                                             NUM_RAD_BINS)
-preradfile = 'pre_{}_rads_{:.0e}events_{:.0e}bins.pkl'.format(BIN_SPACE,
-                                                           NUM_MC_EVENTS,
-                                                           NUM_RAD_BINS)
-subradfile = 'sub_{}_rads_{:.0e}events_{:.0e}bins.pkl'.format(BIN_SPACE,
-                                                           NUM_MC_EVENTS,
-                                                           NUM_RAD_BINS)
-
-splitfn_file = 'split_fns_{:.0e}events_{:.0e}bins.pkl'.format(NUM_MC_EVENTS,
-                                                              NUM_SPLITFN_BINS)
-
-if not FIXED_COUPLING:
-    # Radiator files
-    critradfile = 'crit_{}_rads_rc_{:.0e}events_{:.0e}bins.pkl'.format(BIN_SPACE,
-                                                                 NUM_MC_EVENTS,
-                                                                 NUM_RAD_BINS)
-    preradfile = 'pre_{}_rads_rc_{:.0e}events_{:.0e}bins.pkl'.format(BIN_SPACE,
-                                                               NUM_MC_EVENTS,
-                                                               NUM_RAD_BINS)
-    subradfile = 'sub_{}_rads_rc_{:.0e}events_{:.0e}bins.pkl'.format(BIN_SPACE,
-                                                               NUM_MC_EVENTS,
-                                                               NUM_RAD_BINS)
-
-    splitfn_file = 'split_fns_rc_{:.0e}events_{:.0e}bins.pkl'.format(
-                                                                NUM_MC_EVENTS,
-                                                                NUM_SPLITFN_BINS)
-
-if not COMPARE_UNGROOMED:
-    # If we are not comparing ungroomed emissions, we remember that
-    # the subsequent emissions are actually linked to the critical
-    # emissions by angular ordering
-    subfile = 'crit_' + subfile
-    subradfile = 'crit_' + subradfile
-
-# =====================================
-# Relative paths
-# =====================================
-# Folders
-ps_folder = Path("jetmontecarlo/utils/samples/parton_showers/")
-sampler_folder = Path("jetmontecarlo/utils/samples/phase_space_samplers/")
-rad_folder = Path("jetmontecarlo/utils/functions/radiators/")
-splitfn_folder = Path("jetmontecarlo/utils/functions/splitting_fns/")
-
-# Samplers
-critfile_path = sampler_folder / critfile
-prefile_path = sampler_folder / prefile
-subfile_path = sampler_folder / subfile
-
-# Radiators
-critrad_path = rad_folder / critradfile
-prerad_path = rad_folder / preradfile
-subrad_path = rad_folder / subradfile
-
-# Splitting functions
-splitfn_path = splitfn_folder / splitfn_file
+from examples.params import *
 
 ###########################################
 # MC Integration
@@ -282,6 +136,7 @@ SUB_RADIATORS = []
 # ----------------------------------
 # Loading Radiators
 # ----------------------------------
+print()
 if LOAD_MC_RADS:
     print("Loading radiators...")
     print("    Loading critical radiators...")
@@ -313,7 +168,9 @@ if not LOAD_MC_RADS and SAVE_MC_RADS:
                       +str(z_cut)+"...")
                 # Critical radiators
                 crit_rad_i = gen_numerical_radiator(CRIT_SAMPLERS[i], 'crit',
-                                                    JET_TYPE, ACC,
+                                                    JET_TYPE,
+                                                    obs_accuracy=OBS_ACC,
+                                                    splitfn_accuracy=SPLITFN_ACC,
                                                     beta=None,
                                                     bin_space=BIN_SPACE,
                                                     epsilon=EPSILON,
@@ -329,7 +186,9 @@ if not LOAD_MC_RADS and SAVE_MC_RADS:
                       +str(z_cut)+"...")
                 pre_rad_i = gen_pre_num_rad(PRE_SAMPLERS[i],
                                             CRIT_SAMPLERS[i],
-                                            JET_TYPE, ACC,
+                                            JET_TYPE,
+                                            obs_accuracy=OBS_ACC,
+                                            splitfn_accuracy=SPLITFN_ACC,
                                             bin_space=BIN_SPACE,
                                             epsilon=EPSILON,
                                             fixed_coupling=FIXED_COUPLING,
@@ -344,7 +203,9 @@ if not LOAD_MC_RADS and SAVE_MC_RADS:
                 print("    Generating critical/subsequent radiator "
                       "with beta="+str(beta)+"...")
                 sub_rad = gen_crit_sub_num_rad(SUB_SAMPLERS[0],
-                                               JET_TYPE, ACC,
+                                               JET_TYPE,
+                                               obs_accuracy=OBS_ACC,
+                                               splitfn_accuracy=SPLITFN_ACC,
                                                beta=beta,
                                                epsilon=EPSILON,
                                                bin_space=BIN_SPACE,
@@ -357,7 +218,9 @@ if not LOAD_MC_RADS and SAVE_MC_RADS:
             print("    Generating subsequent radiator with beta="
                   +str(beta)+"...")
             sub_rad = gen_numerical_radiator(SUB_SAMPLERS[0], 'sub',
-                                             JET_TYPE, ACC,
+                                             JET_TYPE,
+                                             obs_accuracy=OBS_ACC,
+                                             splitfn_accuracy=SPLITFN_ACC,
                                              beta=beta,
                                              bin_space=BIN_SPACE,
                                              epsilon=EPSILON,
@@ -373,7 +236,8 @@ if not LOAD_MC_RADS and SAVE_MC_RADS:
     zcraddict = {'z_cuts' : Z_CUTS,
                  'jet type' : JET_TYPE,
                  'fixed coupling' : FIXED_COUPLING,
-                 'accuracy' : ACC,
+                 'observable accuracy' : OBS_ACC,
+                 'split fn accuracy' : SPLITFN_ACC,
                  'epsilon' : EPSILON,
                  'sample space' : BIN_SPACE,
                  'num events' : NUM_MC_EVENTS,
@@ -385,7 +249,8 @@ if not LOAD_MC_RADS and SAVE_MC_RADS:
     subraddict = {'betas' : BETAS,
                   'jet type' : JET_TYPE,
                   'fixed coupling' : FIXED_COUPLING,
-                  'accuracy' : ACC,
+                  'observable accuracy' : OBS_ACC,
+                  'split fn accuracy' : SPLITFN_ACC,
                   'epsilon' : EPSILON,
                   'sample space' : BIN_SPACE,
                   'num events' : NUM_MC_EVENTS,
@@ -428,6 +293,7 @@ SPLITTING_FNS = []
 # ----------------------------------
 # Generating Splitting Functions
 # ----------------------------------
+print()
 if SAVE_SPLITTING_FNS and not LOAD_SPLITTING_FNS:
     print("Saving normalized splitting functions...")
     for _, z_cut in enumerate(Z_CUTS):
@@ -435,7 +301,7 @@ if SAVE_SPLITTING_FNS and not LOAD_SPLITTING_FNS:
               +str(z_cut)+"...")
         # Splitting function generation
         split_fn = gen_normalized_splitting(NUM_MC_EVENTS, z_cut,
-                                     jet_type=JET_TYPE, accuracy=ACC,
+                                     jet_type=JET_TYPE, accuracy=SPLITFN_ACC,
                                      fixed_coupling=FIXED_COUPLING,
                                      num_bins=NUM_SPLITFN_BINS)
 
@@ -448,7 +314,7 @@ if SAVE_SPLITTING_FNS and not LOAD_SPLITTING_FNS:
     splitdict = {'z_cuts' : Z_CUTS,
                  'jet type' : JET_TYPE,
                  'fixed coupling' : FIXED_COUPLING,
-                 'accuracy' : ACC,
+                 'accuracy' : SPLITFN_ACC,
                  'epsilon' : EPSILON,
                  'sample space' : BIN_SPACE,
                  'num events' : NUM_MC_EVENTS,

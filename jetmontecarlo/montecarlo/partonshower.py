@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import dill as pickle
 from pathlib import Path
 
@@ -17,8 +18,10 @@ class parton_shower():
     # ------------------------------------
     # File paths
     # ------------------------------------
-    def showerfile_path(self, info=None):
+    def showerfile_path(self, info=''):
         """Sets up a path for loading or saving shower events."""
+        info += '' if self.jet_type == 'quark' else '_'+self.jet_type
+
         shower_folder = Path("jetmontecarlo/utils/samples/parton_showers/")
         if self.fixed_coupling:
             showerfile = 'jet_list_shower_{:.0e}_fc_{:.0e}cutoff'.format(
@@ -28,7 +31,7 @@ class parton_shower():
                                         self.num_events, self.shower_cutoff)
         if self.shower_beta != 1:
             showerfile = showerfile + '_beta'+str(self.shower_beta)
-        if info is None:
+        if info is '':
             showerfile = showerfile + '.pkl'
         else:
             showerfile = showerfile + '_' + info + '.pkl'
@@ -36,7 +39,10 @@ class parton_shower():
         return shower_folder / showerfile
 
     def correlation_path(self, beta, obs_acc, few_pres,
-                         f_soft=1., angular_ordered=False, info=None):
+                    f_soft=1., angular_ordered=False,
+                    info=''):
+        info += '' if self.jet_type == 'quark' else '_'+self.jet_type
+
         # Preparing filename
         ps_sample_folder = Path("jetmontecarlo/utils/samples/shower_correlations/")
         ps_file = 'shower_{:.0e}_c1_'.format(self.num_events)+str(beta)
@@ -70,7 +76,7 @@ class parton_shower():
             # else:
             #     ps_file += '_manypres.npz'
 
-        if info is not None:
+        if info != '':
             ps_file += '_' + info
 
         ps_file = ps_file + '.npz'
