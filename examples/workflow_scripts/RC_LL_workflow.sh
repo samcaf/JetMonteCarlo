@@ -3,8 +3,8 @@
 # Switch describing whether events are generated or loaded
 gen_events=true
 if $gen_events
-    then gen_events_str='True';
-    else gen_events_str='False';
+    then load_events_str='False';
+    else load_events_str='True';
 fi
 
 # ============================
@@ -65,19 +65,19 @@ printf "
 # Setting desired accuracy:
 # ============================
 # Fixed coupling:
-sed -i '' -e "s/FIXED_COUPLING = .*/FIXED_COUPLING = False/" examples/params.py
+sed -i "s/FIXED_COUPLING = .*/FIXED_COUPLING = False/" examples/params.py
 
 # Accuracy for observable and splittning functions:
 awk '!/OBS_ACC = / || seen { print } /OBS_ACC = / && !seen { print "OBS_ACC = \047LL\047"; seen = 1 }' examples/params.py  > tmp && mv tmp examples/params.py
 awk '!/SPLITFN_ACC = / || seen { print } /SPLITFN_ACC = / && !seen { print "SPLITFN_ACC = \047LL\047"; seen = 1 }' examples/params.py  > tmp && mv tmp examples/params.py
 
 # Cutoff for the angularity which orders the parton shower:
-sed -i '' -e "s/SHOWER_CUTOFF = .*/SHOWER_CUTOFF = 1e-10/" examples/params.py
+sed -i "s/SHOWER_CUTOFF = .*/SHOWER_CUTOFF = 1e-10/" examples/params.py
 
 # ============================
 # Setting jet type:
 # ============================
-sed -i '' -e "s/JET_TYPE = .*/JET_TYPE = 'quark'/" examples/params.py
+sed -i "s/JET_TYPE = .*/JET_TYPE = 'quark'/" examples/params.py
 
 # ============================
 # Setting MC parameters:
@@ -86,9 +86,9 @@ sed -i '' -e "s/JET_TYPE = .*/JET_TYPE = 'quark'/" examples/params.py
 # Deciding whether to produce or reuse samples
 # -------------------------
 # Set all True if using already generated samples, and False otherwise
-sed -i '' -e "s/LOAD_MC_EVENTS = .*/LOAD_MC_EVENTS = "$gen_events_str"/" examples/params.py
-sed -i '' -e "s/LOAD_MC_RADS = .*/LOAD_MC_RADS = "$gen_events_str"/" examples/params.py
-sed -i '' -e "s/LOAD_SPLITTING_FNS = .*/LOAD_SPLITTING_FNS = "$gen_events_str"/" examples/params.py
+sed -i "s/LOAD_MC_EVENTS = .*/LOAD_MC_EVENTS = "$load_events_str"/" examples/params.py
+sed -i "s/LOAD_MC_RADS = .*/LOAD_MC_RADS = "$load_events_str"/" examples/params.py
+sed -i "s/LOAD_SPLITTING_FNS = .*/LOAD_SPLITTING_FNS = "$load_events_str"/" examples/params.py
 
 # -------------------------
 # Number of events/bins:
@@ -96,13 +96,13 @@ sed -i '' -e "s/LOAD_SPLITTING_FNS = .*/LOAD_SPLITTING_FNS = "$gen_events_str"/"
 # 'int(num_events or num_bins)'
 # -------------------------
 # Number of events (MC and parton shower)
-sed -i '' -e "s/NUM_MC_EVENTS = .*/NUM_MC_EVENTS = int(5e6)/" examples/params.py
-sed -i '' -e "s/NUM_SHOWER_EVENTS = .*/NUM_SHOWER_EVENTS = int(5e5)/" examples/params.py
+sed -i "s/NUM_MC_EVENTS = .*/NUM_MC_EVENTS = int(5e6)/" examples/params.py
+sed -i "s/NUM_SHOWER_EVENTS = .*/NUM_SHOWER_EVENTS = int(5e5)/" examples/params.py
 
 # Number of bins used to calculate radiators
 # I've found that 5e6 MC events and 5e3 bins yield good results
-sed -i '' -e "s/NUM_RAD_BINS = .*/NUM_RAD_BINS = int(5e3)/" examples/params.py
-sed -i '' -e "s/NUM_SPLITFN_BINS = .*/NUM_SPLITFN_BINS = int(5e3)/" examples/params.py
+sed -i "s/NUM_RAD_BINS = .*/NUM_RAD_BINS = int(5e3)/" examples/params.py
+sed -i "s/NUM_SPLITFN_BINS = .*/NUM_SPLITFN_BINS = int(5e3)/" examples/params.py
 
 printf "\n
 ###################################
