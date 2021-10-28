@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# Switch describing whether events are generated or loaded
+gen_events=true
+if $gen_events
+    then gen_events_str='True';
+    else gen_events_str='False';
+fi
+
 # ============================
 # Path preparation:
 # ============================
@@ -76,9 +83,12 @@ sed -i '' -e "s/JET_TYPE = .*/JET_TYPE = 'quark'/" examples/params.py
 # Setting MC parameters:
 # ============================
 # -------------------------
-# Telling params.py to generate phase space samples, rather than load them
+# Deciding whether to produce or reuse samples
 # -------------------------
-sed -i '' -e "s/LOAD_MC_EVENTS = .*/LOAD_MC_EVENTS = False/" examples/params.py
+# Set all True if using already generated samples, and False otherwise
+sed -i '' -e "s/LOAD_MC_EVENTS = .*/LOAD_MC_EVENTS = "$gen_events_str"/" examples/params.py
+sed -i '' -e "s/LOAD_MC_RADS = .*/LOAD_MC_RADS = "$gen_events_str"/" examples/params.py
+sed -i '' -e "s/LOAD_SPLITTING_FNS = .*/LOAD_SPLITTING_FNS = "$gen_events_str"/" examples/params.py
 
 # -------------------------
 # Number of events/bins:
@@ -98,26 +108,29 @@ printf "\n
 ###################################
 # Running workflow:
 ###################################"
-printf "
-# ============================
-# Event generation:
-# ============================
+if $gen_events
+    then
+    printf "
+    # ============================
+    # Event generation:
+    # ============================
 
-# -------------------------
-# Phase space samples
-# -------------------------
-\n"
-# Generating phase space samples
-# for numerical integration in pQCD
-python examples/event_generation/phase_space_sampling.py
+    # -------------------------
+    # Phase space samples
+    # -------------------------
+    \n"
+    # Generating phase space samples
+    # for numerical integration in pQCD
+    python examples/event_generation/phase_space_sampling.py
 
-printf "
-# -------------------------
-# Parton shower samples:
-# -------------------------
-\n"
-# Generating shower samples and observables
-python examples/event_generation/parton_shower_gen.py
+    printf "
+    # -------------------------
+    # Parton shower samples:
+    # -------------------------
+    \n"
+    # Generating shower samples and observables
+    python examples/event_generation/parton_shower_gen.py
+fi
 
 printf "\n
 # ============================

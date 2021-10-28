@@ -152,7 +152,7 @@ def aestheticfig(xlabel='x', ylabel=r'Probability Density',
     if labeltext is not None:
         # Extra primary label
         axes[0].text(
-            x=0,
+            x=-0.1,
             y=1.005+pad,
             s=labeltext,
             transform=axes[0].transAxes,
