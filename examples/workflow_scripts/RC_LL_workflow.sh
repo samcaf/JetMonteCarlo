@@ -1,11 +1,42 @@
 #!/bin/bash
+#SBATCH --job-name piranha_rc_ll
+#SBATCH --exclusive
+#SBATCH -c 6
+#SBATCH --mem=0
+#SBATCH -o logs/rc_ll-%j.out
+#SBATCH -e logs/rc_ll-%j.err
+#SBATCH --constraint=xeon-p8
 
+###################################
+# Preparation
+###################################
+# ============================
+# Misc. Preparation
+# ============================
+# -------------------------
+# Code Switches:
+# -------------------------
 # Switch describing whether events are generated or loaded
 gen_events=true
 if $gen_events
     then load_events_str='False';
     else load_events_str='True';
 fi
+
+# -------------------------
+# Supercloud Preparation:
+# -------------------------
+# Preparation for running in supercloud cluster:
+module load anaconda/2021b
+# pip install --user pynverse
+
+# -------------------------
+# log file preparation:
+# -------------------------
+#LOG_FILE="./examples/logs/fc_ll_workflow.log"
+#> $LOG_FILE
+#exec >> $LOG_FILE 2>&1
+
 
 # ============================
 # Path preparation:
@@ -33,43 +64,26 @@ path_append() {
 
 path_append PYTHONPATH $PWD
 
-# -------------------------
-# log file preparation:
-# -------------------------
-LOG_FILE="./examples/logs/rc_ll_workflow.log"
-> $LOG_FILE
-exec >> $LOG_FILE 2>&1
-
-# -------------------------
-# Cluster preparation:
-# -------------------------
-# Slurm options for running in cluster:
-# SBATCH -o rc_ll-%j.out --exclusive
-
-module load anaconda/2021b
-# pip install --user pynverse
-
 
 ###################################
 # Beginning to log workflow
 ###################################
 printf "# ============================
-Date: "`date '+%F'`"-("`date '+%T'`")
+# Date: "`date '+%F'`"-("`date '+%T'`")
 # ============================"
 
 printf "
-# -------------------------
+###################################
 # Setting up files
-# -------------------------"
+###################################"
 # ============================
 # Setting desired accuracy:
 # ============================
 # Fixed coupling:
 sed -i "s/FIXED_COUPLING = .*/FIXED_COUPLING = False/" examples/params.py
-
-# Accuracy for observable and splittning functions:
-awk '!/OBS_ACC = / || seen { print } /OBS_ACC = / && !seen { print "OBS_ACC = \047LL\047"; seen = 1 }' examples/params.py  > tmp && mv tmp examples/params.py
-awk '!/SPLITFN_ACC = / || seen { print } /SPLITFN_ACC = / && !seen { print "SPLITFN_ACC = \047LL\047"; seen = 1 }' examples/params.py  > tmp && mv tmp examples/params.py
+# Accuracy for r.c. observables and splitting functions
+sed -i "s/OBS_ACC = .*/OBS_ACC = 'LL'/" examples/params.py
+sed -i "s/SPLITFN_ACC = .*/SPLITFN_ACC = 'LL'/" examples/params.py
 
 # Cutoff for the angularity which orders the parton shower:
 sed -i "s/SHOWER_CUTOFF = .*/SHOWER_CUTOFF = 1e-10/" examples/params.py
@@ -86,7 +100,7 @@ sed -i "s/JET_TYPE = .*/JET_TYPE = 'quark'/" examples/params.py
 # Deciding whether to produce or reuse samples
 # -------------------------
 # Set all True if using already generated samples, and False otherwise
-sed -i "s/LOAD_MC_EVENTS = .*/LOAD_MC_EVENTS = "$load_events_str"/" examples/params.py
+sed -i "s/LOAD_MC_EVENTS = .*/LOAD_MC_EVENTS = True/" examples/params.py
 sed -i "s/LOAD_MC_RADS = .*/LOAD_MC_RADS = "$load_events_str"/" examples/params.py
 sed -i "s/LOAD_SPLITTING_FNS = .*/LOAD_SPLITTING_FNS = "$load_events_str"/" examples/params.py
 
@@ -103,6 +117,8 @@ sed -i "s/NUM_SHOWER_EVENTS = .*/NUM_SHOWER_EVENTS = int(5e5)/" examples/params.
 # I've found that 5e6 MC events and 5e3 bins yield good results
 sed -i "s/NUM_RAD_BINS = .*/NUM_RAD_BINS = int(5e3)/" examples/params.py
 sed -i "s/NUM_SPLITFN_BINS = .*/NUM_SPLITFN_BINS = int(5e3)/" examples/params.py
+
+python examples/params.py
 
 printf "\n
 ###################################

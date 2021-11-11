@@ -4,6 +4,7 @@ from pathlib import Path
 # Local imports
 from jetmontecarlo.analytics.QCD_utils import MU_NP
 
+VERBOSE = 3
 
 ###########################################
 # Notes:
@@ -18,23 +19,21 @@ from jetmontecarlo.analytics.QCD_utils import MU_NP
 # Run with running coupling, LL, with 1e6
     # crit and pre-crit rads suspiciously fast, probably true of fc too
 
-
-
 ###########################################
 # Definitions and Parameters
 ###########################################
 # =====================================
 # Physics Inputs
 # =====================================
-FIXED_COUPLING = False
+FIXED_COUPLING = True
 
 # Observable accuracy
-OBS_ACC = 'MLL'
+OBS_ACC = 'LL'
 if FIXED_COUPLING:
     OBS_ACC = 'LL'
 
 # Parton shower generation accuracy
-SPLITFN_ACC = 'MLL'
+SPLITFN_ACC = 'LL'
 if FIXED_COUPLING:
     SPLITFN_ACC = 'LL'
 
@@ -58,6 +57,12 @@ Z_CUTS = sorted(set([f*zc for zc in Z_CUTS for f in F_SOFTS]))
 # (use ints when possible for consistency across files)
 BETAS = [1./2., 1, 2, 3, 4]
 
+# Setting up dictionaries to facilitate calling functions of z_cut and beta.
+# In particular, the radiators are organized as lists, ordered by z_cut but without
+# an exact reference to z_cut. Dictionaries might be better in the future.
+INDEX_ZC = {zc : i for i, zc in enumerate(Z_CUTS)}
+INDEX_BETA = {beta : i for i, beta in enumerate(BETAS)}
+
 # =====================================
 # Monte Carlo parameters
 # =====================================
@@ -65,8 +70,8 @@ BETAS = [1./2., 1, 2, 3, 4]
 # MC Event Parameters
 # ------------------------------------
 # Number of generated events
-NUM_MC_EVENTS = int(5e3)
-NUM_SHOWER_EVENTS = int(5e2)
+NUM_MC_EVENTS = int(5e6)
+NUM_SHOWER_EVENTS = int(5e5)
 
 # MC Sampling Switches:
 LOAD_MC_EVENTS = False
@@ -74,18 +79,18 @@ LOAD_MC_EVENTS = False
 SAVE_MC_EVENTS = True
 
 # MC Radiator Switches:
-LOAD_MC_RADS = False
+LOAD_MC_RADS = True
 # Default False, to generate radiators with the correct parameters
 SAVE_MC_RADS = True
 
 # MC Splitting Function Switches:
-LOAD_SPLITTING_FNS = False
+LOAD_SPLITTING_FNS = True
 # Default False, to generate splitting functions with the correct parameters
 SAVE_SPLITTING_FNS = True
 
 # Number of bins for integration of radiators and splitting functions:
-NUM_RAD_BINS = int(1e2)
-NUM_SPLITFN_BINS = int(1e2)
+NUM_RAD_BINS = int(5e3)
+NUM_SPLITFN_BINS = int(5e3)
 
 # ------------------------------------
 # Sampling Parameters
@@ -95,7 +100,7 @@ EPSILON = 1e-15
 BIN_SPACE = 'log'
 
 # Parton showering
-SHOWER_CUTOFF = MU_NP
+SHOWER_CUTOFF = 1e-10
 SHOWER_BETA = 2
 
 # ------------------------------------
@@ -186,3 +191,47 @@ subrad_path = rad_folder / subradfile
 
 # Splitting functions
 splitfn_path = splitfn_folder / splitfn_file
+
+
+
+# ====================================
+# Printing Information
+# ====================================
+if __name__ == '__main__':
+    if VERBOSE > 0:
+        print("\n# =====================================\n# Parameters:\n# =====================================")
+
+        print("    # -----------------------------\n    # Physics:\n    # -----------------------------")
+        print("    # Jet type: "+str(JET_TYPE))
+        print("    # Fixed coupling: "+str(FIXED_COUPLING))
+        print("    # Observable accuracy: "+str(OBS_ACC))
+        print("    # Splitting function accuracy: "+str(OBS_ACC))
+
+        print("\n    # -----------------------------\n    # Grooming:\n    # -----------------------------")
+        print("    # f * z_cut values: " + str(Z_CUTS))
+        if VERBOSE > 2:
+            print("        # z_cut dictionary: " + str(INDEX_ZC))
+
+
+        print("\n    # -----------------------------\n    # Monte Carlo:\n    # -----------------------------")
+        print("    # Number of events for MC integration: {:.1e}".format(NUM_MC_EVENTS))
+        if VERBOSE > 1:
+            print("        # Integration space: " + str(BIN_SPACE) + " (if log, integration cutoff of " + str(EPSILON) + ")")
+            if VERBOSE > 2:
+                print("            # Load MC events: " + str(LOAD_MC_EVENTS))
+                print("            # Save MC events: " + str(SAVE_MC_EVENTS))
+            print("        # Number of radiator bins: {:.1e}".format(NUM_RAD_BINS))
+            if VERBOSE > 2:
+                print("            # Load MC radiators: " + str(LOAD_MC_EVENTS))
+                print("            # Save MC radiators: " + str(SAVE_MC_EVENTS))
+            print("        # Number of splitting function bins:  {:.1e}".format(NUM_RAD_BINS))
+            if VERBOSE > 2:
+                print("            # Load MC splitting functions: " + str(LOAD_MC_EVENTS))
+                print("            # Save MC splitting functions: " + str(SAVE_MC_EVENTS))
+
+        print("    # Number of parton shower events: {:.1e}".format(NUM_SHOWER_EVENTS))
+        if VERBOSE > 1:
+            print("        # Shower cutoff:  {:.1e}".format(SHOWER_CUTOFF))
+            print("        # Angularity beta for shower ordering: " + str(SHOWER_BETA))
+        print("\n")
+

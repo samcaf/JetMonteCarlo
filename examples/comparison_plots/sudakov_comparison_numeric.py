@@ -44,18 +44,11 @@ from examples.params import *
 # Definitions and Parameters
 ###########################################
 # ------------------------------------
-# Jet and grooming parameters
+# Parameters for plotting
 # ------------------------------------
-Z_CUTS = [.05, .1, .2]
-
-# List of betas for comparing distributions for
-# several C_1^{(\beta)} in subsequent emissions
-BETAS = [1, 2, 3, 4]
-# Single beta for other comparisons
-BETA = 2
-
+Z_CUT_PLOT = [.05, .1, .2]
 F_SOFT = 1
-Z_CUTS = [F_SOFT * zc for zc in Z_CUTS]
+Z_CUT_PLOT = [F_SOFT * zc for zc in Z_CUT_PLOT]
 
 # ------------------------------------
 # Comparison parameters
@@ -107,9 +100,8 @@ def ps_correlations(beta):
 with open(splitfn_path, 'rb') as f:
     splitting_fns = pickle.load(f)
 # Index of z_cut values in the splitting function file
-index_zc = {.05: 0, .1: 1, .2: 2}
 def split_fn_num(z, theta, z_cut):
-    return splitting_fns[index_zc[z_cut]](z, theta)
+    return splitting_fns[INDEX_ZC[z_cut]](z, theta)
 
 # Sample file paths:
 sample_folder = Path("jetmontecarlo/utils/samples/inverse_transform_samples")
@@ -166,23 +158,21 @@ def pre_sample_file_path(z_cut):
 def load_radiators():
     print("Loading pickled radiator functions:")
     print("    Loading critical radiator...")
-    index = {.05: 0, .1: 1, .2: 2}
     if True in [COMPARE_CRIT, COMPARE_PRE_AND_CRIT,
                 COMPARE_CRIT_AND_SUB, COMPARE_ALL]:
         with open(critrad_path, 'rb') as file:
             rad_crit_list = pickle.load(file)
         global rad_crit
         def rad_crit(theta, z_cut):
-            return rad_crit_list[index[z_cut]](theta)
+            return rad_crit_list[INDEX_ZC[z_cut]](theta)
 
     if COMPARE_SUB:
         print("    Loading subsequent/ungroomed radiator...")
-        index = {1: 0, 2: 1, 3: 2, 4: 3}
         with open(subrad_path_path, 'rb') as file:
             rad_sub_list = pickle.load(file)
         global rad_sub
         def rad_sub(c_sub, beta):
-            return rad_sub_list[index[beta]](c_sub)
+            return rad_sub_list[INDEX_BETA[beta]](c_sub)
 
     if True in [COMPARE_CRIT_AND_SUB, COMPARE_ALL]:
         print("    Loading critical/subsequent radiator...")
@@ -196,7 +186,7 @@ def load_radiators():
             rad_pre_list = pickle.load(file)
         global rad_pre
         def rad_pre(z_pre, theta, z_cut):
-            return rad_pre_list[index[z_cut]](z_pre, theta)
+            return rad_pre_list[INDEX_ZC[z_cut]](z_pre, theta)
 
 if not(LOAD_MC_EVENTS):
     load_radiators()
@@ -220,8 +210,6 @@ def plot_mc_crit(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
 
     if not load:
         print("    Making critical samples with z_c="+str(z_cut)+"...")
-
-        index = {.05: 0, .1: 1, .2: 2}
 
         def cdf_crit(theta):
             return np.exp(-1.*rad_crit(theta, z_cut))
@@ -265,7 +253,7 @@ def compare_crit(beta=BETA, plot_approx=False):
         axes_pdf[0].set_ylim(0, .2)
 
     # Analytic plot
-    for icol, z_cut in enumerate(Z_CUTS):
+    for icol, z_cut in enumerate(Z_CUT_PLOT):
         if not plot_approx:
             plot_crit_analytic(axes_pdf, axes_cdf, z_cut,
                                beta, icol=icol, jet_type='quark',
@@ -283,7 +271,7 @@ def compare_crit(beta=BETA, plot_approx=False):
         text.set_color(compcolors[(icol, 'dark')])
 
     print("Getting critical samples...")
-    for i, z_cut in enumerate(Z_CUTS):
+    for i, z_cut in enumerate(Z_CUT_PLOT):
         plot_mc_crit(axes_pdf, axes_cdf, z_cut, beta, icol=i)
         plot_shower_pdf_cdf(ps_correlations(beta)['rss_c1s_crit'][i],
                             axes_pdf, axes_cdf,
@@ -513,7 +501,7 @@ def compare_crit_and_sub(beta=BETA):
         axes_pdf[0].set_ylim(0, .2)
 
     # Analytic plot
-    for icol, z_cut in enumerate(Z_CUTS):
+    for icol, z_cut in enumerate(Z_CUT_PLOT):
         plot_crit_analytic(axes_pdf, axes_cdf, z_cut,
                            beta, icol=icol, jet_type='quark',
                            f_soft=F_SOFT,
@@ -526,7 +514,7 @@ def compare_crit_and_sub(beta=BETA):
 
     print("Getting critical and subsequent samples...")
 
-    for i, z_cut in enumerate(Z_CUTS):
+    for i, z_cut in enumerate(Z_CUT_PLOT):
         plot_mc_crit_and_sub(axes_pdf, axes_cdf, z_cut, beta, icol=i)
         plot_shower_pdf_cdf(ps_correlations(beta)['rss_c1s_critsub'][i],
                             axes_pdf, axes_cdf,
@@ -654,7 +642,7 @@ def compare_pre_and_crit(beta=BETA):
         axes_pdf[0].set_ylim(0, .2)
 
     # Analytic plot
-    for icol, z_cut in enumerate(Z_CUTS):
+    for icol, z_cut in enumerate(Z_CUT_PLOT):
         plot_crit_analytic(axes_pdf, axes_cdf, z_cut,
                            beta, icol=icol, jet_type='quark',
                            f_soft=F_SOFT,
@@ -667,7 +655,7 @@ def compare_pre_and_crit(beta=BETA):
 
     print("Getting critical and pre-critical samples...")
 
-    for i, z_cut in enumerate(Z_CUTS):
+    for i, z_cut in enumerate(Z_CUT_PLOT):
         plot_mc_pre_and_crit(axes_pdf, axes_cdf, z_cut, beta, icol=i)
         plot_shower_pdf_cdf(ps_correlations(beta)['rss_c1s_precrit'][i],
                             axes_pdf, axes_cdf,
@@ -723,9 +711,8 @@ def plot_mc_all(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
     if not load:
         print("    Making critical samples with z_c="+str(z_cut)+"...")
 
-        index = {.05: 0, .1: 1, .2: 2}
         with open(critrad_path, 'rb') as file:
-            rad_crit = pickle.load(file)[index[z_cut]]
+            rad_crit = pickle.load(file)[INDEX_ZC[z_cut]]
 
         def cdf_crit(theta):
             return np.exp(-1.*rad_crit(theta))
@@ -826,7 +813,7 @@ def compare_all(beta=BETA, plot_approx=False):
         axes_pdf[0].set_ylim(0, .2)
 
     # Analytic plot
-    for icol, z_cut in enumerate(Z_CUTS):
+    for icol, z_cut in enumerate(Z_CUT_PLOT):
         if not plot_approx:
             plot_crit_analytic(axes_pdf, axes_cdf, z_cut,
                                beta, icol=icol, jet_type='quark',
@@ -845,7 +832,7 @@ def compare_all(beta=BETA, plot_approx=False):
 
     print("Getting all emissions samples...")
 
-    for i, z_cut in enumerate(Z_CUTS):
+    for i, z_cut in enumerate(Z_CUT_PLOT):
         plot_mc_all(axes_pdf, axes_cdf, z_cut, beta, icol=i)
         plot_shower_pdf_cdf(ps_correlations(beta)['rss_c1s_two'][i],
                             axes_pdf, axes_cdf,
