@@ -155,6 +155,6 @@ printf "\n
 \n"
 # Generate pQCD distributions of observables,
 # compare to the results from parton shower
-python examples/comparison_plots/sudakov_comparison_numeric.py
+python examples/sudakov_comparisons/sudakov_comparison_numeric.py
 
 printf "\n\n\n"

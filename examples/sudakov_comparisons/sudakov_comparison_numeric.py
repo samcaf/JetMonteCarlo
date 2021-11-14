@@ -5,7 +5,7 @@ from pathlib import Path
 # Local utilities for comparison
 from jetmontecarlo.utils.montecarlo_utils import *
 from jetmontecarlo.jets.observables import *
-from examples.comparison_plots.comparison_plot_utils import *
+from examples.comparison_plot_utils import *
 
 # Local analytics
 from jetmontecarlo.analytics.radiators import *

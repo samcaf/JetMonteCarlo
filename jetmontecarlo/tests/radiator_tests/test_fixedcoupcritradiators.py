@@ -96,10 +96,8 @@ def test_CritLinRadiator():
             filename = (jet_type+'_fc_linrads_test.pdf')
             plt.savefig(filename)
 
-
-
 # ------------------------------------
-# Linear Radiator:
+# Logarithmic Radiator:
 # ------------------------------------
 def test_CritLogRadiator():
     # Basic setup

@@ -17,32 +17,32 @@ from jetmontecarlo.analytics.sudakovFactors_fixedcoupling import *
 ###########################################
 # Definitions and Parameters
 ###########################################
-# ------------------------------------
-# Physics inputs
-# ------------------------------------
-FIXED_COUPLING = False
-ACC = 'MLL'
-if FIXED_COUPLING:
-    ACC = 'LL'
-
-# Jet and grooming parameters
-Z_CUTS = [.05, .1, .2]
-Z_CUT = .1
-BETA = 2.
-BETAS = [1., 2., 3., 4.]
-F_SOFT = 1.
-JET_TYPE = 'quark'
-
-# ------------------------------------
-# Monte Carlo parameters
-# ------------------------------------
-EPSILON = 1e-15
-
-# ------------------------------------
-# Plotting parameters
-# ------------------------------------
-NUM_BINS = 100
-BIN_SPACE = 'log'
+# # ------------------------------------
+# # Physics inputs
+# # ------------------------------------
+# FIXED_COUPLING = False
+# ACC = 'MLL'
+# if FIXED_COUPLING:
+#     ACC = 'LL'
+#
+# # Jet and grooming parameters
+# Z_CUTS = [.05, .1, .2]
+# Z_CUT = .1
+# BETA = 2.
+# BETAS = [1., 2., 3., 4.]
+# F_SOFT = 1.
+# JET_TYPE = 'quark'
+#
+# # ------------------------------------
+# # Monte Carlo parameters
+# # ------------------------------------
+# EPSILON = 1e-15
+#
+# # ------------------------------------
+# # Plotting parameters
+# # ------------------------------------
+# NUM_BINS = 100
+# BIN_SPACE = 'log'
 
 if BIN_SPACE == 'lin':
     EPSILON = None

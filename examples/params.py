@@ -234,4 +234,3 @@ if __name__ == '__main__':
             print("        # Shower cutoff:  {:.1e}".format(SHOWER_CUTOFF))
             print("        # Angularity beta for shower ordering: " + str(SHOWER_BETA))
         print("\n")
-
