@@ -1,0 +1,56 @@
+# ============================
+# Date: 2021-11-14-(18:49:09)
+# ============================
+###################################
+# Setting up files
+###################################
+# =====================================
+# Parameters:
+# =====================================
+    # -----------------------------
+    # Physics:
+    # -----------------------------
+    # Jet type: quark
+    # Fixed coupling: True
+    # Observable accuracy: LL
+    # Splitting function accuracy: LL
+
+    # -----------------------------
+    # Grooming:
+    # -----------------------------
+    # f * z_cut values: [0.05, 0.07500000000000001, 0.1, 0.15000000000000002, 0.2]
+        # z_cut dictionary: {0.05: 0, 0.07500000000000001: 1, 0.1: 2, 0.15000000000000002: 3, 0.2: 4}
+
+    # -----------------------------
+    # Monte Carlo:
+    # -----------------------------
+    # Number of events for MC integration: 5.0e+06
+        # Integration space: log (if log, integration cutoff of 1e-15)
+            # Load MC events: True
+            # Save MC events: True
+        # Number of radiator bins: 5.0e+03
+            # Load MC radiators: True
+            # Save MC radiators: True
+        # Number of splitting function bins:  5.0e+03
+            # Load MC splitting functions: True
+            # Save MC splitting functions: True
+    # Number of parton shower events: 5.0e+05
+        # Shower cutoff:  1.0e-10
+        # Angularity beta for shower ordering: 2
+
+
+
+
+###################################
+# Running workflow:
+###################################
+
+# ============================
+# Comparison:
+# ============================
+
+Plotting complete!
+Plotting complete!
+
+
+
