@@ -138,12 +138,16 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
+
 # Custom ignores
 
-samplepgfplot.pdf
-# Folders
+# Sample Folders (generally too big to commit)
 jetmontecarlo/utils/functions/
 jetmontecarlo/utils/samples/
-plots/
-examples/misc/
-examples/presentation_plots/
+
+# Log files
+*.out
+*.err
+
+# Figures
+samplepgfplot.pdf

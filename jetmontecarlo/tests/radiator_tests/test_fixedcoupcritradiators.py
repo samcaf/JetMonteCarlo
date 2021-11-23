@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 import matplotlib.backends.backend_pdf
 
 # Local utils:
@@ -31,19 +32,19 @@ zcuts = [.01, .05, .1, .2]
 def test_CritLinRadiator():
     # Basic setup
     numSamples = 1000
-    numBins    = 100
+    numBins = 100
 
     # Setting up integrator
     testInt = integrator()
 
     # Integral is positive, and is zero at the last bin
-    testInt.setLastBinBndCondition([0.,'plus'])
+    testInt.setLastBinBndCondition([0., 'plus'])
 
     for jet_type in ['quark', 'gluon']:
         # Setting up plot
         fig, axes = aestheticfig(xlabel=r'$\theta$', ylabel=r'R($\theta$)',
-                                 title = 'Critical '+jet_type+' radiator, '
-                                        + r'fixed $\alpha_s$',
+                                 title='Critical '+jet_type+' radiator, '
+                                       + r'fixed $\alpha_s$',
                                  ratio_plot=False)
 
 
@@ -53,11 +54,11 @@ def test_CritLinRadiator():
             pnts = np.linspace(0, 1, 100)
             label = (r"$z_c=$" + str(zc))
             axes[0].plot(pnts,
-                        critRadAnalytic_fc_LL(pnts, zc,jet_type=jet_type),
-                        **style_dashed,
-                        color=compcolors[(i,'light')], label=label)
+                         critRadAnalytic_fc_LL(pnts, zc, jet_type=jet_type),
+                         **style_dashed,
+                         color=compcolors[(i, 'light')], label=label)
         # Labelling
-        labelLines(axes[0].get_lines(), xvals = np.linspace(.23,.65,4))
+        labelLines(axes[0].get_lines(), xvals=np.linspace(.23, .65, 4))
         for i in range(len(zcuts)):
             zc = zcuts[i]
             # Sampling
@@ -91,7 +92,8 @@ def test_CritLinRadiator():
         # Legend
         legend_darklight(axes[0], errtype='yerr', twosigma=False)
 
-        if showPlots: plt.show()
+        if showPlots:
+            plt.show()
         elif savePlots:
             filename = (jet_type+'_fc_linrads_test.pdf')
             plt.savefig(filename)
@@ -102,11 +104,11 @@ def test_CritLinRadiator():
 def test_CritLogRadiator():
     # Basic setup
     numSamples = 1000
-    numBins    = 100
+    numBins = 100
 
-    epsilons   = [1e-3, 1e-5, 1e-10]
-    ylims = {'quark': [5.5,3.5,2.5,1.25],
-             'gluon': [10,7.5,5,3]}
+    epsilons = [1e-3, 1e-5, 1e-10]
+    ylims = {'quark': [5.5, 3.5, 2.5, 1.25],
+             'gluon': [10, 7.5, 5,3]}
 
     # Setting up integrator
     testInt = integrator()
