@@ -25,9 +25,13 @@ from examples.params import *
 Z_CUT_PLOT = [.05, .1, .2]
 
 if FIXED_COUPLING:
-    extra_label = '_fc_num_'
+    extra_label = '_fc_num'
 else:
-    extra_label = '_rc_num_'
+    extra_label = '_rc_num'
+
+ylims = {'quark': [5.5,3.5,2.5,1.25],
+         'gluon': [10,7.5,5,3]}
+
 
 ###########################################
 # Plotting Radiators
@@ -43,13 +47,13 @@ def compare_crit_rad():
         rad_crit_list = pickle.load(file)
     global rad_crit
     def rad_crit(theta, z_cut):
-        return rad_pre_list[INDEX_ZC[z_cut]](theta)
+        return rad_crit_list[INDEX_ZC[z_cut]](theta)
 
     # Setting up plot
     fig, axes = aestheticfig(xlabel=r'$\theta$',
-                        ylabel=r'R_{\rm crit}($\theta$)',
+                        ylabel=r'$R_{{\rm crit}}(\theta)$',
                         xlim=(1e-8,1),
-                        ylim=(0, ylims[JET_TYPE][izc]),
+                        ylim=(0, ylims[JET_TYPE][2]),
                         title = 'Critical '+JET_TYPE+' radiator, '
                                 + ('fixed' if FIXED_COUPLING else 'running')
                                 + r' $\alpha_s$',
@@ -61,16 +65,16 @@ def compare_crit_rad():
     for izc, zcut in enumerate(Z_CUT_PLOT):
         # Plotting numerical result
         axes[0].plot(pnts, rad_crit(pnts, zcut),
-                    **style_solid, color=compcolors[(i, 'dark')],
-                    label=r'Numeric, $z_{\rm cut}$={}'.format(zcut))
+                    **style_solid, color=compcolors[(izc, 'dark')],
+                    label=r'Numeric, $z_{{\rm cut}}$={}'.format(zcut))
 
         # Plotting analytic result
         axes[0].plot(pnts,
-                    critRadAnalytic_fc_LL(pnts, zcut, JET_TYPE=JET_TYPE),
-                    **style_dashed, color=compcolors[(i, 'light')],
-                    label=r'Analytic, $z_{\rm cut}$={}'.format(zcut))
+                    critRadAnalytic_fc_LL(pnts, zcut, jet_type=JET_TYPE),
+                    **style_dashed, color=compcolors[(izc, 'light')],
+                    label=r'Analytic, $z_{{\rm cut}}$={}'.format(zcut))
 
-    plt.legend(axes[0])
+    axes[0].legend()
     plt.savefig(filename, format='pdf')
 
     print("Plotting complete!")
@@ -91,11 +95,11 @@ def compare_pre_rad():
 
     for izc, zcut in enumerate(Z_CUT_PLOT):
         # Setting up plot
-        fig, axes = aestheticfig(xlabel=r'$z_{\rm pre}$',
-                            ylabel=r'R_{\rm pre}(z_{\rm pre}~|~$\theta$)',
+        fig, axes = aestheticfig(xlabel=r'$z_{{\rm pre}}$',
+                            ylabel=r'$R_{{\rm pre}}(z_{{\rm pre}})$',
                             xlim=(1e-8,1),
                             ylim=(0,ylims[JET_TYPE][izc]),
-                            title = 'Pre-Critical '+JET_TYPE+' radiator, '
+                            title = 'Pre-Critical '+JET_TYPE+', '
                                     + ('fixed' if FIXED_COUPLING else 'running')
                                     + r' $\alpha_s$, $z_c$='+str(zcut),
                             showdate=False,
@@ -104,10 +108,9 @@ def compare_pre_rad():
 
         # Getting numerical radiator, choosing angles to plot
         theta_list = [.05, .1, .5, .9]
+        pnts = np.logspace(-8.5, 0, 1000)
 
         for i, theta in enumerate(theta_list):
-            pnts = np.logspace(-8.5+np.log10(theta), np.log10(theta), 1000)
-
             # Plotting numerical result
             axes[0].plot(pnts, rad_pre(pnts, theta, zcut),
                         **style_solid, color=compcolors[(i, 'dark')],
@@ -115,12 +118,12 @@ def compare_pre_rad():
 
             # Plotting analytic result
             axes[0].plot(pnts,
-                        preRadAnalytic_fc_LL(pnts, theta, zcut, JET_TYPE=JET_TYPE),
+                        preRadAnalytic_fc_LL(pnts, theta, zcut, jet_type=JET_TYPE),
                         **style_dashed, color=compcolors[(i, 'light')],
                         label=r'Analytic, $\theta$={}'.format(theta))
 
         # Legend, saving
-        plt.legend(axes[0])
+        axes[0].legend()
         plt.savefig(pdffile, format='pdf')
 
     pdffile.close()
@@ -133,40 +136,50 @@ def compare_pre_rad():
 def compare_sub_rad():
     # Files and filenames
     filename = JET_TYPE+extra_label+"_sub_radiators.pdf"
+    pdffile = matplotlib.backends.backend_pdf.PdfPages(filename)
 
+    # Getting numerical radiator, choosing angles to plot
     with open(subrad_path, 'rb') as file:
         rad_sub_list = pickle.load(file)
     global rad_sub
-    def rad_sub(c_sub, beta):
-        return rad_pre_list[INDEX_BETA[beta]](c_sub)
+    def rad_sub(c_sub, theta, beta):
+        return rad_sub_list[INDEX_BETA[beta]](c_sub, theta)
 
-    # Setting up plot
-    fig, axes = aestheticfig(xlabel=r'$C$',
-                        ylabel=r'R_{\rm sub}(C)',
-                        xlim=(1e-8,1),
-                        ylim=(0,ylims[JET_TYPE][izc]),
-                        title = 'Subsequent '+JET_TYPE+' radiator, '
-                                + ('fixed' if FIXED_COUPLING else 'running')
-                                + r' $\alpha_s$, $z_c$='+str(zcut),
-                        showdate=False,
-                        ratio_plot=False)
-    axes[0].set_xscale('log')
+    theta_list = [.05, .1, .5, .9]
     pnts = np.logspace(-8.5, 0, 1000)
 
     for ib, beta in enumerate(BETAS):
-        # Plotting numerical result
-        axes[0].plot(pnts, rad_pre(pnts, beta),
-                    **style_solid, color=compcolors[(i, 'dark')],
-                    label=r'Numeric, $\beta$={}'.format(beta))
+        print(beta)
+        # Setting up plot
+        fig, axes = aestheticfig(xlabel=r'$C$',
+                                 ylabel=r'$R_{{\rm sub}}(C)$',
+                                 xlim=(1e-8,1),
+                                 ylim=(0,ylims[JET_TYPE][0]),
+                                 title = 'Subsequent '+JET_TYPE
+                                 + ('fixed' if FIXED_COUPLING else 'running')
+                                 + r' $\alpha_s$, $\beta$={}'.format(beta),
+                                 showdate=False,
+                                 ratio_plot=False)
+        axes[0].set_xscale('log')
+        pnts = np.logspace(-8.5, 0, 1000)
 
-        # Plotting analytic result
-        axes[0].plot(pnts,
-                    subRadAnalytic_fc_LL(pnts, beta, JET_TYPE=JET_TYPE),
-                    **style_dashed, color=compcolors[(i, 'light')],
-                    label=r'Analytic, $\beta$={}'.format(beta))
+        for i, theta in enumerate(theta_list):
+            print(rad_sub(pnts, theta, beta))
+            # Plotting numerical result
+            axes[0].plot(pnts, rad_sub(pnts, theta, beta),
+                        **style_solid, color=compcolors[(i, 'dark')],
+                        label=r'Numeric, $\theta$={}'.format(theta))
 
-    # Legend, saving
-    plt.legend(axes[0])
-    plt.savefig(filename, format='pdf')
+            # Plotting analytic result
+            axes[0].plot(pnts,
+                         subRadAnalytic_fc_LL(pnts/theta**beta, beta, jet_type=JET_TYPE),
+                        **style_dashed, color=compcolors[(i, 'light')],
+                        label=r'Analytic, $\theta$={}'.format(theta))
+
+        # Legend, saving
+        axes[0].legend()
+        plt.savefig(pdffile, format='pdf')
+
+    pdffile.close()
 
     print("Plotting complete!")

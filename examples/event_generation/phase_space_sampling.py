@@ -104,8 +104,8 @@ else:
 
     # No z_cut label for subsequent samplers:
     subsampdict = {'epsilon' : EPSILON,
-               'sample space' : BIN_SPACE,
-               'num events' : NUM_MC_EVENTS}
+                   'sample space' : BIN_SPACE,
+                   'num events' : NUM_MC_EVENTS}
     SUB_SAMPLERS.append(subsampdict)
 
     # ----------------------------------
@@ -192,7 +192,7 @@ if not LOAD_MC_RADS and SAVE_MC_RADS:
                                             bin_space=BIN_SPACE,
                                             epsilon=EPSILON,
                                             fixed_coupling=FIXED_COUPLING,
-                                            num_bins=100)
+                                            num_bins=NUM_RAD_BINS)
             PRE_RADIATORS.append(pre_rad_i)
 
         sub_rad = None

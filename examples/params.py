@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from pathlib import Path
+import dill as pickle
 
 # Local imports
 from jetmontecarlo.analytics.QCD_utils import MU_NP
@@ -74,7 +75,7 @@ NUM_MC_EVENTS = int(5e6)
 NUM_SHOWER_EVENTS = int(5e5)
 
 # MC Sampling Switches:
-LOAD_MC_EVENTS = False
+LOAD_MC_EVENTS = True
 # Default True: phase space doesn't change, only weights do
 SAVE_MC_EVENTS = True
 
