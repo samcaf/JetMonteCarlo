@@ -29,8 +29,6 @@ def lin_log_mixed_list(lower_bound, upper_bound, num_bins):
     mixed_list = np.sort(mixed_list[1:-1])
     return mixed_list
 
-# # TODO: Change line 102, 355, 376, 414 to acc=accuracy
-
 ###########################################
 # Numerical Radiator Calculations:
 ###########################################
@@ -42,7 +40,7 @@ def gen_numerical_radiator(rad_sampler, emission_type,
                            obs_accuracy='LL',
                            splitfn_accuracy='LL',
                            beta = None,
-                           bin_space='lin', epsilon=None,
+                           bin_space='lin',
                            fixed_coupling=True,
                            save=True,
                            num_bins=100):
@@ -87,9 +85,6 @@ def gen_numerical_radiator(rad_sampler, emission_type,
     assert (beta is None and not emission_type == 'sub')\
         or (beta is not None and emission_type == 'sub'),\
         str(emission_type)+' emissions must have a valid beta value.'
-    assert (epsilon is None and bin_space == 'lin')\
-        or (epsilon is not None and bin_space == 'log'),\
-        'Invalid epsilon value for ' + bin_space + ' sampling.'
     # Setting up an integrator
     rad_integrator = integrator()
 
@@ -180,7 +175,7 @@ def gen_numerical_radiator(rad_sampler, emission_type,
 def gen_pre_num_rad(rad_sampler, crit_rad_sampler,
                     jet_type='quark',
                     obs_accuracy='LL', splitfn_accuracy='LL',
-                    bin_space='lin', epsilon=1e-15,
+                    bin_space='lin',
                     fixed_coupling=True,
                     num_bins=100):
     """A function which takes in a sampler with generated data,
@@ -224,11 +219,6 @@ def gen_pre_num_rad(rad_sampler, crit_rad_sampler,
     function
         A 2d interpolating function for the pre-critical radiator.
     """
-    # Verifying that the generation is proceeding with valid parameters
-    assert (epsilon is None and bin_space == 'lin')\
-        or (epsilon is not None and bin_space == 'log'),\
-        'Invalid epsilon value for ' + bin_space + ' sampling.'
-
     # Setting up an integrator
     rad_integrator = integrator_2d()
 
@@ -278,6 +268,53 @@ def gen_pre_num_rad(rad_sampler, crit_rad_sampler,
 
     rad_integrator.interpFn = bounded_interp_function
 
+    ########################## (46 d down)
+    # Plot tests
+    xs = rad_integrator.bins[0][1:]
+    ys = rad_integrator.bins[1][1:]
+
+    integral_interp = rad_integrator.interpFn(xs, ys)
+    xs, ys = np.meshgrid(xs, ys)
+    zs = [radiator, integral_interp, preRadAnalytic_fc_LL(xs, ys, .05)] 
+    zs.append(abs(zs[0] - zs[1]))
+
+    zlims = [(0, 1), (0, 1), (0, 1), (0, .1)]
+    titles = ['Monte Carlo', 'Interpolation',
+              'Analytic', '|Difference|']
+
+    projection = '3d'
+    figsize = plt.figaspect(0.5)
+
+    fig = plt.figure(figsize=figsize)
+    fig.suptitle('MC Integration to determine '
+                 + 'precrit radiator')
+    axes = []
+    for i in range(4):
+        ax = fig.add_subplot(1, 4, i+1, projection=projection)
+        ax.set_title(titles[i])
+        my_col = cm.coolwarm(zs[i])
+        ax.plot_surface(xs, ys, zs[i],
+                        rstride=1, cstride=1,
+                        facecolors=my_col,
+                        linewidth=0, antialiased=False)
+        ax.set_zlim(zlims[i])
+        if i == 0 or i == 3:
+            # Plotting errorbars
+            fx = xs.flatten()
+            fy = ys.flatten()
+            fz = zs[i].flatten()
+            fzerr = int_err.flatten()
+            fcols = my_col.reshape(fx.shape[0], 4)
+            for j in np.arange(0, len(fx)):
+                ax.plot([fx[j], fx[j]], [fy[j], fy[j]],
+                        [fz[j]+fzerr[j], fz[j]-fzerr[j]],
+                        marker="|", color=fcols[j], zorder=5)
+
+    fig.savefig('precrit_test.pdf', format='pdf')
+    # end of plot tests
+    ##########################
+
+
     return rad_integrator.interpFn
 
 def gen_crit_sub_num_rad(rad_sampler,
@@ -314,11 +351,6 @@ def gen_crit_sub_num_rad(rad_sampler,
     function
         A 2d interpolating function for the critical-subsequent radiator.
     """
-    # Verifying that the generation is proceeding with valid parameters
-    assert (epsilon is None and bin_space == 'lin')\
-        or (epsilon is not None and bin_space == 'log'),\
-        'Invalid epsilon value for ' + bin_space + ' sampling.'
-
     # Preparing lists to hold all radiator and angle data
     rads_all = []
     rad_error_all = []
@@ -441,99 +473,3 @@ def gen_normalized_splitting(num_samples, z_cut,
 
     return normed_splitting_fn
 
-
-###########################################
-# Unused:
-###########################################
-# ------------------------------------
-# Generation of Sudakov Exponents:
-# ------------------------------------
-def gen_sudakov_exponent(beta, f, crit_sampler, theta_crits,
-                         sub_samples=None, pre_samples=None,
-                         save=True, multiple_emissions=False):
-    # Setting up integrator
-    cdf_integrator = integrator()
-    # Integrating to find a CDF
-    cdf_integrator.setLastBinBndCondition([1., 'minus'])
-
-    # Prepare and double check critical samples:
-    z_crits = crit_sampler.samples[:, 0]
-    assert len(z_crits) == len(theta_crits),\
-        'Must have the same number of critical zs and thetas'
-    z_cut = crit_sampler.zc
-
-    # Prepare and double check subsequent samples:
-    if sub_samples is None:
-        sub_samples = np.zeros(len(theta_crits))
-        pass
-    else:
-        assert len(sub_samples) == len(theta_crits),\
-            'Must have the same number of subsequent and critical samples'
-
-    # Prepare and double check pre-critical samples:
-    if pre_samples is None:
-        pre_samples = np.zeros(len(theta_crits))
-        pass
-    else:
-        assert len(pre_samples) == len(theta_crits),\
-            'Must have the same number of pre-critical and critical samples'
-
-    if multiple_emissions:
-        pass
-        obs = np.maximum(C_groomed(z_crits, theta_crits, z_cut, beta,
-                                   z_pre=pre_samples, f=f, acc='LL'),
-                         sub_samples)
-    else:
-        obs = np.maximum(C_groomed(z_crits, theta_crits, z_cut, beta,
-                                   z_pre=pre_samples, f=f, acc='LL'),
-                         sub_samples)
-
-    weights = 1./(z_crits * -np.log(2.*z_cut))
-
-    # Do integral
-    cdf_integrator.setDensity(obs, weights, 1.)
-    cdf_integrator.integrate()
-
-    pdf = cdf_integrator.density
-    pdf_error = cdf_integrator.densityErr
-    cdf = cdf_integrator.integral
-    cdf_error = cdf_integrator.integralErr
-
-    # Saving data and interpolating function
-    if save:
-        pass
-
-    return pdf, pdf_error, cdf, cdf_error, cdf_integrator.bins
-
-# ------------------------------------
-# Full Monte Carlo Integration
-# ------------------------------------
-def get_numerical_int_ECFs(save=True):
-    """Generates a set of critical emissions.
-    Returns a pdf, error, cdf, error, and bins to
-    find the associated groomed ECF values.
-    """
-    # Make samplers
-    crit_sampler = gen_rad_sampler('crit', NUM_MC_EVENTS, save=save)
-    sub_sampler = gen_rad_sampler('sub', NUM_MC_EVENTS, save=save)
-    pre_sampler = gen_rad_sampler('pre', NUM_MC_EVENTS, save=save)
-
-    # Generate numerical radiators
-    crit_rad = gen_numerical_radiator(crit_sampler, 'crit',
-                                      JET_TYPE, ACC,
-                                      FIXED_COUPLING, save=save)
-    sub_rad = gen_numerical_radiator(sub_sampler, 'sub',
-                                      JET_TYPE, ACC,
-                                      FIXED_COUPLING, save=save)
-    pre_rad = gen_numerical_radiator(pre_sampler, 'pre',
-                                      JET_TYPE, ACC,
-                                      FIXED_COUPLING, save=save)
-
-    # Sample using inverse transform method
-    theta_crits = gen_sudakov_samples('crit', NUM_MC_EVENTS, save=save)
-    c_subs = gen_sudakov_samples('sub', NUM_MC_EVENTS, save=save)
-    z_pres = gen_sudakov_samples('pre', NUM_MC_EVENTS, save=save)
-
-    # Generate sudakov exponent
-    return gen_sudakov_exponent(BETA, F, crit_sampler, theta_crits,
-                                c_subs, z_pres)

@@ -173,7 +173,6 @@ if not LOAD_MC_RADS and SAVE_MC_RADS:
                                                     splitfn_accuracy=SPLITFN_ACC,
                                                     beta=None,
                                                     bin_space=BIN_SPACE,
-                                                    epsilon=EPSILON,
                                                     fixed_coupling=FIXED_COUPLING,
                                                     save=False,
                                                     num_bins=NUM_RAD_BINS)
@@ -190,7 +189,6 @@ if not LOAD_MC_RADS and SAVE_MC_RADS:
                                             obs_accuracy=OBS_ACC,
                                             splitfn_accuracy=SPLITFN_ACC,
                                             bin_space=BIN_SPACE,
-                                            epsilon=EPSILON,
                                             fixed_coupling=FIXED_COUPLING,
                                             num_bins=NUM_RAD_BINS)
             PRE_RADIATORS.append(pre_rad_i)
@@ -223,7 +221,6 @@ if not LOAD_MC_RADS and SAVE_MC_RADS:
                                              splitfn_accuracy=SPLITFN_ACC,
                                              beta=beta,
                                              bin_space=BIN_SPACE,
-                                             epsilon=EPSILON,
                                              fixed_coupling=FIXED_COUPLING,
                                              save=False,
                                              num_bins=NUM_RAD_BINS)

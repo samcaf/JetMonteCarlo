@@ -1,11 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name fc_radiators
-#SBATCH --exclusive
-#SBATCH -c 10
-#SBATCH --mem=0
 #SBATCH -o logs/fc_rad-%j.out
 #SBATCH -e logs/fc_rad-%j.err
-#SBATCH --constraint=xeon-p8
 
 ###################################
 # Preparation
@@ -21,6 +17,12 @@ gen_events=false
 if $gen_events
     then load_events_str='False';
     else load_events_str='True';
+fi
+
+gen_rads=true
+if $gen_rads
+    then load_rads_str='False';
+    else load_rads_str='True';
 fi
 
 # -------------------------
@@ -92,9 +94,8 @@ sed -i "s/JET_TYPE = .*/JET_TYPE = 'quark'/" examples/params.py
 # Deciding whether to produce or reuse samples
 # -------------------------
 # Set all True if using already generated samples, and False otherwise
-sed -i "s/LOAD_MC_EVENTS = .*/LOAD_MC_EVENTS = True/" examples/params.py
-#sed -i "s/LOAD_MC_EVENTS = .*/LOAD_MC_EVENTS = "$load_events_str"/" examples/params.py
-sed -i "s/LOAD_MC_RADS = .*/LOAD_MC_RADS = "$load_events_str"/" examples/params.py
+sed -i "s/LOAD_MC_EVENTS = .*/LOAD_MC_EVENTS = "$load_events_str"/" examples/params.py
+sed -i "s/LOAD_MC_RADS = .*/LOAD_MC_RADS = "$load_rads_str"/" examples/params.py
 sed -i "s/LOAD_SPLITTING_FNS = .*/LOAD_SPLITTING_FNS = True/" examples/params.py
 
 # -------------------------
@@ -103,11 +104,13 @@ sed -i "s/LOAD_SPLITTING_FNS = .*/LOAD_SPLITTING_FNS = True/" examples/params.py
 # 'int(num_events or num_bins)'
 # -------------------------
 # Number of events (MC and parton shower)
-sed -i "s/NUM_MC_EVENTS = .*/NUM_MC_EVENTS = int(5e6)/" examples/params.py
+sed -i "s/NUM_MC_EVENTS = .*/NUM_MC_EVENTS = int(1e4)/" examples/params.py
+# sed -i "s/NUM_MC_EVENTS = .*/NUM_MC_EVENTS = int(5e6)/" examples/params.py
 
 # Number of bins used to calculate radiators
 # I've found that 5e6 MC events and 5e3 bins yield good results
-sed -i "s/NUM_RAD_BINS = .*/NUM_RAD_BINS = int(5e3)/" examples/params.py
+sed -i "s/NUM_RAD_BINS = .*/NUM_RAD_BINS = int(1e2)/" examples/params.py
+# sed -i "s/NUM_RAD_BINS = .*/NUM_RAD_BINS = int(5e3)/" examples/params.py
 
 python examples/params.py
 
@@ -115,7 +118,7 @@ printf "\n
 ###################################
 # Running workflow:
 ###################################"
-if $gen_events
+if $gen_rads
     then
     printf "
     # ============================

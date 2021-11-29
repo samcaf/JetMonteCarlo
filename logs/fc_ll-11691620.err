@@ -1,8 +1,0 @@
-findfont: Font family ['DIN Condensed'] not found. Falling back to DejaVu Sans.
-findfont: Font family ['Arial'] not found. Falling back to DejaVu Sans.
-Traceback (most recent call last):
-  File "examples/radiator_comparisons/radiator_comparison.py", line 13, in <module>
-    compare_sub_rad()
-  File "/home/gridsan/sfard/Projects/JetMonteCarlo/examples/radiator_comparisons/radiator_utils.py", line 153, in compare_sub_rad
-    + r' $\alpha_s$, $z_c$='+str(zcut),
-NameError: name 'zcut' is not defined

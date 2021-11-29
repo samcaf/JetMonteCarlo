@@ -8,6 +8,6 @@ from examples.radiator_comparisons.radiator_utils import *
 ###########################################
 #compare_crit_rad()
 
-#compare_pre_rad()
+compare_pre_rad()
 
-compare_sub_rad()
+#compare_sub_rad()

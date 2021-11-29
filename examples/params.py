@@ -71,7 +71,7 @@ INDEX_BETA = {beta : i for i, beta in enumerate(BETAS)}
 # MC Event Parameters
 # ------------------------------------
 # Number of generated events
-NUM_MC_EVENTS = int(5e6)
+NUM_MC_EVENTS = int(1e4)
 NUM_SHOWER_EVENTS = int(5e5)
 
 # MC Sampling Switches:
@@ -80,7 +80,7 @@ LOAD_MC_EVENTS = True
 SAVE_MC_EVENTS = True
 
 # MC Radiator Switches:
-LOAD_MC_RADS = True
+LOAD_MC_RADS = False
 # Default False, to generate radiators with the correct parameters
 SAVE_MC_RADS = True
 
@@ -90,7 +90,7 @@ LOAD_SPLITTING_FNS = True
 SAVE_SPLITTING_FNS = True
 
 # Number of bins for integration of radiators and splitting functions:
-NUM_RAD_BINS = int(5e3)
+NUM_RAD_BINS = int(1e2)
 NUM_SPLITFN_BINS = int(5e3)
 
 # ------------------------------------
