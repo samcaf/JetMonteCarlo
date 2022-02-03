@@ -17,11 +17,13 @@ Each of these are described in more detail below.
   - [Basic Monte Carlo Integration](#basic-mc-integration)
   - [Basic Jet Monte Carlo Integration](#basic-jet-mc)
   - [Basic Parton Showering](#basic-parton-shower)
+- [To Add](#toadd)
+    - [Additional Utilities](#add-utils)
+    - [Multivariable Parton Showering](#multivar-ps)
+    - [Evolution Equations](#ev-eqs)
 - [Maintainers](#maintainers)
 - [Contributing](#contributing)
 - [License](#license)
-
-## <a name="background"></a> Background
 
 ### <a name="mc-integration"></a> Monte Carlo Integration
 Monte Carlo integration is a method of sampling over a parameter space in order to numerically estimate the integrals of distributions over that parameter space.
@@ -182,6 +184,26 @@ Here is an example showing that our parton shower accurately reproduces quark je
 <p align="center">
     <img src="https://github.com/samcaf/JetMonteCarlo/blob/main/doc_figures/LL_partonshower_display.png" alt="LL_partonshower" width="700">
 </p>
+
+
+## <a name="toadd"></a> To Add
+### <a name="add-utils"></a> Additional Utilities
+I would like to add additional utilities, including observables, formatting utilities (using common formatting for events such as in .hepmc files), and bridges to other technology (such as FastJet).
+
+### <a name="multivar-ps"></a> Multivariable Parton Showering
+I'd like to add functionality for parton showers with multiple evolution variables, as in
+
+https://arxiv.org/pdf/2201.08056.pdf
+
+### <a name="ev-eqs"></a> Evolution Equations
+I'd like to add additonal utilities for solving evolution equations, both analytically and numerically. Basic equations include DGLAP equations, and perhaps BFKL equations.
+Furthermore, it seems like parton branching is a place where using Monte Carlo to solve evolution equations has been well explored, and provides transverse momentum dependent (TMD) information:
+
+https://arxiv.org/pdf/1708.03279.pdf
+
+https://arxiv.org/pdf/1704.01757.pdf
+
+https://arxiv.org/pdf/2202.00969.pdf
 
 
 ## <a name="maintainers"></a> Maintainers
