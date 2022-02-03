@@ -82,45 +82,77 @@ def compare_crit_rad():
 # ==========================================
 # Pre-Critical Radiator:
 # ==========================================
-def compare_pre_rad():
+def compare_pre_rad(fill_between=False):
     # Files and filenames
-    filename = JET_TYPE+extra_label+"_precrit_radiators.pdf"
+    filename = JET_TYPE+extra_label+str(NUM_MC_EVENTS)+"samples_"+str(NUM_RAD_BINS)+"bins_precrit_radiators.pdf"
     pdffile = matplotlib.backends.backend_pdf.PdfPages(filename)
 
     with open(prerad_path, 'rb') as file:
         rad_pre_list = pickle.load(file)
     global rad_pre
     def rad_pre(z_pre, theta, z_cut):
-        return rad_pre_list[INDEX_ZC[z_cut]](z_pre, theta)
+        rad_pre, rad_err = rad_pre_list[INDEX_ZC[z_cut]]
+        return rad_pre(z_pre, theta), rad_err(z_pre, theta)
+    #def rad_pre_err(z_pre, theta, z_cut):
+    #    return rad_pre_list[INDEX_ZC[z_cut]][1](z_pre, theta)
 
     for izc, zcut in enumerate(Z_CUT_PLOT):
         # Setting up plot
         fig, axes = aestheticfig(xlabel=r'$z_{{\rm pre}}$',
                             ylabel=r'$R_{{\rm pre}}(z_{{\rm pre}})$',
-                            xlim=(1e-8,1),
-                            ylim=(0,ylims[JET_TYPE][izc]),
+                            xlim=(1e-8, zcut),
+                            ylim=(-.01,ylims[JET_TYPE][izc]),
                             title = 'Pre-Critical '+JET_TYPE+', '
                                     + ('fixed' if FIXED_COUPLING else 'running')
                                     + r' $\alpha_s$, $z_c$='+str(zcut),
                             showdate=False,
-                            ratio_plot=False)
+                            ratio_plot=True)
         axes[0].set_xscale('log')
+        axes[1].set_xscale('log')
 
         # Getting numerical radiator, choosing angles to plot
         theta_list = [.05, .1, .5, .9]
         pnts = np.logspace(-8.5, 0, 1000)
 
         for i, theta in enumerate(theta_list):
+            # Numerical
+            num_result, num_error = rad_pre(pnts, theta, zcut)
+            #num_error =rad_pre_err(pnts, theta, zcut)
+            err_low, err_high = num_result-num_error, num_result+num_error
+
+            # Analytic
+            an_result = preRadAnalytic_fc_LL(pnts, theta, zcut, jet_type=JET_TYPE)
+
+            # Ratio
+            num_ratio = num_result/an_result
+            err_low_ratio, err_high_ratio = err_low/an_result, err_high/an_result
+
+            err_low, err_high = np.append(err_low[::500], 0), np.append(err_high[::500],0)
+            err_low_ratio, err_high_ratio = np.append(err_low_ratio[::500], 0), np.append(err_high_ratio[::500], 0)
+
             # Plotting numerical result
-            axes[0].plot(pnts, rad_pre(pnts, theta, zcut),
+            axes[0].plot(pnts, num_result,
                         **style_solid, color=compcolors[(i, 'dark')],
                         label=r'Numeric, $\theta$={}'.format(theta))
+            if fill_between:
+                axes[0].fill_between(np.append(pnts[::500], zcut), err_low, err_high, 
+                                     **style_solid, color=compcolors[(i, 'dark')],
+                                     alpha=.3)
+
+            axes[1].plot(pnts, num_result / an_result,
+                         **style_solid, color=compcolors[(i, 'dark')])
+            if fill_between:
+                axes[1].fill_between(np.append(pnts[::500], zcut), err_low_ratio, err_high_ratio,
+                                     **style_solid, color=compcolors[(i, 'dark')],
+                                     alpha=.3)
 
             # Plotting analytic result
-            axes[0].plot(pnts,
-                        preRadAnalytic_fc_LL(pnts, theta, zcut, jet_type=JET_TYPE),
-                        **style_dashed, color=compcolors[(i, 'light')],
-                        label=r'Analytic, $\theta$={}'.format(theta))
+            axes[0].plot(pnts, an_result,
+                         **style_dashed, color=compcolors[(i, 'light')],
+                         label=r'Analytic, $\theta$={}'.format(theta))
+
+            axes[1].plot(pnts, np.ones(len(pnts)),
+                         **style_dashed, color='black')
 
         # Legend, saving
         axes[0].legend()
@@ -149,7 +181,6 @@ def compare_sub_rad():
     pnts = np.logspace(-8.5, 0, 1000)
 
     for ib, beta in enumerate(BETAS):
-        print(beta)
         # Setting up plot
         fig, axes = aestheticfig(xlabel=r'$C$',
                                  ylabel=r'$R_{{\rm sub}}(C)$',
@@ -164,9 +195,11 @@ def compare_sub_rad():
         pnts = np.logspace(-8.5, 0, 1000)
 
         for i, theta in enumerate(theta_list):
-            print(rad_sub(pnts, theta, beta))
             # Plotting numerical result
-            axes[0].plot(pnts, rad_sub(pnts, theta, beta),
+            #axes[0].plot(pnts, rad_sub(pnts, theta, beta),
+            #            **style_solid, color=compcolors[(i, 'dark')],
+            #            label=r'Numeric, $\theta$={}'.format(theta))
+            axes[0].fill_between(pnts, rad_sub(pnts, theta, beta),
                         **style_solid, color=compcolors[(i, 'dark')],
                         label=r'Numeric, $\theta$={}'.format(theta))
 

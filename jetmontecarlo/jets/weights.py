@@ -31,7 +31,6 @@ def radiatorWeight(z, theta, jet_type, fixedcoupling=True, acc='LL'):
 def criticalEmissionWeight(z, theta, z_c, jet_type='quark',
                            fixedcoupling=True):
     """Provides a weight function to integrate on the sampled phase space"""
-    # TODO: Include f dependence, accuracy dependence
     if fixedcoupling:
         linweight = critPDFAnalytic_fc_LL(z, theta, z_c=z_c,
                                           jet_type=jet_type)

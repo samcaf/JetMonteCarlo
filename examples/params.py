@@ -26,17 +26,17 @@ VERBOSE = 3
 # =====================================
 # Physics Inputs
 # =====================================
-FIXED_COUPLING = True
+FIXED_COUPLING = False
 
 # Observable accuracy
-OBS_ACC = 'LL'
+OBS_ACC = 'MLL'
 if FIXED_COUPLING:
-    OBS_ACC = 'LL'
+    OBS_ACC = 'MLL'
 
 # Parton shower generation accuracy
-SPLITFN_ACC = 'LL'
+SPLITFN_ACC = 'MLL'
 if FIXED_COUPLING:
-    SPLITFN_ACC = 'LL'
+    SPLITFN_ACC = 'MLL'
 
 # Angular ordering takes more time, and
 # does not change the agreement between our
@@ -71,7 +71,7 @@ INDEX_BETA = {beta : i for i, beta in enumerate(BETAS)}
 # MC Event Parameters
 # ------------------------------------
 # Number of generated events
-NUM_MC_EVENTS = int(1e4)
+NUM_MC_EVENTS = int(5e6)
 NUM_SHOWER_EVENTS = int(5e5)
 
 # MC Sampling Switches:
@@ -85,13 +85,16 @@ LOAD_MC_RADS = False
 SAVE_MC_RADS = True
 
 # MC Splitting Function Switches:
-LOAD_SPLITTING_FNS = True
+LOAD_SPLITTING_FNS = False
 # Default False, to generate splitting functions with the correct parameters
 SAVE_SPLITTING_FNS = True
 
 # Number of bins for integration of radiators and splitting functions:
-NUM_RAD_BINS = int(1e2)
+NUM_RAD_BINS = int(5e3)
 NUM_SPLITFN_BINS = int(5e3)
+
+# Determining whether to load inverse transform samples for full computation
+LOAD_INV_SAMPLES = LOAD_MC_EVENTS
 
 # ------------------------------------
 # Sampling Parameters
@@ -101,8 +104,12 @@ EPSILON = 1e-15
 BIN_SPACE = 'log'
 
 # Parton showering
-SHOWER_CUTOFF = 1e-10
-SHOWER_BETA = 2
+SHOWER_CUTOFF = MU_NP # 1e-10
+if FIXED_COUPLING:
+    SHOWER_CUTOFF = 1e-10
+SHOWER_BETA = None
+if FIXED_COUPLING:
+    SHOWER_BETA = 2
 
 # ------------------------------------
 # Emissions to Generate
@@ -217,19 +224,23 @@ if __name__ == '__main__':
         print("\n    # -----------------------------\n    # Monte Carlo:\n    # -----------------------------")
         print("    # Number of events for MC integration: {:.1e}".format(NUM_MC_EVENTS))
         if VERBOSE > 1:
+            # Basic MC Integraion Information:
             print("        # Integration space: " + str(BIN_SPACE) + " (if log, integration cutoff of " + str(EPSILON) + ")")
             if VERBOSE > 2:
                 print("            # Load MC events: " + str(LOAD_MC_EVENTS))
                 print("            # Save MC events: " + str(SAVE_MC_EVENTS))
+            # Radiator Information:
             print("        # Number of radiator bins: {:.1e}".format(NUM_RAD_BINS))
             if VERBOSE > 2:
-                print("            # Load MC radiators: " + str(LOAD_MC_EVENTS))
-                print("            # Save MC radiators: " + str(SAVE_MC_EVENTS))
+                print("            # Load MC radiators: " + str(LOAD_MC_RADS))
+                print("            # Save MC radiators: " + str(SAVE_MC_RADS))
+            # Spliting Function Information:
             print("        # Number of splitting function bins:  {:.1e}".format(NUM_RAD_BINS))
             if VERBOSE > 2:
                 print("            # Load MC splitting functions: " + str(LOAD_MC_EVENTS))
                 print("            # Save MC splitting functions: " + str(SAVE_MC_EVENTS))
 
+        # Parton Shower Information:
         print("    # Number of parton shower events: {:.1e}".format(NUM_SHOWER_EVENTS))
         if VERBOSE > 1:
             print("        # Shower cutoff:  {:.1e}".format(SHOWER_CUTOFF))

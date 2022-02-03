@@ -3,10 +3,6 @@ import numpy as np
 # Local imports
 from jetmontecarlo.utils.vector_utils import angle
 
-# TODO: Include multiple emission accuracy to observables
-# TODO: Include accuracy into parton shower observables
-# TODO: Include groomed parton shower observables
-
 #######################################
 # Observables used in MC integration:
 #######################################
@@ -17,7 +13,7 @@ from jetmontecarlo.utils.vector_utils import angle
 # https://arxiv.org/pdf/1402.2657.pdf#page=4&zoom=200,0,300
 
 def C_groomed(z_crit, theta_crit, z_cut, beta,
-              z_pre=0., f=1., acc='LL'):
+              z_pre=0., f=1., acc='LL', verbose=0):
     """The contribution of a groomed, critical emission
     to a generalized energy correlation function (ECF).
 
@@ -54,8 +50,11 @@ def C_groomed(z_crit, theta_crit, z_cut, beta,
         emission or emissions.
         (critical by default, or critical + pre-critical).
     """
-    assert 0 <= f <= 1, "f must be between 0 and 1!"
-    assert beta > 1, "beta must be greater than 1!"
+    if isinstance(f, list) or isinstance(f, (np.ndarray, np.generic)):
+        assert all(0 <= f_i <= 1 for f_i in f), "f must be between 0 and 1!"
+    else:
+        assert 0 <= f <= 1, "f must be between 0 and 1!"
+    # assert beta > 1, "beta must be greater than 1!"
     assert acc in ['LL', 'MLL'], "Accuracy must be LL or MLL!"
 
     # Groomed value of z_cut:
@@ -67,9 +66,20 @@ def C_groomed(z_crit, theta_crit, z_cut, beta,
         return ((z_crit - f*z_cut_g) * (1.-(1.-f)*z_cut_g)
                 * theta_crit**beta)
     # MLL accuracy in the observable:
-    z_crit = np.minimum(z_crit, 1./2.-z_crit)
-    return ((z_crit - f*z_cut_g) * (1./2. - z_crit - (1.-f)*z_cut_g)
-            * theta_crit**beta)
+    #z_crit = np.minimum(z_crit, 1./2.-z_crit)
+    #return ((z_crit - f*z_cut_g) * (1./2. - z_crit - (1.-f)*z_cut_g)
+    #        * theta_crit**beta)
+    z_crit = np.minimum(z_crit, 1.-z_crit)
+    C = ((z_crit - f*z_cut_g) * (1. - z_crit - (1.-f)*z_cut_g)
+         * theta_crit**beta)
+    if verbose > 0:
+        print("    zcrit: "+str(z_crit))
+        print("    z_crit - f*z_c: "+str(z_crit - f*z_cut_g))
+        print("    1. - z_crit - (1.-f)*z_c: "
+              +str(1. - z_crit - (1.-f)*z_cut_g))
+        print("    theta_crit**beta: "+str(theta_crit**beta))
+        print("    C : " + str(C))
+    return C
 
 def C_ungroomed(z, theta, beta, acc='LL'):
     """The contribution of an ungroomed emission

@@ -45,12 +45,9 @@ def test_Simple2DLinIntegrator_firstbin(plot_2d=False):
         m = 1
         # Weights, binned observables, and area
         weights = test_weight(samples_1, samples_2, n, m)
-        jacs = (np.array(testSampler_1.jacobians)
-                * np.array(testSampler_2.jacobians))
         obs = [samples_1, samples_2]
-        area = testSampler_1.area * testSampler_2.area
 
-        testInt.setDensity(obs, weights * jacs, area)
+        testInt.setDensity(obs, weights)
         testInt.integrate()
 
         integral = testInt.integral
@@ -133,12 +130,9 @@ def test_Simple2DLinIntegrator_lastbin(plot_2d=False):
         m = 1
         # Weights, binned observables, and area
         weights = test_weight(samples_1, samples_2, n, m)
-        jacs = (np.array(testSampler_1.jacobians)
-                * np.array(testSampler_2.jacobians))
         obs = [samples_1, samples_2]
-        area = testSampler_1.area * testSampler_2.area
 
-        testInt.setDensity(obs, weights * jacs, area)
+        testInt.setDensity(obs, weights)
         testInt.integrate()
 
         integral = testInt.integral
@@ -226,12 +220,9 @@ def test_Simple2DLogIntegrator_firstbin(plot_2d=False):
         m = 1
         # Weights, binned observables, and area
         weights = test_weight(samples_1, samples_2, n, m)
-        jacs = (np.array(testSampler_1.jacobians)
-                * np.array(testSampler_2.jacobians))
         obs = [samples_1, samples_2]
-        area = testSampler_1.area * testSampler_2.area
 
-        testInt.setDensity(obs, weights * jacs, area)
+        testInt.setDensity(obs, weights)
         testInt.integrate()
 
         integral = testInt.integral
@@ -318,12 +309,9 @@ def test_Simple2DLogIntegrator_lastbin(plot_2d=False):
         m = 1
         # Weights, binned observables, and area
         weights = test_weight(samples_1, samples_2, n, m)
-        jacs = (np.array(testSampler_1.jacobians)
-                * np.array(testSampler_2.jacobians))
         obs = [samples_1, samples_2]
-        area = testSampler_1.area * testSampler_2.area
 
-        testInt.setDensity(obs, weights * jacs, area)
+        testInt.setDensity(obs, weights)
         testInt.integrate()
 
         integral = testInt.integral

@@ -3,6 +3,7 @@ import dill as pickle
 
 # Local utilities for numerics
 from jetmontecarlo.jets.jet_numerics import *
+from jetmontecarlo.tests.radiator_tests.test_precrit_jet_numerics import tst_pre_num_rad
 from examples.params import *
 
 ###########################################
@@ -41,18 +42,18 @@ use_sub = COMPARE_UNGROOMED or COMPARE_CRIT_AND_SUB or COMPARE_ALL
 if LOAD_MC_EVENTS:
     print("Loading Monte Carlo events...")
     if use_crit:
-        print("    Loading critical events...")
+        print("    Loading critical events...", flush=True)
         with open(critfile_path, 'rb') as f:
             CRIT_SAMPLERS = pickle.load(f)
     if use_precrit:
-        print("    Loading pre-critical events...")
+        print("    Loading pre-critical events...", flush=True)
         with open(prefile_path, 'rb') as f:
             PRE_SAMPLERS = pickle.load(f)
     if use_sub:
-        print("    Loading subsequent events...")
+        print("    Loading subsequent events...", flush=True)
         with open(subfile_path, 'rb') as f:
             SUB_SAMPLERS = pickle.load(f)
-    print("Monte Carlo events loaded!")
+    print("Monte Carlo events loaded!", flush=True)
 
 # ----------------------------------
 # Generating Samplers
@@ -65,7 +66,7 @@ else:
     if use_crit:
         for _, z_cut in enumerate(Z_CUTS):
             print("    Generating critical emissions with cutoff z_cut="
-                  +str(z_cut)+"...")
+                  +str(z_cut)+"...", flush=True)
             # Critical samplers
             crit_sampler_i = criticalSampler(BIN_SPACE, zc=z_cut,
                                              epsilon=EPSILON)
@@ -79,7 +80,7 @@ else:
             # If we should generate pre-critical samples:
             if use_precrit:
                 print("    Generating pre-critical emissions with cutoff z_cut="
-                      +str(z_cut)+"...")
+                      +str(z_cut)+"...", flush=True)
                 pre_sampler_i.generateSamples(NUM_MC_EVENTS)
             PRE_SAMPLERS.append(pre_sampler_i)
 
@@ -87,7 +88,7 @@ else:
     sub_sampler = ungroomedSampler(BIN_SPACE, epsilon=EPSILON)
     # If we should generate subsequent samples:
     if use_sub:
-        print("    Generating subsequent emissions...")
+        print("    Generating subsequent emissions...", flush=True)
         sub_sampler.generateSamples(NUM_MC_EVENTS)
     SUB_SAMPLERS.append(sub_sampler)
 
@@ -139,18 +140,18 @@ SUB_RADIATORS = []
 print()
 if LOAD_MC_RADS:
     print("Loading radiators...")
-    print("    Loading critical radiators...")
+    print("    Loading critical radiators...", flush=True)
     with open(critrad_path, 'rb') as f:
         CRIT_RADIATORS = pickle.load(f)
-    print("    Loading pre-critical radiators...")
+    print("    Loading pre-critical radiators...", flush=True)
     with open(prerad_path, 'rb') as f:
         PRE_RADIATORS = pickle.load(f)
-    print("    Loading subsequent radiators...")
+    print("    Loading subsequent radiators...", flush=True)
     with open(subrad_path, 'rb') as f:
         SUB_RADIATORS = pickle.load(f)
     print("Radiators loaded!")
 elif not MAKE_CRIT_RAD:
-    print("Loading critical radiators...")
+    print("Loading critical radiators...", flush=True)
     with open(critrad_path, 'rb') as f:
         CRIT_RADIATORS = pickle.load(f)
     print("Radiators loaded!")
@@ -165,7 +166,7 @@ if not LOAD_MC_RADS and SAVE_MC_RADS:
         for i, z_cut in enumerate(Z_CUTS):
             if MAKE_CRIT_RAD:
                 print("    Generating critical radiator with cutoff z_cut="
-                      +str(z_cut)+"...")
+                      +str(z_cut)+"...", flush=True)
                 # Critical radiators
                 crit_rad_i = gen_numerical_radiator(CRIT_SAMPLERS[i], 'crit',
                                                     JET_TYPE,
@@ -182,8 +183,9 @@ if not LOAD_MC_RADS and SAVE_MC_RADS:
             pre_rad_i = None
             if COMPARE_PRE_AND_CRIT or COMPARE_ALL:
                 print("    Generating pre-critical radiator with cutoff z_cut="
-                      +str(z_cut)+"...")
+                      +str(z_cut)+"...", flush=True)
                 pre_rad_i = gen_pre_num_rad(PRE_SAMPLERS[i],
+                #pre_rad_i = tst_pre_num_rad(PRE_SAMPLERS[i],
                                             CRIT_SAMPLERS[i],
                                             JET_TYPE,
                                             obs_accuracy=OBS_ACC,
@@ -199,7 +201,7 @@ if not LOAD_MC_RADS and SAVE_MC_RADS:
         if COMPARE_CRIT_AND_SUB or COMPARE_ALL:
             for _, beta in enumerate(BETAS):
                 print("    Generating critical/subsequent radiator "
-                      "with beta="+str(beta)+"...")
+                      "with beta="+str(beta)+"...", flush=True)
                 sub_rad = gen_crit_sub_num_rad(SUB_SAMPLERS[0],
                                                JET_TYPE,
                                                obs_accuracy=OBS_ACC,
@@ -214,7 +216,7 @@ if not LOAD_MC_RADS and SAVE_MC_RADS:
     elif COMPARE_UNGROOMED:
         for _, beta in enumerate(BETAS):
             print("    Generating subsequent radiator with beta="
-                  +str(beta)+"...")
+                  +str(beta)+"...", flush=True)
             sub_rad = gen_numerical_radiator(SUB_SAMPLERS[0], 'sub',
                                              JET_TYPE,
                                              obs_accuracy=OBS_ACC,
@@ -260,26 +262,26 @@ if not LOAD_MC_RADS and SAVE_MC_RADS:
     if SAVE_MC_RADS:
         # Saving critical radiators:
         if use_crit and MAKE_CRIT_RAD:
-            print("Saving critical radiator to "+str(critrad_path))
+            print("Saving critical radiator to "+str(critrad_path), flush=True)
             with open(critrad_path, 'wb') as f:
                 pickle.dump(CRIT_RADIATORS, f)
-            print("Saving complete!")
+            print("Saving complete!", flush=True)
         # Saving pre-critical radiators:
         if use_precrit:
-            print("Saving pre-crit radiator to "+str(prerad_path))
+            print("Saving pre-crit radiator to "+str(prerad_path), flush=True)
             with open(prerad_path, 'wb') as f:
                 pickle.dump(PRE_RADIATORS, f)
-            print("Saving complete!")
+            print("Saving complete!", flush=True)
         # Saving subsequent radiators:
         if use_sub:
             if COMPARE_UNGROOMED:
                 desc = 'sub'
             else:
                 desc = 'crit-sub'
-            print("Saving "+desc+" radiator to "+str(subrad_path))
+            print("Saving "+desc+" radiator to "+str(subrad_path), flush=True)
             with open(subrad_path, 'wb') as f:
                 pickle.dump(SUB_RADIATORS, f)
-            print("Saving complete!")
+            print("Saving complete!", flush=True)
 
 # =====================================
 # Splitting Functions by integration
@@ -295,7 +297,7 @@ if SAVE_SPLITTING_FNS and not LOAD_SPLITTING_FNS:
     print("Saving normalized splitting functions...")
     for _, z_cut in enumerate(Z_CUTS):
         print("    Generating splitting function with cutoff z_cut="
-              +str(z_cut)+"...")
+              +str(z_cut)+"...", flush=True)
         # Splitting function generation
         split_fn = gen_normalized_splitting(NUM_MC_EVENTS, z_cut,
                                      jet_type=JET_TYPE, accuracy=SPLITFN_ACC,
@@ -323,12 +325,12 @@ if SAVE_SPLITTING_FNS and not LOAD_SPLITTING_FNS:
     # ----------------------------------
     with open(splitfn_path, 'wb') as f:
         pickle.dump(SPLITTING_FNS, f)
-    print("Saved splitting functions to "+str(splitfn_path)+".")
+    print("Saved splitting functions to "+str(splitfn_path)+".", flush=True)
 
 # ----------------------------------
 # Loading Splitting Functions
 # ----------------------------------
 elif LOAD_SPLITTING_FNS:
-    print("Loading normalized splitting functions...")
+    print("Loading normalized splitting functions...", flush=True)
     with open(splitfn_path, 'rb') as f:
         SPLITTING_FNS = pickle.load(f)

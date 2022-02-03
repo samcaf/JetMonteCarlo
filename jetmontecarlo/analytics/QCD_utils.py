@@ -147,9 +147,9 @@ def splittingFn(z, jet_type, accuracy):
 R0 = 1.
 #alpha_fixed = alpha1loop(P_T*R0)
 # If an emission occurs with z*theta ~ 1/10, then the scale of the emission is ~1/10 the jet scale
-alpha_fixed = alpha1loop(P_T*R0/10)
+alpha_fixed = alpha1loop(P_T*R0/10.)
 
-MU_NP = 1./(P_T*R0) # Unitless non-perturbative scale
+MU_NP = 1./(P_T*R0) # Unitless non-perturbative scale, associated with the QCD Landau pole at 1 GeV
 
 # ---------------------------------------------------
 # Other useful function definitions

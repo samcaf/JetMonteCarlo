@@ -49,7 +49,6 @@ class criticalSampler(sampler):
             z, theta = (getLinSample(self.zc, 1./2.),
                         getLinSample(0, self.radius))
             jac = 1.
-
         elif self.sampleMethod == 'log':
             # Logarithmic critical sampling
             eps = self.epsilon
@@ -147,7 +146,6 @@ class precriticalSampler(sampler):
             # Linear pre-critical sampling:
             zpre = getLinSample(0., self.zc)
             jac = 1.
-
         elif self.sampleMethod == 'log':
             # Logarithmic pre-critical sampling
             eps = self.epsilon

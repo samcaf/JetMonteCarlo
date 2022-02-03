@@ -50,6 +50,8 @@ Z_CUT_PLOT = [.05, .1, .2]
 F_SOFT = 1
 Z_CUT_PLOT = [F_SOFT * zc for zc in Z_CUT_PLOT]
 
+save_cdf = False
+
 # ------------------------------------
 # Comparison parameters
 # ------------------------------------
@@ -77,15 +79,15 @@ if F_SOFT:
 # ------------------------------------
 # Parton shower files
 # ------------------------------------
-# Getting filenames using proxy shower:
-shower = parton_shower(fixed_coupling=FIXED_COUPLING,
-                       shower_cutoff=SHOWER_CUTOFF,
-                       shower_beta=SHOWER_BETA,
-                       jet_type=JET_TYPE)
-shower.num_events = NUM_SHOWER_EVENTS
 
 # Correlation files
 def ps_correlations(beta):
+    # Getting filenames using proxy shower:
+    shower = parton_shower(fixed_coupling=FIXED_COUPLING,
+                           shower_cutoff=SHOWER_CUTOFF,
+                           shower_beta=SHOWER_BETA if FIXED_COUPLING else beta,
+                           jet_type=JET_TYPE)
+    shower.num_events = NUM_SHOWER_EVENTS
     ps_file = shower.correlation_path(int(beta), OBS_ACC, few_pres=True,
                                      f_soft=F_SOFT,
                                      angular_ordered=ANGULAR_ORDERING)
@@ -157,7 +159,8 @@ def pre_sample_file_path(z_cut):
 # ------------------------------------
 def load_radiators():
     print("Loading pickled radiator functions:")
-    print("    Loading critical radiator...")
+    print("    Loading critical radiator from "
+          +str(critrad_path)+"...", flush=True)
     if True in [COMPARE_CRIT, COMPARE_PRE_AND_CRIT,
                 COMPARE_CRIT_AND_SUB, COMPARE_ALL]:
         with open(critrad_path, 'rb') as file:
@@ -167,7 +170,8 @@ def load_radiators():
             return rad_crit_list[INDEX_ZC[z_cut]](theta)
 
     if COMPARE_SUB:
-        print("    Loading subsequent/ungroomed radiator...")
+        print("    Loading subsequent/ungroomed radiator from "
+              +str(subrad_path)+"...", flush=True)
         with open(subrad_path_path, 'rb') as file:
             rad_sub_list = pickle.load(file)
         global rad_sub
@@ -175,13 +179,15 @@ def load_radiators():
             return rad_sub_list[INDEX_BETA[beta]](c_sub)
 
     if True in [COMPARE_CRIT_AND_SUB, COMPARE_ALL]:
-        print("    Loading critical/subsequent radiator...")
+        print("    Loading critical/subsequent radiator from "
+              +str(subrad_path)+"...", flush=True)
         global rad_crit_sub
         with open(subrad_path, 'rb') as file:
             rad_crit_sub = pickle.load(file)[0]
 
     if True in [COMPARE_PRE_AND_CRIT, COMPARE_ALL]:
-        print("    Loading pre-critical radiator...")
+        print("    Loading pre-critical radiator from "
+              +str(prerad_path)+"...", flush=True)
         with open(prerad_path, 'rb') as file:
             rad_pre_list = pickle.load(file)
         global rad_pre
@@ -195,13 +201,14 @@ if not(LOAD_MC_EVENTS):
 # Critical Emission Only
 ###########################################
 def plot_mc_crit(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
-                 load=LOAD_MC_EVENTS):
+                 load=LOAD_MC_EVENTS, verbose=5):
     sud_integrator = integrator()
     sud_integrator.setLastBinBndCondition([1., 'minus'])
 
     if load:
         if crit_sample_file_path(z_cut, beta).is_file():
-            print("    Loading critical samples with z_c="+str(z_cut)+"...")
+            print("    Loading critical samples with z_c="+str(z_cut)+"...",
+                  flush=True)
             theta_crits = np.load(crit_sample_file_path(z_cut, beta))
         else:
             load = False
@@ -209,12 +216,14 @@ def plot_mc_crit(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
                 load_radiators()
 
     if not load:
-        print("    Making critical samples with z_c="+str(z_cut)+"...")
+        print("    Making critical samples with z_c="+str(z_cut)+"...",
+              flush=True)
 
         def cdf_crit(theta):
             return np.exp(-1.*rad_crit(theta, z_cut))
 
-        theta_crits = samples_from_cdf(cdf_crit, NUM_MC_EVENTS, domain=[0,1])
+        theta_crits = samples_from_cdf(cdf_crit, NUM_MC_EVENTS, domain=[0.,1.],
+                                       verbose=3)
         theta_crits = np.where(np.isinf(theta_crits), 0, theta_crits)
 
         np.save(crit_sample_file_path(z_cut, beta), theta_crits)
@@ -225,6 +234,15 @@ def plot_mc_crit(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
 
     obs = C_groomed(z_crits, theta_crits, z_cut, beta,
                     z_pre=0., f=F_SOFT, acc=OBS_ACC)
+
+    if verbose > 1:
+        arg = np.argmax(obs)
+        print("zc: " + str(z_cut))
+        print("obs_acc: " + OBS_ACC)
+        print("maximum observable: " + str(max(obs)))
+        print("associated with\n    z = "+str(z_crits[arg])
+              +"\n    theta = "+str(theta_crits[arg]))
+        print('', flush=True)
 
     # Weights, binned observables, and area
     if BIN_SPACE == 'lin':
@@ -270,7 +288,7 @@ def compare_crit(beta=BETA, plot_approx=False):
     for icol, text in enumerate(leg1.get_texts()):
         text.set_color(compcolors[(icol, 'dark')])
 
-    print("Getting critical samples...")
+    print("Getting critical samples...", flush=True)
     for i, z_cut in enumerate(Z_CUT_PLOT):
         plot_mc_crit(axes_pdf, axes_cdf, z_cut, beta, icol=i)
         plot_shower_pdf_cdf(ps_correlations(beta)['rss_c1s_crit'][i],
@@ -303,14 +321,15 @@ def compare_crit(beta=BETA, plot_approx=False):
                     +str(this_plot_label)
                     +'.pdf',
                     format='pdf')
-    fig_cdf.savefig(JET_TYPE+'_RSS_crit_'+BIN_SPACE+'_cdf_comp'
-                    +'_beta'+str(beta)
-                    +'_{:.0e}showers_{:.0e}mc'.format(
-                        NUM_SHOWER_EVENTS,  NUM_MC_EVENTS)
-                    +str(this_plot_label)
-                    +'.pdf',
-                    format='pdf')
-    print("Plotting complete!")
+    if save_cdf:
+        fig_cdf.savefig(JET_TYPE+'_RSS_crit_'+BIN_SPACE+'_cdf_comp'
+                        +'_beta'+str(beta)
+                        +'_{:.0e}showers_{:.0e}mc'.format(
+                            NUM_SHOWER_EVENTS,  NUM_MC_EVENTS)
+                        +str(this_plot_label)
+                        +'.pdf',
+                        format='pdf')
+    print("Plotting complete!", flush=True)
 
 ###########################################
 # Subsequent Emissions
@@ -322,7 +341,8 @@ def plot_mc_sub(axes_pdf, axes_cdf, beta, icol=0,
     if load:
         print(sub_sample_file_path(beta))
         if sub_sample_file_path(beta).is_file():
-            print("    Loading subsequent samples with beta="+str(beta)+"...")
+            print("    Loading subsequent samples with beta="+str(beta)+"...",
+                  flush=True)
             c_subs = np.load(sub_sample_file_path(beta))
         else:
             load = False
@@ -330,11 +350,13 @@ def plot_mc_sub(axes_pdf, axes_cdf, beta, icol=0,
                 load_radiators()
 
     if not load:
-        print("    Making subsequent samples with beta="+str(beta)+"...")
+        print("    Making subsequent samples with beta="+str(beta)+"...",
+              flush=True)
         def cdf_sub(c_sub):
             return np.exp(-1.*rad_sub(c_sub, beta))
 
-        c_subs = samples_from_cdf(cdf_sub, NUM_MC_EVENTS, domain=[0,.5])
+        c_subs = samples_from_cdf(cdf_sub, NUM_MC_EVENTS, domain=[0.,.5],
+                                  verbose=3)
         c_subs = np.where(np.isinf(c_subs), 0, c_subs)
         np.save(sub_sample_file_path(beta), c_subs)
 
@@ -376,7 +398,7 @@ def compare_sub():
     for icol, text in enumerate(leg1.get_texts()):
         text.set_color(compcolors[(icol, 'dark')])
 
-    print("Getting subsequent samples...")
+    print("Getting subsequent samples...", flush=True)
     for icol, beta in enumerate(BETAS):
         plot_mc_sub(axes_pdf, axes_cdf, beta, icol=icol)
         plot_shower_pdf_cdf(ps_correlations(beta)['ungroomed_c1s'],
@@ -403,13 +425,14 @@ def compare_sub():
                     +str(this_plot_label)
                     +'.pdf',
                     format='pdf')
-    fig_cdf.savefig(JET_TYPE+'_ungroomed_'+BIN_SPACE+'_cdf_comp'
-                    +'_{:.0e}showers_{:.0e}mc'.format(
-                        NUM_SHOWER_EVENTS,  NUM_MC_EVENTS)
-                    +str(this_plot_label)
-                    +'.pdf',
-                    format='pdf')
-    print("Plotting complete!")
+    if save_cdf:
+        fig_cdf.savefig(JET_TYPE+'_ungroomed_'+BIN_SPACE+'_cdf_comp'
+                        +'_{:.0e}showers_{:.0e}mc'.format(
+                            NUM_SHOWER_EVENTS,  NUM_MC_EVENTS)
+                        +str(this_plot_label)
+                        +'.pdf',
+                        format='pdf')
+    print("Plotting complete!", flush=True)
 
 ###########################################
 # Critical and Subsequent Emissions
@@ -421,7 +444,7 @@ def plot_mc_crit_and_sub(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
 
     if load:
         if crit_sample_file_path(z_cut, beta).is_file():
-            print("    Loading critical samples with z_c="+str(z_cut)+"...")
+            print("    Loading critical samples with z_c="+str(z_cut)+"...", flush=True)
             theta_crits = np.load(crit_sample_file_path(z_cut, beta))
         else:
             load = False
@@ -429,12 +452,13 @@ def plot_mc_crit_and_sub(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
                 load_radiators()
 
     if not load:
-        print("    Making critical samples with z_c="+str(z_cut)+"...")
+        print("    Making critical samples with z_c="+str(z_cut)+"...", flush=True)
 
         def cdf_crit(theta):
             return np.exp(-1.*rad_crit(theta, z_cut))
 
-        theta_crits = samples_from_cdf(cdf_crit, NUM_MC_EVENTS, domain=[0,1])
+        theta_crits = samples_from_cdf(cdf_crit, NUM_MC_EVENTS, domain=[0.,1.],
+                                       verbose=3)
         theta_crits = np.where(np.isinf(theta_crits), 0, theta_crits)
 
         np.save(crit_sample_file_path(z_cut, beta), theta_crits)
@@ -442,7 +466,8 @@ def plot_mc_crit_and_sub(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
     if load:
         if crit_sub_sample_file_path(z_cut, beta).is_file():
             print("    Loading subsequent samples with beta="+str(beta)+
-                  " from crit samples with z_cut="+str(z_cut)+"...")
+                  " from crit samples with z_cut="+str(z_cut)+"...",
+                  flush=True)
             c_subs = np.load(crit_sub_sample_file_path(z_cut, beta))
         else:
             load = False
@@ -450,18 +475,24 @@ def plot_mc_crit_and_sub(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
                 load_radiators()
 
     if not load:
-        print("    Making subsequent samples with beta="+str(beta)+"...")
+        print("    Making subsequent samples with beta="+str(beta)+"...",
+              flush=True)
         c_subs = []
 
         for i, theta in enumerate(theta_crits):
             def cdf_sub_conditional(c_sub):
                 return np.exp(-1.*rad_crit_sub(c_sub, theta))
 
-            c_sub = samples_from_cdf(cdf_sub_conditional, 1,
-                                     domain=[0,theta**beta/2.])[0]
+            if theta**beta/2. < 1e-10:
+                # Assigning to an underflow bin for small observable values
+                c_sub = 1e-100
+            else:
+                c_sub = samples_from_cdf(cdf_sub_conditional, 1,
+                                     domain=[0.,theta**beta/2.],
+                                     verbose=3)[0]
             c_subs.append(c_sub)
             if (i+1)%(len(theta_crits)/10)==0:
-                print("        Generated "+str(i+1)+" events...")
+                print("        Generated "+str(i+1)+" events...", flush=True)
         c_subs = np.array(c_subs)
         c_subs = np.where(np.isinf(c_subs), 0, c_subs)
         np.save(crit_sub_sample_file_path(z_cut, beta), c_subs)
@@ -512,7 +543,7 @@ def compare_crit_and_sub(beta=BETA):
     for icol, text in enumerate(leg1.get_texts()):
         text.set_color(compcolors[(icol, 'dark')])
 
-    print("Getting critical and subsequent samples...")
+    print("Getting critical and subsequent samples...", flush=True)
 
     for i, z_cut in enumerate(Z_CUT_PLOT):
         plot_mc_crit_and_sub(axes_pdf, axes_cdf, z_cut, beta, icol=i)
@@ -541,14 +572,15 @@ def compare_crit_and_sub(beta=BETA):
                     +str(this_plot_label)
                     +'.pdf',
                     format='pdf')
-    fig_cdf.savefig(JET_TYPE+'_RSS_crit_and_sub_'+BIN_SPACE+'_cdf_comp'
-                    +'_beta'+str(beta)
-                    +'_{:.0e}showers_{:.0e}mc'.format(
-                        NUM_SHOWER_EVENTS,  NUM_MC_EVENTS)
-                    +str(this_plot_label)
-                    +'.pdf',
-                    format='pdf')
-    print("Plotting complete!")
+    if save_cdf:
+        fig_cdf.savefig(JET_TYPE+'_RSS_crit_and_sub_'+BIN_SPACE+'_cdf_comp'
+                        +'_beta'+str(beta)
+                        +'_{:.0e}showers_{:.0e}mc'.format(
+                            NUM_SHOWER_EVENTS,  NUM_MC_EVENTS)
+                        +str(this_plot_label)
+                        +'.pdf',
+                        format='pdf')
+    print("Plotting complete!", flush=True)
 
 ###########################################
 # Pre + Critical Emissions
@@ -560,7 +592,8 @@ def plot_mc_pre_and_crit(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
 
     if load:
         if crit_sample_file_path(z_cut, beta).is_file():
-            print("    Loading critical samples with z_c="+str(z_cut)+"...")
+            print("    Loading critical samples with z_c="+str(z_cut)+"...",
+                  flush=True)
             theta_crits = np.load(crit_sample_file_path(z_cut, beta))
         else:
             load = False
@@ -568,12 +601,14 @@ def plot_mc_pre_and_crit(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
                 load_radiators()
 
     if not load:
-        print("    Making critical samples with z_c="+str(z_cut)+"...")
+        print("    Making critical samples with z_c="+str(z_cut)+"...",
+              flush=True)
 
         def cdf_crit(theta):
             return np.exp(-1.*rad_crit(theta, z_cut))
 
-        theta_crits = samples_from_cdf(cdf_crit, NUM_MC_EVENTS, domain=[0,1])
+        theta_crits = samples_from_cdf(cdf_crit, NUM_MC_EVENTS, domain=[0.,1.],
+                                       verbose=3)
         theta_crits = np.where(np.isinf(theta_crits), 0, theta_crits)
 
         np.save(crit_sample_file_path(z_cut, beta), theta_crits)
@@ -581,7 +616,8 @@ def plot_mc_pre_and_crit(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
     if load:
         if pre_sample_file_path(z_cut).is_file():
             print("    Loading pre-critical samples"
-                  +" from crit samples with z_cut="+str(z_cut)+"...")
+                  +" from crit samples with z_cut="+str(z_cut)+"...",
+                  flush=True)
             z_pres = np.load(pre_sample_file_path(z_cut))
         else:
             load = False
@@ -590,7 +626,8 @@ def plot_mc_pre_and_crit(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
 
     if not load:
         print("    Making pre-critical samples"
-              +" from crit samples with z_cut="+str(z_cut)+"...")
+              +" from crit samples with z_cut="+str(z_cut)+"...",
+              flush=True)
 
         z_pres = []
 
@@ -599,10 +636,10 @@ def plot_mc_pre_and_crit(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
                 return np.exp(-1.*rad_pre(z_pre, theta, z_cut))
 
             z_pre = samples_from_cdf(cdf_pre_conditional, 1,
-                                     domain=[0,z_cut], monotone_verbose=1)[0]
+                                     domain=[0.,z_cut], verbose=3)[0]
             z_pres.append(z_pre)
             if (i+1)%(len(theta_crits)/10)==0:
-                print("        Generated "+str(i+1)+" events...")
+                print("        Generated "+str(i+1)+" events...", flush=True)
         z_pres = np.array(z_pres)
         z_pres = np.where(np.isinf(z_pres), 0, z_pres)
         np.save(pre_sample_file_path(z_cut), z_pres)
@@ -653,7 +690,7 @@ def compare_pre_and_crit(beta=BETA):
     for icol, text in enumerate(leg1.get_texts()):
         text.set_color(compcolors[(icol, 'dark')])
 
-    print("Getting critical and pre-critical samples...")
+    print("Getting critical and pre-critical samples...", flush=True)
 
     for i, z_cut in enumerate(Z_CUT_PLOT):
         plot_mc_pre_and_crit(axes_pdf, axes_cdf, z_cut, beta, icol=i)
@@ -682,14 +719,15 @@ def compare_pre_and_crit(beta=BETA):
                     +str(this_plot_label)
                     +'.pdf',
                     format='pdf')
-    fig_cdf.savefig(JET_TYPE+'_RSS_pre_and_crit_'+BIN_SPACE+'_cdf_comp'
-                    +'_beta'+str(beta)
-                    +'_{:.0e}showers_{:.0e}mc'.format(
+    if save_cdf:
+        fig_cdf.savefig(JET_TYPE+'_RSS_pre_and_crit_'+BIN_SPACE+'_cdf_comp'
+                        +'_beta'+str(beta)
+                        +'_{:.0e}showers_{:.0e}mc'.format(
                         NUM_SHOWER_EVENTS,  NUM_MC_EVENTS)
-                    +str(this_plot_label)
-                    +'.pdf',
-                    format='pdf')
-    print("Plotting complete!")
+                        +str(this_plot_label)
+                        +'.pdf',
+                        format='pdf')
+    print("Plotting complete!", flush=True)
 
 ###########################################
 # All Emissions
@@ -701,7 +739,8 @@ def plot_mc_all(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
 
     if load:
         if crit_sample_file_path(z_cut, beta).is_file():
-            print("    Loading critical samples with z_c="+str(z_cut)+"...")
+            print("    Loading critical samples with z_c="+str(z_cut)+"...",
+                  flush=True)
             theta_crits = np.load(crit_sample_file_path(z_cut, beta))
         else:
             load = False
@@ -709,7 +748,8 @@ def plot_mc_all(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
                 load_radiators()
 
     if not load:
-        print("    Making critical samples with z_c="+str(z_cut)+"...")
+        print("    Making critical samples with z_c="+str(z_cut)+"...",
+              flush=True)
 
         with open(critrad_path, 'rb') as file:
             rad_crit = pickle.load(file)[INDEX_ZC[z_cut]]
@@ -717,7 +757,8 @@ def plot_mc_all(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
         def cdf_crit(theta):
             return np.exp(-1.*rad_crit(theta))
 
-        theta_crits = samples_from_cdf(cdf_crit, NUM_MC_EVENTS, domain=[0,1])
+        theta_crits = samples_from_cdf(cdf_crit, NUM_MC_EVENTS, domain=[0.,1.],
+                                       verbose=3)
         theta_crits = np.where(np.isinf(theta_crits), 0, theta_crits)
 
         np.save(crit_sample_file_path(z_cut, beta), theta_crits)
@@ -725,7 +766,8 @@ def plot_mc_all(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
     if load:
         if crit_sub_sample_file_path(z_cut, beta).is_file():
             print("    Loading subsequent samples with beta="+str(beta)+
-                  " from crit samples with z_cut="+str(z_cut)+"...")
+                  " from crit samples with z_cut="+str(z_cut)+"...",
+                  flush=True)
             c_subs = np.load(crit_sub_sample_file_path(z_cut, beta))
         else:
             load = False
@@ -733,18 +775,24 @@ def plot_mc_all(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
                 load_radiators()
 
     if not load:
-        print("    Making subsequent samples with beta="+str(beta)+"...")
+        print("    Making subsequent samples with beta="+str(beta)+"...",
+              flush=True)
         c_subs = []
 
         for i, theta in enumerate(theta_crits):
             def cdf_sub_conditional(c_sub):
                 return np.exp(-1.*rad_crit_sub(c_sub, theta))
 
-            c_sub = samples_from_cdf(cdf_sub_conditional, 1,
-                                     domain=[0,theta**beta/2.])[0]
+            if theta**beta/2. < 1e-10:
+                # Assigning to an underflow bin for small observable values
+                c_sub = 1e-100
+            else:
+                c_sub = samples_from_cdf(cdf_sub_conditional, 1,
+                                     domain=[0.,theta**beta/2.],
+                                     verbose=3)[0]
             c_subs.append(c_sub)
             if (i+1)%(len(theta_crits)/10) == 0:
-                print("        Generated "+str(i+1)+" events...")
+                print("        Generated "+str(i+1)+" events...", flush=True)
         c_subs = np.array(c_subs)
         c_subs = np.where(np.isinf(c_subs), 0, c_subs)
         np.save(crit_sub_sample_file_path(z_cut, beta), c_subs)
@@ -752,7 +800,8 @@ def plot_mc_all(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
     if load:
         if pre_sample_file_path(z_cut).is_file():
             print("    Loading pre-critical samples"
-                  +" from crit samples with z_cut="+str(z_cut)+"...")
+                  +" from crit samples with z_cut="+str(z_cut)+"...",
+                  flush=True)
             z_pres = np.load(pre_sample_file_path(z_cut))
         else:
             load = False
@@ -761,7 +810,8 @@ def plot_mc_all(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
 
     if not load:
         print("    Making pre-critical samples"
-              +" from crit samples with z_cut="+str(z_cut)+"...")
+              +" from crit samples with z_cut="+str(z_cut)+"...",
+              flush=True)
 
         z_pres = []
 
@@ -770,10 +820,12 @@ def plot_mc_all(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
                 return np.exp(-1.*rad_pre(z_pre, theta, z_cut))
 
             z_pre = samples_from_cdf(cdf_pre_conditional, 1,
-                                     domain=[0,z_cut])[0]
+                                     domain=[0,z_cut],
+                                     verbose=3)[0]
             z_pres.append(z_pre)
             if (i+1)%(len(theta_crits)/10) == 0:
-                print("        Generated "+str(i+1)+" events...")
+                print("        Generated "+str(i+1)+" events...",
+                      flush=True)
         z_pres = np.array(z_pres)
         z_pres = np.where(np.isinf(z_pres), 0, z_pres)
         np.save(pre_sample_file_path(z_cut), z_pres)
@@ -830,7 +882,7 @@ def compare_all(beta=BETA, plot_approx=False):
     for icol, text in enumerate(leg1.get_texts()):
         text.set_color(compcolors[(icol, 'dark')])
 
-    print("Getting all emissions samples...")
+    print("Getting all emissions samples...", flush=True)
 
     for i, z_cut in enumerate(Z_CUT_PLOT):
         plot_mc_all(axes_pdf, axes_cdf, z_cut, beta, icol=i)
@@ -863,14 +915,15 @@ def compare_all(beta=BETA, plot_approx=False):
                     +str(this_plot_label)
                     +'.pdf',
                     format='pdf')
-    fig_cdf.savefig(JET_TYPE+'_RSS_all_em_'+BIN_SPACE+'_cdf_comp'
-                    +'_beta'+str(beta)
-                    +'_{:.0e}showers_{:.0e}mc'.format(
-                        NUM_SHOWER_EVENTS,  NUM_MC_EVENTS)
-                    +str(this_plot_label)
-                    +'.pdf',
-                    format='pdf')
-    print("Plotting complete!")
+    if save_cdf:
+        fig_cdf.savefig(JET_TYPE+'_RSS_all_em_'+BIN_SPACE+'_cdf_comp'
+                        +'_beta'+str(beta)
+                        +'_{:.0e}showers_{:.0e}mc'.format(
+                          NUM_SHOWER_EVENTS,  NUM_MC_EVENTS)
+                        +str(this_plot_label)
+                        +'.pdf',
+                        format='pdf')
+    print("Plotting complete!", flush=True)
 
 ###########################################
 # Main:

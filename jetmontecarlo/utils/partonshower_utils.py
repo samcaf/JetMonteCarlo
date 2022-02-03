@@ -172,6 +172,7 @@ def angularity_split(ang_init, beta, jet_type,
                                     - np.pi*beta/(CR(jet_type)*alpha)
                                     * np.log(r1))) / 2.
 
+        # z, between 0 and 1/2, is the energy fraction of the softer emission
         z = (2.*ang_final)**r2 / 2.
         theta = (2.*ang_final)**((1-r2) / beta)
 
@@ -193,19 +194,12 @@ def angularity_split(ang_init, beta, jet_type,
             # but the conclusion in Equation 5.5, which we use
             # here, is correct
 
-            # Nonsense!
-            if cut > .6:
-                print("beep boop")
-            if cut > .8:
-                print("close")
-            if cut > .9:
-                print("closer")
-            if cut > .95:
-                print("even closer")
-
             if cut > 1:
                 raise ValueError("The pdf must be everywhere less than the"
                                  + "proposed pdf!")
+            elif cut > .6:
+                print("Dangerous value of "+str(cut)+" for pdf ratio in the veto algorithm.", flush=True)
+
             if random.random() < cut:
                 # If we accept the emission, stop the algorithm here
                 accept_emission = True
@@ -226,7 +220,8 @@ def angularity_split(ang_init, beta, jet_type,
 # ----------------------------------
 # Recursive Shower:
 # ----------------------------------
-def angularity_shower(parton, ang_init, beta, jet_type, jet,
+def angularity_shower(parton, ang_init, z_init, theta_init,
+                      beta, jet_type, jet,
                       acc='LL', split_soft=True, cutoff=MU_NP):
     """Starts with an initial parton and jet, and
     performs a recursive angularity shower, defined by
@@ -266,25 +261,26 @@ def angularity_shower(parton, ang_init, beta, jet_type, jet,
     -------
         None
     """
-    # FIX HERE!
-    if ang_init > cutoff:
-        ang_final, z, theta = angularity_split(ang_init, beta,
-                                               jet_type, acc)
+    if z_init * theta_init > cutoff:
+        ang_final, z_final, theta_final = angularity_split(ang_init, beta,
+                                                           jet_type, acc)
         if ang_final is None:
             return
 
-        parton.split(z, theta)
+        parton.split(z_final, theta_final)
         d1, d2 = parton.daughter1, parton.daughter2
         d1.type = 'soft'
         d2.type = 'hard'
 
         jet.partons.append(d1)
         if split_soft:
-            angularity_shower(d1, ang_final, beta, jet_type, jet,
+            angularity_shower(d1, ang_final, z_final, theta_final,
+                              beta, jet_type, jet,
                               acc, split_soft, cutoff)
 
         jet.partons.append(d2)
-        angularity_shower(d2, ang_final, beta, jet_type, jet,
+        angularity_shower(d2, ang_final, z_final, theta_final,
+                          beta, jet_type, jet,
                           acc, split_soft, cutoff)
 
 
@@ -303,13 +299,14 @@ def gen_jets(num_events, beta=2.,
     through angularity based parton showering.
     """
     if verbose > 0:
-        print("Generating {:.0e} shower events...".format(num_events))
+        print("Generating {:.0e} shower events".format(num_events)
+              + " ordered by e_1^{("+str(beta)+")} ...", flush=True)
     # Setting up for angularities
     jet_list = []
 
     for i in range(int(num_events)):
         if (i+1)%(int(num_events/10)) == 0 and verbose > 0:
-            print("   Generated "+str(i+1)+" events")
+            print("   Generated "+str(i+1)+" events", flush=True)
         # Initializing a parton
         ang_init = radius**beta / 2.
         momentum = Vector([0, P_T, 0])
@@ -318,9 +315,10 @@ def gen_jets(num_events, beta=2.,
         jet = Jet(momentum, radius, partons=None)
         mother = jet.partons[0]
         mother.type = 'mother'
-        angularity_shower(mother, ang_init, beta, jet_type,
-                          jet, acc=acc, split_soft=False,
-                          cutoff=cutoff)
+        angularity_shower(mother, ang_init, z_init=1./2, theta_init=radius,
+                          beta=beta, jet_type=jet_type, jet=jet,
+                          acc=acc, split_soft=False, cutoff=cutoff)
+        # Initial theta and z are unimportant, we simply require theta*z > cutoff
         jet.has_showered = True
 
         # Adding jet to list
@@ -436,7 +434,7 @@ def getangs(jet_list, beta=2., acc='LL', emission_type=None,
 
         # Additional verbose messages
         if (i+1)%(int(len(jet_list)/5)) == 0 and verbose > 0:
-            print("       Generated "+str(i+1)+" ungroomed correlations.")
+            print("       Generated "+str(i+1)+" ungroomed correlations.", flush=True)
 
     return angs
 
@@ -495,7 +493,7 @@ def getECFs_ungroomed(jet_list, beta=2.,
         # Additional verbose messages
         if (i+1)%(int(len(jet_list)/5)) == 0 and verbose > 0:
             print("       Generated "+str(i+1)+" "+str(n_emissions)
-                  +" emissions ungroomed correlations.")
+                  +" emissions ungroomed correlations.", flush=True)
 
     return all_ecfs
 
@@ -670,7 +668,7 @@ def getECFs_rss(jet_list, z_cut, beta=2., f=1.,
         if (i+1)%(int(len(jet_list)/5)) == 0 and verbose > 0:
             print("       Generated "+str(i+1)+" "+str(obs_acc)
                   +" ("+str(n_emissions)
-                  +" emissions) RSS correlations.")
+                  +" emissions) RSS correlations.", flush=True)
 
     return all_ecfs
 
@@ -743,9 +741,9 @@ def getECFs_softdrop(jet_list, z_cut, beta=2., beta_sd=0.,
             z = min(daughter1.momentum.mag()/mother.momentum.mag(),
                     daughter2.momentum.mag()/mother.momentum.mag())
 
-            if not soft_drop and z > z_cut*theta**beta_sd:
+            if not soft_drop:# and z > z_cut*theta**beta_sd:
                 c_list.append(ecf_val(z, theta))
-            if soft_drop == True and z > z_cut*theta**beta_sd:
+            if soft_drop and z > z_cut*theta**beta_sd:
                 # The first emission corresponds to c_list[0]
                 soft_drop = False
                 c_list.append(ecf_val(z, theta))
@@ -786,7 +784,7 @@ def getECFs_softdrop(jet_list, z_cut, beta=2., beta_sd=0.,
         # Additional verbose messages
         if (i+1)%(int(len(jet_list)/5)) == 0 and verbose > 0:
             print("       Generated "+str(i+1)+" "+str(n_emissions)
-                  +" emission Soft Drop correlations.")
+                  +" emission Soft Drop correlations.", flush=True)
 
     return all_ecfs
 
@@ -815,7 +813,7 @@ def save_shower_correlations(jet_list, file_path,
     n_emissions_list = [1, 2, 'all']
 
     if verbose > 1:
-        print("    beta for shower correlations: " +str(beta))
+        print("    beta for shower correlations: " +str(beta), flush=True)
 
     ungroomed_c1s = []
     for n in n_emissions_list:

@@ -84,7 +84,7 @@ def getLogSample_zerobin(sample_min, sample_max, cum_dist,
     return sample_min + np.exp(logsample)
 
 def samples_from_cdf(cdf, num_samples, domain=None,
-                     monotone_verbose=0):
+                     catch_turnpoint=False, verbose=0):
     """A function which takes in a functional form for a cdf,
     inverts it, and generates samples using the inverse transform
     method.
@@ -107,26 +107,27 @@ def samples_from_cdf(cdf, num_samples, domain=None,
         given cdf.
     """
     with warnings.catch_warnings():
+        # Common but usually uniformative warning we would like to ignore:
         warnings.filterwarnings("ignore",
                 message="Results obtained with less than 2 decimal"
                 +" digits of accuracy")
         try:
+            # Using pynverse's inversefunc method to sample from the CDF
             inv_cdf = inversefunc(cdf, domain=domain, image=[0,1])
         except ValueError:
-            # If it is always 1, simply return zero!
+            #==========================================================
+            # Logging Errors and Correcting Common Use Cases
+            #==========================================================
             pnts = np.linspace(domain[0], domain[1], 1000)
+
+            #----------------------------------------------------
+            # If it is always 1, simply return zeros/a zero bin!
+            #----------------------------------------------------
             if all(cdf(pnts)==1):
                 return np.zeros(num_samples)
 
             # Otherwise, find where it is not monotone
             monotone = cdf(pnts[:-1]) <= cdf(pnts[1:])
-
-            # Verbose comments pointing out features of cdf
-            if monotone_verbose > 1:
-                print("Found cdf of " + str(cdf(pnts[:-1]))+"at"+str(pnts[:-1][0]))
-                print("Found cdf of " + str(cdf(pnts[1:]))+"at"+str(pnts[1:][0]))
-                print("Testing monotonicity in domain...")
-                print(monotone)
 
             bad_xvals_low = np.array([pnts[i] for i in range(len(monotone))
                                       if not monotone[i]])
@@ -134,48 +135,55 @@ def samples_from_cdf(cdf, num_samples, domain=None,
                                        if not monotone[i]])
             bad_cdf_low, bad_cdf_high = cdf(bad_xvals_low), cdf(bad_xvals_high)
 
+
+            #----------------------------------------------------
+            # Verbose comments pointing out features of cdf
+            if verbose > 2:
+                print("Points from "+str(domain[0])+" to "+str(domain[1])
+                      +": " + str(pnts))
+
+            if verbose > 1:
+                print("Found cdf of " + str(cdf(pnts[:-1]))+" at points "+str(pnts[:-1]))
+                print("Found cdf of " + str(cdf(pnts[1:]))+" at points "+str(pnts[1:]))
+                print("Testing monotonicity at these points in the requested domain:")
+                print(monotone)
+
+            if verbose > 2:
+                print("Arguments where proposed cdf is not monotone: ")
+                print(bad_xvals_low)
+                print()
+                print("Arguments i+1 where proposed cdf is not monotone: ")
+                print(bad_xvals_high)
+
+            # Finding the inconsistent cdf values
+            if verbose > 0:
+                print('[lower, higher] cdf_val where monotonicity is broken: '
+                        + str([bad_cdf_low, bad_cdf_high]))
+            #----------------------------------------------------
+
+            #----------------------------------------------------
+            # Other common use cases:
+            #----------------------------------------------------
             # If the lowest fluctation is at the lower bound of the domain,
             # and the cdf appears to be 1 near there
             if bad_xvals_low[0] == pnts[0] and bad_cdf_low[0] == 1:
-                if monotone_verbose>1:
+                # If the CDF starts out as 1 from the lowest point already,
+                # inverse transform should yield all zeros
+                if verbose>1:
                     print("Found non-monotone cdf behavior at minimum "
                           +"value of domain. Drawing from zero bin.")
                 return np.zeros(num_samples)
 
-            # Otherwise, if the bad cdf appears to just be fluctuating around 1
-            # when monotonicity fails, we can ignore the region where the
-            # bad fluctuations, which are presumably numerical artifacts, occur.
-            # We can then do the same inverse transform method to sample from
-            # the cdf in the valid region of the domain.
-
-            # Finding the inconsistent cdf values
-            if monotone_verbose > 0:
-                print('[lower, higher] cdf_val where monotonicity is broken: '
-                        + str([bad_cdf_low, bad_cdf_high]))
-
-            if len(bad_cdf_low) > 0:
-                if bad_cdf_low[0] == 1:
-                    # Finding the highest point above which there are no
-                    # bad cdf fluctuations:
-                    high_good_xval = domain[1]
-
-                    while high_good_xval == domain[1]:
-                        if not monotone[i+1]:
-                            high_good_xval = pnts[i]
-                        i += 1
-                        if i > len(monotone)-1:
-                            raise AssertionError("Function is not strictly"+
-                                "monotonic. Unable to correct this feature.")
-
-                    if monotone_verbose > 0:
-                        print("Found numerical fluctuations."
-                              +"Correcting recursively...")
-
-                    # Sample from the valid/consistent phase space region
-                    return samples_from_cdf(cdf, num_samples,
-                                            domain=[domain[0], high_good_xval],
-                                            monotone_verbose=monotone_verbose)
-
+            elif bad_cdf_low[0] == 1 and catch_turnpoint:
+                # Otherwise, if the CDF reaches 1 at a particular location,
+                # and we expect the CDF to be valid only up to that point
+                # (where the CDF may `turn around' and start decreasing):
+                if verbose>1:
+                    print("Found turning point of CDF. Adjusting sampling.")
+                return samples_from_cdf(cdf=cdf, num_samples=num_samples,
+                                        domain=[domain[0],bad_xvals_low[0]],
+                                        catch_turnpoint=catch_turnpoint,
+                                        verbose=verbose)
 
             inv_cdf = inversefunc(cdf, domain=domain, image=[0,1])
 

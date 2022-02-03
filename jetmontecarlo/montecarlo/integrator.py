@@ -71,8 +71,8 @@ class integrator():
         num_in_bin, _ = np.histogram(observables, self.bins)
 
         # Here we calculate the weighted distribution of the observable:
-        # density(bin) = \int dA weightFn(A) delta(bin - observable(A))
-        #           ~ (average weight in bin) * ("area" of bin) / binWidth
+        # density(bin) = \int dx weightFn(A) delta(bin - observable(A))
+        #           ~ (average weight in bin) * dx_bin / binWidth
 
         # We proceed by finding
         # (average weight in bin) = (total weight in bin) / num_in_bin
@@ -476,29 +476,31 @@ class integrator_2d():
                                                  weights=np.square(weights))
         num_in_bin, _, _ = np.histogram2d(observables[0], observables[1],
                                           self.bins)
-        # Here we calculate the weighted distribution of the observable:
+
         # density(bin) = \int dA weightFn(A) delta(bin - observable(A))
-        #           ~ (average weight in bin) * ("area" of bin) / binWidth
+        #           ~ (average weight in bin) * dA_bin / binArea
 
         # We proceed by finding
         # (average weight in bin) = (total weight in bin) / num_in_bin
         # dA_bin = (total area) * num_in_bin / num_total
 
         # Therefore,
-        # density ~ (total weight in bin / binArea)
+        # density ~ (total weight in bin / binWidth)
         #           * (total area)/num_total
 
         binWidths_1 = self.bins[0][1:]-self.bins[0][:-1]
         binWidths_2 = self.bins[1][1:]-self.bins[1][:-1]
         binWidths_1, binWidths_2 = np.meshgrid(binWidths_1, binWidths_2)
         binAreas = binWidths_1 * binWidths_2
+        # np.histogram2d confusingly gives the transpose of what
+        # you might naively expect; taking this into account:
+        binAreas = binAreas.T
 
-        # binAreas = np.reshape(binAreas, weightHist.shape)
+        areafactor = area / (len(observables[0]) * binAreas)
+        
+        self.density = weightHist * areafactor
+        self.densityErr = np.sqrt(square_weightHist) * areafactor
 
-        self.density = ((weightHist/binAreas)
-                        * (area/len(observables[0])))
-        self.densityErr = ((np.sqrt(square_weightHist)/binAreas)
-                           * (area/len(observables[0])))
 
         # No points in a given bin -> no information about that bin:
         self.density = np.where(num_in_bin == 0, 0, self.density)
@@ -577,19 +579,10 @@ class integrator_2d():
         self.hasMCIntegral = True
 
     # ------------------
-    # Plotting
-    # ------------------
-    def plotIntegral(self):
-        pass
-    def plotDensity(self):
-        pass
-
-    # ------------------
     # Integral Interpolation:
     # ------------------
-    def makeInterpolatingFn(self):
-        """Makes an interpolating function for the integral. Assumes linear
-        binning."""
+    def makeInterpolatingFn(self, interpolate_error=False):
+        """Makes an interpolating function for the integral."""
         assert self.hasMCIntegral, \
             "Need MC integral to produce interpolation"
         x, y = self.bins[0], self.bins[1]
@@ -597,23 +590,40 @@ class integrator_2d():
         if self.useFirstBinBndCond:
             z = []
             z.append(np.ones(len(self.bins[0])) * self.firstBinBndCond)
-
             for z_i in self.integral:
                 z.append(np.append(self.firstBinBndCond, z_i))
-
             z = np.array(z).T
+
+            if interpolate_error:
+                zerr = []
+                zerr.append(np.zeros(len(self.bins[0])))
+                for z_i in self.integralErr:
+                    zerr.append(np.append(0, z_i))
+                zerr = np.array(zerr).T
 
         elif self.useLastBinBndCond:
             z = []
             for z_i in self.integral:
                 z.append(np.append(z_i, self.lastBinBndCond[0]))
-
             z.append(np.ones(len(self.bins[0])) * self.lastBinBndCond[0])
 
             z = np.array(z).T
 
+            if interpolate_error:
+                zerr = []
+                for z_i in self.integralErr:
+                    zerr.append(np.append(0, z_i))
+                zerr.append(np.zeros(len(self.bins[0])))
+                zerr = np.array(zerr).T
+
         z = z.flatten()
         self.interpFn = interpolate.interp2d(x=x, y=y, z=z)
+
+        if interpolate_error:
+            zerr = zerr.flatten()
+            self.interpErr = interpolate.interp2d(x=x, y=y, z=zerr)
+        else:
+            self.interpErr = None
 
         self.hasInterpIntegral = True
 
@@ -727,12 +737,9 @@ def integrate_2d(function, bounds,
     this_integrator.setBins(num_bins, [samples_1, samples_2], bin_space)
 
     weights = function(samples_1, samples_2)
-    jacs = (np.array(testSampler_1.jacobians)
-            * np.array(testSampler_2.jacobians))
     obs = [samples_1, samples_2]
-    area = testSampler_1.area * testSampler_2.area
 
-    this_integrator.setDensity(obs, weights * jacs, area)
+    this_integrator.setDensity(obs, weights)
     this_integrator.integrate()
 
     integral = this_integrator.integral

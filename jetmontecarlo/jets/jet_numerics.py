@@ -268,53 +268,6 @@ def gen_pre_num_rad(rad_sampler, crit_rad_sampler,
 
     rad_integrator.interpFn = bounded_interp_function
 
-    ########################## (46 d down)
-    # Plot tests
-    xs = rad_integrator.bins[0][1:]
-    ys = rad_integrator.bins[1][1:]
-
-    integral_interp = rad_integrator.interpFn(xs, ys)
-    xs, ys = np.meshgrid(xs, ys)
-    zs = [radiator, integral_interp, preRadAnalytic_fc_LL(xs, ys, .05)] 
-    zs.append(abs(zs[0] - zs[1]))
-
-    zlims = [(0, 1), (0, 1), (0, 1), (0, .1)]
-    titles = ['Monte Carlo', 'Interpolation',
-              'Analytic', '|Difference|']
-
-    projection = '3d'
-    figsize = plt.figaspect(0.5)
-
-    fig = plt.figure(figsize=figsize)
-    fig.suptitle('MC Integration to determine '
-                 + 'precrit radiator')
-    axes = []
-    for i in range(4):
-        ax = fig.add_subplot(1, 4, i+1, projection=projection)
-        ax.set_title(titles[i])
-        my_col = cm.coolwarm(zs[i])
-        ax.plot_surface(xs, ys, zs[i],
-                        rstride=1, cstride=1,
-                        facecolors=my_col,
-                        linewidth=0, antialiased=False)
-        ax.set_zlim(zlims[i])
-        if i == 0 or i == 3:
-            # Plotting errorbars
-            fx = xs.flatten()
-            fy = ys.flatten()
-            fz = zs[i].flatten()
-            fzerr = int_err.flatten()
-            fcols = my_col.reshape(fx.shape[0], 4)
-            for j in np.arange(0, len(fx)):
-                ax.plot([fx[j], fx[j]], [fy[j], fy[j]],
-                        [fz[j]+fzerr[j], fz[j]-fzerr[j]],
-                        marker="|", color=fcols[j], zorder=5)
-
-    fig.savefig('precrit_test.pdf', format='pdf')
-    # end of plot tests
-    ##########################
-
-
     return rad_integrator.interpFn
 
 def gen_crit_sub_num_rad(rad_sampler,
@@ -402,7 +355,7 @@ def gen_crit_sub_num_rad(rad_sampler,
 
         # Radiator, given a maximum angle of theta
         radiator = rad_integrator.integral
-        radiator_error = rad_integrator.integralErr
+        # radiator_error = rad_integrator.integralErr
         xs = rad_integrator.bins[:-1]
 
         radiator = np.append(radiator, 0)

@@ -14,35 +14,24 @@ from jetmontecarlo.analytics.radiators import *
 from jetmontecarlo.analytics.radiators_fixedcoupling import *
 from jetmontecarlo.analytics.sudakovFactors_fixedcoupling import *
 
+from examples.params import *
+
 ###########################################
 # Definitions and Parameters
 ###########################################
-# # ------------------------------------
-# # Physics inputs
-# # ------------------------------------
-# FIXED_COUPLING = False
-# ACC = 'MLL'
-# if FIXED_COUPLING:
-#     ACC = 'LL'
-#
-# # Jet and grooming parameters
-# Z_CUTS = [.05, .1, .2]
-# Z_CUT = .1
-# BETA = 2.
-# BETAS = [1., 2., 3., 4.]
-# F_SOFT = 1.
-# JET_TYPE = 'quark'
-#
-# # ------------------------------------
-# # Monte Carlo parameters
-# # ------------------------------------
-# EPSILON = 1e-15
-#
-# # ------------------------------------
-# # Plotting parameters
-# # ------------------------------------
-# NUM_BINS = 100
-# BIN_SPACE = 'log'
+# ------------------------------------
+# Physics inputs
+# ------------------------------------
+# Jet and grooming parameters
+Z_CUT = .1
+F_SOFT = 1
+BETA = 2
+
+# ------------------------------------
+# Plotting parameters
+# ------------------------------------
+NUM_BINS = 100
+BIN_SPACE = 'log'
 
 if BIN_SPACE == 'lin':
     EPSILON = None
@@ -187,7 +176,7 @@ def plot_crit_approx(axespdf, axescdf, z_cut, beta=BETA,
 
 def plot_crit_analytic(axespdf, axescdf, z_cut, beta=BETA, f_soft=1.,
                        jet_type='quark', icol=-1, label='Analytic',
-                       fixed_coupling=True):
+                       fixed_coupling=True, col=None):
     """Plot the critical emission analytic result."""
     # Preparing the bins
     if BIN_SPACE == 'lin':
@@ -219,7 +208,8 @@ def plot_crit_analytic(axespdf, axescdf, z_cut, beta=BETA, f_soft=1.,
         pdf = xs * pdf * np.log(10) # d sigma / d log10 C
 
     # Plotting
-    col = compcolors[(icol, 'light')]
+    if col is None:
+        col = compcolors[(icol, 'light')]
     axespdf[0].plot(xs, pdf, **style_dashed,
                     color=col, label=label)
     axescdf[0].plot(xs, cdf, **style_dashed,
@@ -237,9 +227,10 @@ def plot_crit_analytic(axespdf, axescdf, z_cut, beta=BETA, f_soft=1.,
 # Plotting Monte Carlo Integrals
 # ------------------------------------
 def plot_mc_pdf(axespdf, pdf, pdferr, bins, icol=0,
-                label='M.C. Integration'):
+                label='M.C. Integration', col=None):
     """Plots a set of pdf values."""
-    col = compcolors[(icol, 'dark')]
+    if col is None:
+        col = compcolors[(icol, 'dark')]
 
     if BIN_SPACE == 'lin':
         xs = (bins[:-1] + bins[1:])/2.
@@ -255,9 +246,10 @@ def plot_mc_pdf(axespdf, pdf, pdferr, bins, icol=0,
                         label=label)
 
 def plot_mc_cdf(axescdf, cdf, cdferr, bins, icol=0,
-                label='M.C. Integration'):
+                label='M.C. Integration', col=None):
     """Plots a set of cdf values."""
-    col = compcolors[(icol, 'dark')]
+    if col is None:
+        col = compcolors[(icol, 'dark')]
 
     _, _, bars = axescdf[0].errorbar(bins[:-1], cdf, yerr=cdferr,
                                      **style_yerr,
@@ -270,9 +262,95 @@ def plot_mc_cdf(axescdf, cdf, cdferr, bins, icol=0,
 # ------------------------------------
 def plot_shower_pdf_cdf(vals, axespdf, axescdf,
                         label='Parton Shower',
-                        colnum=1,
                         z_cut=Z_CUT,
-                        beta=BETA):
+                        beta=BETA,
+                        colnum=1, col=None,
+                        style=modstyle_ps):
+    """Plots the pdf and cdf associated with the
+    set of correlators (vals) on axespdf and axescdf.
+    """
+    if BIN_SPACE == 'lin':
+        bins = np.linspace(0, 1., NUM_BINS)
+    else:
+        bins = np.logspace(-8, 0., NUM_BINS)
+        if FIXED_COUPLING:
+            bins = np.append(1e-100, bins)
+    ps_integrator = integrator()
+    ps_integrator.setLastBinBndCondition([1., 'minus'])
+    ps_integrator.bins = bins
+
+    num_in_bin, _ = np.histogram(np.array(vals), bins)
+    pdf, _ = np.histogram(vals, bins, density=True)
+    pdf_error = pdf / (1e-100 + np.sqrt(num_in_bin))
+
+    ps_integrator.densityErr = pdf_error
+    ps_integrator.density = pdf
+    ps_integrator.hasMCDensity = True
+
+    ps_integrator.integrate()
+    integral = ps_integrator.integral
+    interr = ps_integrator.integralErr
+
+    if col is None:
+        col = compcolors[(colnum, 'dark')]
+        # col = compcolors[(colnum, 'medium')]
+
+    # Analytic cdf and pdf:
+    xs = (bins[:-1] + bins[1:])/2.
+
+    # Numerically obtaining pdf for comparison plots:
+    cdf_an = critSudakov_fc_LL(xs, z_cut, beta, f=F_SOFT,
+                               jet_type=JET_TYPE)
+    _, pdf_an = histDerivative(cdf_an, bins, giveHist=True,
+                               binInput=BIN_SPACE)
+    pdf_an = np.array(pdf_an.tolist(), dtype=float)
+
+    # ------------------
+    # PDF plots:
+    # ------------------
+    if BIN_SPACE == 'log':
+        pdf = xs*pdf * np.log(10) # d sigma / d log10 C
+        pdf_error = xs*pdf_error * np.log(10) # d sigma / d log10 C
+        pdf_an = xs*pdf_an * np.log(10) # d sigma / d log10 C
+    axespdf[0].errorbar(xs, pdf,
+                        yerr=pdf_error,
+                        xerr=(bins[1:] - bins[:-1])/2.,
+                        **style, color=col,
+                        label=label)
+
+    if len(axespdf) > 1:
+        axespdf[1].errorbar(xs, pdf/pdf_an,
+                            yerr=pdf_error/pdf_an,
+                            xerr=(bins[1:] - bins[:-1])/2.,
+                            **style, color=col)
+
+    # ------------------
+    # CDF plots:
+    # ------------------
+    xs = bins[:-1]
+    cdf_an = critSudakov_fc_LL(xs, z_cut, beta, f=F_SOFT,
+                               jet_type=JET_TYPE)
+    cdf_an = np.array(cdf_an.tolist(), dtype=float)
+
+    _, _, bars = axescdf[0].errorbar(xs, integral,
+                                     yerr=interr,
+                                     **style_yerr_ps,
+                                     color=col, ecolor=col,
+                                     label=label)
+    bars = [b.set_alpha(.5) for b in bars]
+
+    if len(axescdf) > 1:
+        _, _, bars_r = axescdf[1].errorbar(xs,
+                                           integral/cdf_an,
+                                           yerr=interr/cdf_an,
+                                           **style_yerr_ps,
+                                           color=col, ecolor=col)
+        bars_r = [b.set_alpha(.5) for b in bars_r]
+
+def plot_pythia_pdf_cdf(vals, axespdf, axescdf,
+                        label='Pythia',
+                        z_cut=Z_CUT, beta=BETA,
+                        colnum=1, col=None):
     """Plots the pdf and cdf associated with the
     set of correlators (vals) on axespdf and axescdf.
     """
@@ -297,18 +375,11 @@ def plot_shower_pdf_cdf(vals, axespdf, axescdf,
     integral = ps_integrator.integral
     interr = ps_integrator.integralErr
 
-    col = compcolors[(colnum, 'dark')]
-    col = compcolors[(colnum, 'medium')]
+    if col is None:
+        col = compcolors[(colnum, 'light')]
 
     # Analytic cdf and pdf:
     xs = (bins[:-1] + bins[1:])/2.
-
-    # Numerically obtaining pdf for comparison plots:
-    cdf_an = critSudakov_fc_LL(xs, z_cut, beta, f=F_SOFT,
-                               jet_type=JET_TYPE)
-    _, pdf_an = histDerivative(cdf_an, bins, giveHist=True,
-                               binInput=BIN_SPACE)
-    pdf_an = np.array(pdf_an.tolist(), dtype=float)
 
     # ------------------
     # PDF plots:
@@ -316,38 +387,19 @@ def plot_shower_pdf_cdf(vals, axespdf, axescdf,
     if BIN_SPACE == 'log':
         pdf = xs*pdf * np.log(10) # d sigma / d log10 C
         pdf_error = xs*pdf_error * np.log(10) # d sigma / d log10 C
-        pdf_an = xs*pdf_an * np.log(10) # d sigma / d log10 C
     axespdf[0].errorbar(xs, pdf,
                         yerr=pdf_error,
                         xerr=(bins[1:] - bins[:-1])/2.,
                         **modstyle_ps, color=col,
                         label=label)
 
-    if len(axespdf) > 1:
-        axespdf[1].errorbar(xs, pdf/pdf_an,
-                            yerr=pdf_error/pdf_an,
-                            xerr=(bins[1:] - bins[:-1])/2.,
-                            **modstyle_ps, color=col)
-
     # ------------------
     # CDF plots:
     # ------------------
     xs = bins[:-1]
-    cdf_an = critSudakov_fc_LL(xs, z_cut, beta, f=F_SOFT,
-                               jet_type=JET_TYPE)
-    cdf_an = np.array(cdf_an.tolist(), dtype=float)
-
     _, _, bars = axescdf[0].errorbar(xs, integral,
                                      yerr=interr,
                                      **style_yerr_ps,
                                      color=col, ecolor=col,
                                      label=label)
     bars = [b.set_alpha(.5) for b in bars]
-
-    if len(axescdf) > 1:
-        _, _, bars_r = axescdf[1].errorbar(xs,
-                                           integral/cdf_an,
-                                           yerr=interr/cdf_an,
-                                           **style_yerr_ps,
-                                           color=col, ecolor=col)
-        bars_r = [b.set_alpha(.5) for b in bars_r]

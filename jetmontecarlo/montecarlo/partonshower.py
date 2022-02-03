@@ -31,10 +31,11 @@ class parton_shower():
                                         self.num_events, self.shower_cutoff)
         if self.shower_beta != 1:
             showerfile = showerfile + '_beta'+str(self.shower_beta)
-        if info is '':
-            showerfile = showerfile + '.pkl'
-        else:
-            showerfile = showerfile + '_' + info + '.pkl'
+
+        if info != '':
+            showerfile += '_' + info
+
+        showerfile = showerfile + '.npz'
 
         return shower_folder / showerfile
 
@@ -86,39 +87,44 @@ class parton_shower():
     # ------------------------------------
     # Helper functions
     # ------------------------------------
-    def save_events(self, file_path=None):
+    def save_events(self, file_path=None, info=''):
         if file_path is not None:
             with open(file_path, 'wb') as f:
                 pickle.dump(self.jet_list, f)
-        file_path = self.showerfile_path()
+            return
+
+        file_path = self.showerfile_path(info=info)
         if self.verbose > 0:
             print("Saving {:.0e} parton shower events to {}...".format(
-                                            self.num_events, str(file_path)))
+                                            self.num_events, str(file_path)),
+                  flush=True)
         with open(file_path, 'wb') as f:
             pickle.dump(self.jet_list, f)
         if self.verbose > 0:
-            print("Parton shower events saved!")
+            print("Parton shower events saved!", flush=True)
 
     def load_events(self, num_events):
         self.num_events = num_events
         file_path = self.showerfile_path()
         if self.verbose > 0:
             print("Loading {:.0e} parton shower events from {}...".format(
-                                            self.num_events, str(file_path)))
+                                            self.num_events, str(file_path)),
+                  flush=True)
         with open(file_path, 'rb') as f:
             self.jet_list = pickle.load(f)
         if self.verbose > 0:
-            print("Parton shower events loaded!")
+            print("Parton shower events loaded!", flush=True)
 
-    def save_correlations(self, beta, obs_acc, few_pres=True, f_soft=1.):
+    def save_correlations(self, beta, obs_acc, few_pres=True, f_soft=1., info=''):
         if isinstance(beta, list):
             for b in beta:
-                self.save_correlations(b, obs_acc, few_pres, f_soft=f_soft)
+                self.save_correlations(b, obs_acc, few_pres, f_soft=f_soft,
+                                       info=info)
         else:
-            file_path = self.correlation_path(beta, obs_acc,
-                                              few_pres, f_soft=f_soft)
+            file_path = self.correlation_path(beta, obs_acc, few_pres, f_soft=f_soft,
+                                              info=info)
             if self.verbose > 0:
-                print("Saving shower correlations to {}...".format(str(file_path)))
+                print("Saving shower correlations to {}...".format(str(file_path)), flush=True)
             save_shower_correlations(self.jet_list,
                                      file_path,
                                      beta=beta, obs_acc=obs_acc,
@@ -128,7 +134,7 @@ class parton_shower():
                                      verbose=self.verbose)
 
         if self.verbose > 0:
-            print("Shower correlations saved!")
+            print("Shower correlations saved!", flush=True)
 
     # ------------------------------------
     # Init
