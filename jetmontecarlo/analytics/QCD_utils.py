@@ -1,6 +1,9 @@
 import numpy as np
 from mpmath import polylog, hyp2f1
 
+import warnings
+warnings.filterwarnings("ignore", message="invalid value encountered in log")
+
 # Jets are quark or gluon jets:
 valid_jet_types = ['quark', 'gluon']
 def check_jet_type(jet_type):
@@ -145,11 +148,14 @@ def splittingFn(z, jet_type, accuracy):
 # Jet Parameters
 # ---------------------------------------------------
 R0 = 1.
-#alpha_fixed = alpha1loop(P_T*R0)
-# If an emission occurs with z*theta ~ 1/10, then the scale of the emission is ~1/10 the jet scale
-alpha_fixed = alpha1loop(P_T*R0/10.)
+alpha_fixed = alpha1loop(P_T*R0)
 
-MU_NP = 1./(P_T*R0) # Unitless non-perturbative scale, associated with the QCD Landau pole at 1 GeV
+MU_NP = 1./(P_T*R0)  # Unitless non-perturbative scale, associated with the QCD Landau pole at 1 GeV
+LAMBDA_QCD = .3/(P_T*R0)  # Unitless constant associated with Lambda_QCD
+
+# For comparison to fixed coupling:
+# If an emission occurs with z*theta ~ 1/10, then the scale of the emission is ~1/10 the jet scale
+alpha_fc = alpha1loop(P_T*R0/10)
 
 # ---------------------------------------------------
 # Other useful function definitions

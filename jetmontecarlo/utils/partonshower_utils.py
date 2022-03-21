@@ -874,10 +874,10 @@ def save_shower_correlations(jet_list, file_path,
              rss_c1s_precrit = np.asarray(rss_c1s_precrit),
              rss_c1s_precritsub = np.asarray(rss_c1s_precritsub),
              rss_c1s_two = np.asarray(rss_c1s_two),
-             rss_c1s_three = np.asarray(rss_c1s_three),
+             # rss_c1s_three = np.asarray(rss_c1s_three),
              rss_c1s_all = np.asarray(rss_c1s_all),
              softdrop_c1s_crit = np.asarray(softdrop_c1s_crit),
              softdrop_c1s_two = np.asarray(softdrop_c1s_two),
-             softdrop_c1s_three = np.asarray(softdrop_c1s_three),
+             # softdrop_c1s_three = np.asarray(softdrop_c1s_three),
              softdrop_c1s_all = np.asarray(softdrop_c1s_all)
              )

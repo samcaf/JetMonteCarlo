@@ -10,6 +10,7 @@
 ###################################
 # Preparation
 ###################################
+
 # ============================
 # Misc. Preparation
 # ============================
@@ -42,8 +43,10 @@ make_sudakov=true
 module load anaconda/2021b
 # pip install --user pynverse
 
-# Linking log files to more precisely named logs
+# Preparing log file
 logfile='sudakov_fixedcoup'$fixedcoup'_'$nsamples'samples_'$nbins'bins'
+
+# Linking log files to more precisely named logs
 ln -f logs/zlog-${SLURM_JOB_ID}.out logs/$logfile.out.${SLURM_JOB_ID}
 ln -f logs/zlog-${SLURM_JOB_ID}.err logs/$logfile.err.${SLURM_JOB_ID}
 
@@ -67,7 +70,6 @@ chmod +x examples/slurm_scripts/prepare_path.sh
 printf "# ============================
 # Date: "`date '+%F'`"-("`date '+%T'`")
 # ============================"
-python examples/params.py
 
 # ============================
 # Setting desired accuracy:
@@ -104,14 +106,19 @@ sed -i "s/LOAD_SPLITTING_FNS = .*/LOAD_SPLITTING_FNS = "$load_fns"/" examples/pa
 sed -i "s/SAVE_SPLITTING_FNS = .*/SAVE_SPLITTING_FNS = "$save_splitfns"/" examples/params.py
 
 
+python examples/params.py
+
 if $make_rad_plot
 then
 	printf "
 # ============================
-# Plotting:
+# Plotting Radiators:
 # ============================
 \n"
 	python examples/radiator_comparisons/radiator_comparison.py
+printf "
+# Complete!
+"
 fi
 
 
@@ -119,10 +126,28 @@ if $make_sudakov
 then
         printf "
 # ============================
-# Plotting:
+# Plotting Sudakov Exponents:
 # ============================
 \n"
+
+
+printf "# ----------------------------
+# Soft Drop: 
+# ----------------------------
+\n"
+	python examples/sudakov_comparisons/sudakov_comparison_softdrop_numeric.py
+
+
+printf "
+
+# ----------------------------
+# Recursive Safe Subtraction:
+# ----------------------------
+\n"
 	python examples/sudakov_comparisons/sudakov_comparison_full.py
+printf "
+# Complete!
+"
 fi
 
 # Remove duplicate log files:

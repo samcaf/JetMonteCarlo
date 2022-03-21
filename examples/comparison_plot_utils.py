@@ -43,7 +43,7 @@ if BIN_SPACE == 'log':
     ylim_1 = (0, .12)
     ylim_2 = (0, .40)
     ylim_3 = (0, .65)
-    xlim = (1e-8, .5)
+    xlim = (1e-8, .5) if SHOWER_CUTOFF == MU_NP else (1e-11, .5)
 
 """Verifying valid bin_space."""
 assert(BIN_SPACE in ['lin', 'log']), \
@@ -125,6 +125,7 @@ def plot_crit_approx(axespdf, axescdf, z_cut, beta=BETA,
         xs = (bins[:-1] + bins[1:])/2.
     if BIN_SPACE == 'log':
         bins = np.logspace(-13, np.log10(.5), 100)
+        bins = np.insert(bins, 0, 1e-100)
         xs = np.sqrt(bins[:-1]*bins[1:])
 
     # Preparing the appropriate cdf
@@ -184,6 +185,7 @@ def plot_crit_analytic(axespdf, axescdf, z_cut, beta=BETA, f_soft=1.,
         xs = (bins[:-1] + bins[1:])/2.
     if BIN_SPACE == 'log':
         bins = np.logspace(-13, np.log10(.5), 10000)
+        bins = np.insert(bins, 0, 1e-100)
         xs = np.sqrt(bins[:-1]*bins[1:])
 
     # Preparing the appropriate cdf
@@ -265,21 +267,31 @@ def plot_shower_pdf_cdf(vals, axespdf, axescdf,
                         z_cut=Z_CUT,
                         beta=BETA,
                         colnum=1, col=None,
-                        style=modstyle_ps):
+                        style=modstyle_ps,
+                        verbose=2):
     """Plots the pdf and cdf associated with the
     set of correlators (vals) on axespdf and axescdf.
     """
     if BIN_SPACE == 'lin':
         bins = np.linspace(0, 1., NUM_BINS)
     else:
-        bins = np.logspace(-8, 0., NUM_BINS)
+        bins = np.logspace(-10, 0., NUM_BINS) if SHOWER_CUTOFF == MU_NP\
+               else np.logspace(-18, 0., NUM_BINS)
         if FIXED_COUPLING:
             bins = np.append(1e-100, bins)
+        bins = np.insert(bins, 0, 1e-100)
     ps_integrator = integrator()
     ps_integrator.setLastBinBndCondition([1., 'minus'])
     ps_integrator.bins = bins
 
-    num_in_bin, _ = np.histogram(np.array(vals), bins)
+    if verbose > 2:
+        print("bins:", bins)
+        print("vals:", vals)
+    try:
+        num_in_bin, _ = np.histogram(np.array(vals), bins)
+    except TypeError:
+        vals = vals[0]
+        num_in_bin, _ = np.histogram(np.array(vals), bins)
     pdf, _ = np.histogram(vals, bins, density=True)
     pdf_error = pdf / (1e-100 + np.sqrt(num_in_bin))
 
@@ -350,19 +362,24 @@ def plot_shower_pdf_cdf(vals, axespdf, axescdf,
 def plot_pythia_pdf_cdf(vals, axespdf, axescdf,
                         label='Pythia',
                         z_cut=Z_CUT, beta=BETA,
-                        colnum=1, col=None):
+                        colnum=1, col=None,
+                        verbose=0):
     """Plots the pdf and cdf associated with the
     set of correlators (vals) on axespdf and axescdf.
     """
     if BIN_SPACE == 'lin':
         bins = np.linspace(0, 1., NUM_BINS)
     else:
-        bins = np.logspace(-8, 0., NUM_BINS)
+        bins = np.logspace(-10, 0., NUM_BINS) if SHOWER_CUTOFF == MU_NP\
+               else np.logspace(-18, 0., NUM_BINS)
         bins = np.append(1e-100, bins)
     ps_integrator = integrator()
     ps_integrator.setLastBinBndCondition([1., 'minus'])
     ps_integrator.bins = bins
 
+    if verbose > 2:
+        print("bins:", bins)
+        print("vals:", vals)
     num_in_bin, _ = np.histogram(np.array(vals), bins)
     pdf, _ = np.histogram(vals, bins, density=True)
     pdf_error = pdf / (1e-100 + np.sqrt(num_in_bin))

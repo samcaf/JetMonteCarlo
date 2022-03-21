@@ -29,11 +29,11 @@ VERBOSE = 3
 FIXED_COUPLING = False
 
 # Observable accuracy
-OBS_ACC = 'MLL'
+OBS_ACC = 'LL'
 if FIXED_COUPLING:
-    OBS_ACC = 'MLL'
+    OBS_ACC = 'LL'
 
-# Parton shower generation accuracy
+# Splitting Function generation accuracy
 SPLITFN_ACC = 'MLL'
 if FIXED_COUPLING:
     SPLITFN_ACC = 'MLL'
@@ -56,13 +56,16 @@ Z_CUTS = sorted(set([f*zc for zc in Z_CUTS for f in F_SOFTS]))
 
 # List of betas for the C_1^{(betas)} we will calculate:
 # (use ints when possible for consistency across files)
-BETAS = [1./2., 1, 2, 3, 4]
+BETAS = [2, 1, 3, 4, 1./2.] # [1./2., 1, 2, 3, 4]
 
 # Setting up dictionaries to facilitate calling functions of z_cut and beta.
 # In particular, the radiators are organized as lists, ordered by z_cut but without
 # an exact reference to z_cut. Dictionaries might be better in the future.
 INDEX_ZC = {zc : i for i, zc in enumerate(Z_CUTS)}
 INDEX_BETA = {beta : i for i, beta in enumerate(BETAS)}
+
+# Confusingly, the parton shower zcuts are enumerated differently
+PS_INDEX_ZC = {zc: i for i, zc in enumerate([.05, .1, .2])}
 
 # =====================================
 # Monte Carlo parameters
@@ -99,17 +102,28 @@ LOAD_INV_SAMPLES = LOAD_MC_EVENTS
 # ------------------------------------
 # Sampling Parameters
 # ------------------------------------
+# -----------------
 # MC Integration
-EPSILON = 1e-15
+# -----------------
+EPSILON = 1e-10
 BIN_SPACE = 'log'
 
+# -----------------
 # Parton showering
-SHOWER_CUTOFF = MU_NP # 1e-10
-if FIXED_COUPLING:
-    SHOWER_CUTOFF = 1e-10
+# -----------------
+# Shower cutoff:
+SHOWER_CUTOFF = 1e-15
+
+# Shower ordering variable (ordered by angularity e^{(beta)})
 SHOWER_BETA = None
 if FIXED_COUPLING:
     SHOWER_BETA = 2
+
+# Additional info to label parton shower files
+SHOWER_INFO = 'cutoff'+str(SHOWER_CUTOFF)\
+           if (not FIXED_COUPLING and SHOWER_CUTOFF not in [1e-10, MU_NP])\
+           or (FIXED_COUPLING and SHOWER_CUTOFF not in [1e-10, 1e-15])\
+       else ''
 
 # ------------------------------------
 # Emissions to Generate
@@ -201,7 +215,6 @@ subrad_path = rad_folder / subradfile
 splitfn_path = splitfn_folder / splitfn_file
 
 
-
 # ====================================
 # Printing Information
 # ====================================
@@ -245,4 +258,5 @@ if __name__ == '__main__':
         if VERBOSE > 1:
             print("        # Shower cutoff:  {:.1e}".format(SHOWER_CUTOFF))
             print("        # Angularity beta for shower ordering: " + str(SHOWER_BETA))
+            print("        # Shower information:", SHOWER_INFO)
         print("\n")

@@ -299,21 +299,17 @@ def critRadAnalytic(theta, z_c, jet_type='quark', alpha=alpha_fixed):
 def preSC_nofreeze(z_pre, theta_crit, z_cut,
                    alpha=alpha_fixed, jet_type='quark'):
     check_jet_type(jet_type)
-    sc = W(1.+2.*alpha*beta_0*np.log(z_cut))\
-         - W(1.+2.*alpha*beta_0*np.log(z_pre))\
-         - W(1.+2.*alpha*beta_0*np.log(z_cut/theta_crit))\
-         + W(1.+2.*alpha*beta_0*np.log(z_pre/theta_crit))
+    sc = W(1. + Lambda(z_cut, alpha))\
+         - W(1. + Lambda(z_pre, alpha))\
+         - W(1. + Lambda(z_cut * theta_crit, alpha))\
+         + W(1. + Lambda(z_pre * theta_crit, alpha))
     prefactor = CR(jet_type) / (2. * alpha * beta_0**2. * np.pi)
-    return -prefactor * sc
+    return prefactor * sc
 
 def preRadAnalytic_nofreeze(z_pre, theta_crit, z_cut,
                             alpha=alpha_fixed, jet_type='quark'):
     return preSC_nofreeze(z_pre, theta_crit, z_cut,
                           alpha=alpha_fixed, jet_type='quark')
-# ---------------------------------------------------
-# Hard Collinear Pieces
-# ---------------------------------------------------
-
 
 
 ############################################################

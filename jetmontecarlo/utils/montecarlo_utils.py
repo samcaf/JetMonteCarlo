@@ -84,7 +84,7 @@ def getLogSample_zerobin(sample_min, sample_max, cum_dist,
     return sample_min + np.exp(logsample)
 
 def samples_from_cdf(cdf, num_samples, domain=None,
-                     catch_turnpoint=False, verbose=0):
+                     catch_turnpoint=False, verbose=5):
     """A function which takes in a functional form for a cdf,
     inverts it, and generates samples using the inverse transform
     method.
@@ -121,9 +121,11 @@ def samples_from_cdf(cdf, num_samples, domain=None,
             pnts = np.linspace(domain[0], domain[1], 1000)
 
             #----------------------------------------------------
-            # If it is always 1, simply return zeros/a zero bin!
+            # If it is always 1, simply return zeros (the zero bin)!
             #----------------------------------------------------
             if all(cdf(pnts)==1):
+                if verbose > 4:
+                    print("CDF always 1. Returning zero bin.")
                 return np.zeros(num_samples)
 
             # Otherwise, find where it is not monotone
@@ -135,6 +137,16 @@ def samples_from_cdf(cdf, num_samples, domain=None,
                                        if not monotone[i]])
             bad_cdf_low, bad_cdf_high = cdf(bad_xvals_low), cdf(bad_xvals_high)
 
+
+            if (all(monotone == True) and cdf(domain[1]) < 1e-20) or all(cdf(pnts) < 1e-20):
+                # Another situation I've run into is that the CDF is monotone,
+                # but close to zero everywhere in the domain.
+                # I've also run into situations where every CDF value is miniscule.
+                # In both cases, I'll do the reverse of the above, and always
+                # return the highest value in the domain:
+                if verbose > 4:
+                    print("CDF always negligible. Returning highest point in domain.")
+                return np.full(num_samples, domain[1])
 
             #----------------------------------------------------
             # Verbose comments pointing out features of cdf

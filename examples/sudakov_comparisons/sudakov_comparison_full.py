@@ -5,6 +5,7 @@ from examples.params import *
 from examples.sudakov_comparisons.sudakov_utils import *
 
 save_cdf = False
+plot_level = 'partons'
 
 index_zc = {.05: 0, .1: 1, .2: 2}
 
@@ -103,8 +104,8 @@ def compare_ecf_pdf(z_cut, beta, emission='crit', plot_ivs=True):
             bins = np.linspace(0, .5, 100)
         if BIN_SPACE == 'log':
             bins = np.logspace(np.log10(EPSILON)-1, np.log10(.5), 100)
-        pythia_c2s = pythiadata['rss']['parton'][z_cut][f_soft][beta]
-        #pythia_c2s = pythiadata['rss']['hadron'][z_cut][f_soft][beta]
+        params = (z_cut, f_soft)
+        pythia_c2s = pythia_data['rss'][plot_level][params]['C1'][beta]
         height, _ = np.histogram(pythia_c2s, bins)
         norm = np.sum(height * (np.log10(bins[1:]) - np.log10(bins[:-1])))
         axes_pdf[0].hist(pythia_c2s, bins=bins,
@@ -123,9 +124,9 @@ def compare_ecf_pdf(z_cut, beta, emission='crit', plot_ivs=True):
         print("Plotting IVS...", flush=True)
         plot_mc_ivs(axes_pdf, axes_cdf, z_cut, beta, f_soft,
                     col=plot_colors['ivs']['num'])
-        print(pythiadata['ivs']['parton'][z_cut].keys())
-        pythia_c2s = pythiadata['ivs']['parton'][z_cut][beta]
-        #pythia_c2s = pythiadata['rss']['hadron'][z_cut][beta]
+        params = z_cut
+        pythia_c2s = pythia_data['ivs'][plot_level][params]['C1'][beta]
+        height, _ = np.histogram(pythia_c2s, bins)
         
         height, _ = np.histogram(pythia_c2s, bins)
         norm = np.sum(height * (np.log10(bins[1:]) - np.log10(bins[:-1])))

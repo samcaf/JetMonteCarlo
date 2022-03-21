@@ -93,20 +93,24 @@ def softdrop_rad_rc(c, z_cut, beta, beta_sd=0,
     # ----------------------------------------------------
     # Radiator in diffferent phase space regions
     # ----------------------------------------------------
+    # Utility functions:
+    L1 = - 2.*alpha*beta_0*Bi*np.log(1.-lambda_sd/beta)
+ 
+
     # z_cut <= c
     def reg1():
-        return prefactor * (
-                W(1.-lambda_sd)/(beta-1.)
+        return prefactor * (L1
+                # L1: - 2.*alpha*beta_0*Bi*np.log(1.-lambda_sd/beta)
+                + W(1.-lambda_sd)/(beta-1.)
                 - beta*W(1.-lambda_sd/beta)/(beta-1.)
-                - 2.*alpha*beta_0*Bi*np.log(1.-lambda_sd/beta)
                )
 
     # bound1 <= c < z_cut
     def reg2():
-        return prefactor * (
+        return prefactor * (L1
+                # L1: - 2.*alpha*beta_0*Bi*np.log(1.-lambda_sd/beta)
                 -W(1.-lambda_c)/(1.+beta_sd)
                 - beta*W(1.-lambda_sd/beta)/(beta-1.)
-                - 2.*alpha*beta_0*Bi*np.log(1.-lambda_sd/beta)
                 +
                 (beta+beta_sd)*W(1.-(1.+beta_sd)/(beta+beta_sd)*lambda_sd
                                  -(beta-1.)/(beta+beta_sd)*lambda_c)
@@ -116,10 +120,10 @@ def softdrop_rad_rc(c, z_cut, beta, beta_sd=0,
     # bound2 <= c <bound1
     def reg3():
         if beta > 1:
-            return prefactor * (
-                    -W(1.-lambda_c)/(1.+beta_sd)
+            return prefactor * (L1
+                    # L1: - 2.*alpha*beta_0*Bi*np.log(1.-lambda_sd/beta)
+                    - W(1.-lambda_c)/(1.+beta_sd)
                     - beta*W(1.-lambda_sd/beta)/(beta-1.)
-                    - 2.*alpha*beta_0*Bi*np.log(1.-lambda_sd/beta)
                     +
                     (1.+np.log(1.-lambda_mu)) * (
                         (beta-1.)*lambda_c

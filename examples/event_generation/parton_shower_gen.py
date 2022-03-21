@@ -5,7 +5,7 @@ from jetmontecarlo.montecarlo.partonshower import *
 from examples.params import *
 
 SAVE_SHOWER_EVENTS = False
-LOAD_SHOWER_EVENTS = False
+LOAD_SHOWER_EVENTS = True
 SAVE_SHOWER_CORRELATIONS = True
 
 """
@@ -57,7 +57,7 @@ for b in BETAS:
             shower.save_events()
 
     if SAVE_SHOWER_CORRELATIONS:
-        shower.save_correlations(b, OBS_ACC, f_soft=1)
-        shower.save_correlations(b, OBS_ACC, f_soft=.75)
-        shower.save_correlations(b, OBS_ACC, f_soft=.5)
+        shower.save_correlations(b, OBS_ACC, f_soft=1, info=SHOWER_INFO)
+        shower.save_correlations(b, OBS_ACC, f_soft=.75, info=SHOWER_INFO)
+        shower.save_correlations(b, OBS_ACC, f_soft=.5, info=SHOWER_INFO)
 

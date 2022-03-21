@@ -103,24 +103,76 @@ def pre_sample_file_path(z_cut):
 # Parton shower files
 # ------------------------------------
 # Correlation files
-def ps_correlations(beta, f_soft):
+def ps_correlations(beta, f_soft, verbose=5):
     # Getting filenames using proxy shower:
+    shower_beta = SHOWER_BETA if FIXED_COUPLING else beta
     shower = parton_shower(fixed_coupling=FIXED_COUPLING,
                            shower_cutoff=SHOWER_CUTOFF,
-                           shower_beta=SHOWER_BETA if FIXED_COUPLING else beta,
+                           shower_beta=shower_beta,
                            jet_type=JET_TYPE)
     shower.num_events = NUM_SHOWER_EVENTS
-    ps_file = shower.correlation_path(beta, OBS_ACC, few_pres=True,
-                                     f_soft=f_soft,
-                                     angular_ordered=ANGULAR_ORDERING)
-    ps_data = np.load(ps_file, allow_pickle=True)
+    ps_file = shower.correlation_path(beta, OBS_ACC,
+                                      few_pres=True, f_soft=f_soft,
+                                      angular_ordered=ANGULAR_ORDERING,
+                                      info=SHOWER_INFO)
+    if verbose > 0:
+        print("    Loading parton shower data from:", ps_file)
+    try:
+        ps_data = np.load(ps_file, allow_pickle=True)
+    except FileNotFoundError:
+        print("    Trying to load data from file:", ps_file)
+        print("    Params given to parton shower:")
+        print("        NUMBER OF EVENTS:", NUM_SHOWER_EVENTS)
+        print("        FIXED COUPLING:", FIXED_COUPLING)
+        print("        SHOWER_CUTOFF:", SHOWER_CUTOFF)
+        print("        SHOWER_BETA:", shower_beta)
+        print("        OBSERVABLE ACCURACY:", OBS_ACC)
+        print("        BETA:", beta)
+        print("        F_RSS:", f_soft)
+        print("        JET_TYPE:", JET_TYPE)
+        print("    (Few pre-critical emissions)")
+    if verbose > 3:
+        print("        ps_data.keys():", ps_data.keys())
+        print("        len(ps_data['softdrop_c1s_crit']):",
+              len(ps_data['softdrop_c1s_crit']))
+        print("        len(ps_data['softdrop_c1s_two']):",
+              len(ps_data['softdrop_c1s_two']))
+
+        print("        len(ps_data['softdrop_c1s_all']):",
+              len(ps_data['softdrop_c1s_all']))
 
     return ps_data
 
 # Pythia Data
-pythiafile = open('pythiadata/groomed_pythia_obs.pkl', 'rb')
-pythiadata = pickle.load(pythiafile)
-pythiafile.close()
+#pythiafile = open('pythiadata/groomed_pythia_obs.pkl', 'rb')
+#pythiadata = pickle.load(pythiafile)
+#pythiafile.close()
+rss_data = {'partons': {}, 'hadrons': {}, 'charged': {}}
+softdrop_data = {'partons': {}, 'hadrons': {}, 'charged': {}}
+raw_data = {'partons': {}, 'hadrons': {}, 'charged': {}}
+
+for level in ['partons', 'hadrons', 'charged']:
+    # Raw
+    raw_file = open('pythiadata/raw_Zq_pT3TeV_noUE_'+level+'.pkl', 'rb')
+    this_raw = pickle.load(raw_file)
+    raw_data[level] = this_raw
+    raw_file.close()
+
+    # Softdrop
+    for i in range(6):
+        softdrop_file = open('pythiadata/softdrop_Zq_pT3TeV_noUE_param'+str(i)+'_'+level+'.pkl', 'rb')
+        this_softdrop = pickle.load(softdrop_file)
+        softdrop_data[level][this_softdrop['params']] = this_softdrop
+        softdrop_file.close()
+
+    # RSS
+    for i in range(9):
+        rss_file = open('pythiadata/rss_Zq_pT3TeV_noUE_param'+str(i)+'_'+level+'.pkl', 'rb')
+        this_rss = pickle.load(rss_file)
+        rss_data[level][this_rss['params']] = this_rss
+        rss_file.close()
+
+pythia_data = {'raw': raw_data, 'softdrop': softdrop_data, 'rss': rss_data}
 
 
 # ------------------------------------

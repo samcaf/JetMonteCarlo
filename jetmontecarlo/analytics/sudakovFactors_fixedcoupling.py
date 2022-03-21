@@ -8,7 +8,7 @@ from jetmontecarlo.analytics.QCD_utils import *
 # ---------------------------------------------------
 # Leading Log (critical emission only) Sudakov Factor:
 # ---------------------------------------------------
-def critSudakov_fc_LL(C, z_c, beta, jet_type, f=1., alpha=alpha_fixed):
+def critSudakov_fc_LL(C, z_c, beta, jet_type, f=1., alpha=alpha_fc):
     """Sudakov factor for a single critical emission
     at fixed coupling.
     """

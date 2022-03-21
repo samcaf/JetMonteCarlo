@@ -10,8 +10,8 @@ from jetmontecarlo.utils.hist_utils import *
 
 # Local analytics
 from jetmontecarlo.analytics.QCD_utils import *
-from jetmontecarlo.analytics.radiators import *
 from jetmontecarlo.analytics.radiators_fixedcoupling import *
+from jetmontecarlo.analytics.radiators import *
 
 # Parameters
 from examples.params import *
@@ -32,6 +32,11 @@ else:
 ylims = {'quark': [5.5,3.5,2.5,1.25],
          'gluon': [10,7.5,5,3]}
 
+def file_name(rad_type):
+    return rad_type+"rads_"+JET_TYPE\
+           + ('_fc_num' if FIXED_COUPLING else '_rc_num')\
+           + "_{:.0e}samples".format(NUM_MC_EVENTS)\
+           + "_{:.0e}bins.pdf".format(NUM_RAD_BINS)
 
 ###########################################
 # Plotting Radiators
@@ -40,9 +45,6 @@ ylims = {'quark': [5.5,3.5,2.5,1.25],
 # Critical Radiator:
 # ==========================================
 def compare_crit_rad():
-    # Files and filenames
-    filename = JET_TYPE+extra_label+"_critical_radiators.pdf"
-
     with open(critrad_path, 'rb') as file:
         rad_crit_list = pickle.load(file)
     global rad_crit
@@ -64,18 +66,23 @@ def compare_crit_rad():
 
     for izc, zcut in enumerate(Z_CUT_PLOT):
         # Plotting numerical result
-        axes[0].plot(pnts, rad_crit(pnts, zcut),
+        num_result = rad_crit(pnts, zcut)
+
+        axes[0].plot(pnts, num_result,
                     **style_solid, color=compcolors[(izc, 'dark')],
                     label=r'Numeric, $z_{{\rm cut}}$={}'.format(zcut))
 
         # Plotting analytic result
-        axes[0].plot(pnts,
-                    critRadAnalytic_fc_LL(pnts, zcut, jet_type=JET_TYPE),
+        if FIXED_COUPLING:
+            an_result = critRadAnalytic_fc_LL(pnts, zcut, jet_type=JET_TYPE)
+        else:
+            an_result = critRadAnalytic(pnts, zcut, jet_type=JET_TYPE)
+        axes[0].plot(pnts, an_result,
                     **style_dashed, color=compcolors[(izc, 'light')],
                     label=r'Analytic, $z_{{\rm cut}}$={}'.format(zcut))
 
     axes[0].legend()
-    plt.savefig(filename, format='pdf')
+    plt.savefig(file_name('crit'), format='pdf')
 
     print("Plotting complete!")
 
@@ -83,16 +90,22 @@ def compare_crit_rad():
 # Pre-Critical Radiator:
 # ==========================================
 def compare_pre_rad(fill_between=False):
-    # Files and filenames
-    filename = JET_TYPE+extra_label+str(NUM_MC_EVENTS)+"samples_"+str(NUM_RAD_BINS)+"bins_precrit_radiators.pdf"
-    pdffile = matplotlib.backends.backend_pdf.PdfPages(filename)
+    pdffile = matplotlib.backends.backend_pdf.PdfPages(file_name('precrit'))
 
     with open(prerad_path, 'rb') as file:
         rad_pre_list = pickle.load(file)
     global rad_pre
+    if VERBOSE > 0:
+        print("rad_pre_list:", rad_pre_list)
+        print("len(rad_pre_list):", len(rad_pre_list))
+        print("INDEX_ZC:", INDEX_ZC)
     def rad_pre(z_pre, theta, z_cut):
-        rad_pre, rad_err = rad_pre_list[INDEX_ZC[z_cut]]
-        return rad_pre(z_pre, theta), rad_err(z_pre, theta)
+        if FIXED_COUPLING:
+            rad_pre, rad_err = rad_pre_list[INDEX_ZC[z_cut]]
+            return rad_pre(z_pre, theta), rad_err(z_pre, theta)
+        else:
+            rad_pre = rad_pre_list[INDEX_ZC[z_cut]]
+            return rad_pre(z_pre, theta)
     #def rad_pre_err(z_pre, theta, z_cut):
     #    return rad_pre_list[INDEX_ZC[z_cut]][1](z_pre, theta)
 
@@ -116,12 +129,19 @@ def compare_pre_rad(fill_between=False):
 
         for i, theta in enumerate(theta_list):
             # Numerical
-            num_result, num_error = rad_pre(pnts, theta, zcut)
+            if FIXED_COUPLING:
+                num_result, num_error = rad_pre(pnts, theta, zcut)
+            else:
+                num_result = rad_pre(pnts, theta, zcut)
+                num_error = [0]*len(pnts)
             #num_error =rad_pre_err(pnts, theta, zcut)
             err_low, err_high = num_result-num_error, num_result+num_error
 
             # Analytic
-            an_result = preRadAnalytic_fc_LL(pnts, theta, zcut, jet_type=JET_TYPE)
+            if FIXED_COUPLING:
+                an_result = preRadAnalytic_fc_LL(pnts, theta, zcut, jet_type=JET_TYPE)
+            else:
+                an_result = preRadAnalytic_nofreeze(pnts, theta, zcut, jet_type=JET_TYPE)
 
             # Ratio
             num_ratio = num_result/an_result
@@ -165,10 +185,8 @@ def compare_pre_rad(fill_between=False):
 # ==========================================
 # Subsequent Radiator:
 # ==========================================
-def compare_sub_rad():
-    # Files and filenames
-    filename = JET_TYPE+extra_label+"_sub_radiators.pdf"
-    pdffile = matplotlib.backends.backend_pdf.PdfPages(filename)
+def compare_sub_rad(fill_between=False):
+    pdffile = matplotlib.backends.backend_pdf.PdfPages(file_name('sub'))
 
     # Getting numerical radiator, choosing angles to plot
     with open(subrad_path, 'rb') as file:
@@ -196,18 +214,23 @@ def compare_sub_rad():
 
         for i, theta in enumerate(theta_list):
             # Plotting numerical result
-            #axes[0].plot(pnts, rad_sub(pnts, theta, beta),
-            #            **style_solid, color=compcolors[(i, 'dark')],
-            #            label=r'Numeric, $\theta$={}'.format(theta))
-            axes[0].fill_between(pnts, rad_sub(pnts, theta, beta),
+            if fill_between:
+                axes[0].fill_between(pnts, rad_sub(pnts, theta, beta),
                         **style_solid, color=compcolors[(i, 'dark')],
                         label=r'Numeric, $\theta$={}'.format(theta))
+            else:
+                axes[0].plot(pnts, rad_sub(pnts, theta, beta),
+                             **style_solid, color=compcolors[(i, 'dark')],
+                             label=r'Numeric, $\theta$={}'.format(theta))
 
             # Plotting analytic result
-            axes[0].plot(pnts,
-                         subRadAnalytic_fc_LL(pnts/theta**beta, beta, jet_type=JET_TYPE),
-                        **style_dashed, color=compcolors[(i, 'light')],
-                        label=r'Analytic, $\theta$={}'.format(theta))
+            if FIXED_COUPLING:
+                an_result = subRadAnalytic_fc_LL(pnts/theta**beta, beta, jet_type=JET_TYPE)
+            else:
+                an_result = subRadAnalytic(pnts, beta, jet_type=JET_TYPE, maxRadius=theta)
+            axes[0].plot(pnts, an_result,
+                         **style_dashed, color=compcolors[(i, 'light')],
+                         label=r'Analytic, $\theta$={}'.format(theta))
 
         # Legend, saving
         axes[0].legend()

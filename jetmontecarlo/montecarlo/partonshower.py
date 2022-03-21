@@ -103,9 +103,9 @@ class parton_shower():
         if self.verbose > 0:
             print("Parton shower events saved!", flush=True)
 
-    def load_events(self, num_events):
+    def load_events(self, num_events, info=''):
         self.num_events = num_events
-        file_path = self.showerfile_path()
+        file_path = self.showerfile_path(info=info)
         if self.verbose > 0:
             print("Loading {:.0e} parton shower events from {}...".format(
                                             self.num_events, str(file_path)),
