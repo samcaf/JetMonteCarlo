@@ -96,8 +96,7 @@ class parton_shower():
         file_path = self.showerfile_path(info=info)
         if self.verbose > 0:
             print("Saving {:.0e} parton shower events to {}...".format(
-                                            self.num_events, str(file_path)),
-                  flush=True)
+                                            self.num_events, str(file_path)), flush=True)
         with open(file_path, 'wb') as f:
             pickle.dump(self.jet_list, f)
         if self.verbose > 0:

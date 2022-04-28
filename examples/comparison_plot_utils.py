@@ -57,7 +57,7 @@ def dilog(x): return spence(1.-x)
 # ------------------------------------
 # Setting up figures
 # ------------------------------------
-def get_axes(title_info, ratio_plot=False, ylim=ylim_2):
+def get_axes(title_info, ratio_plot=False):
     """Shows tests plots for beta=2 GECF distributions."""
     # ---------------------
     # Setting up figures
@@ -177,7 +177,8 @@ def plot_crit_approx(axespdf, axescdf, z_cut, beta=BETA,
 
 def plot_crit_analytic(axespdf, axescdf, z_cut, beta=BETA, f_soft=1.,
                        jet_type='quark', icol=-1, label='Analytic',
-                       fixed_coupling=True, col=None):
+                       fixed_coupling=True, col=None,
+                       extra_emission=True):
     """Plot the critical emission analytic result."""
     # Preparing the bins
     if BIN_SPACE == 'lin':
@@ -193,6 +194,15 @@ def plot_crit_analytic(axespdf, axescdf, z_cut, beta=BETA, f_soft=1.,
         cdf = critSudakov_fc_LL(xs, z_cut, beta,
                                 jet_type=jet_type,
                                 f=f_soft)
+        if extra_emission:
+            # a is a factor that emerges at LL, e.g. through
+            # rho(theta_crit) ~ theta_crit^(a-1).
+            # In general, this holds only for f_soft = 1, but we
+            # jump around that here by upgrading zcut -> f zcut
+            a = 2.*CR(JET_TYPE)*alpha_fixed / np.pi * np.log(f_soft * z_cut)
+            mean_theta_crit = a / (1. + a)
+            cdf *= np.exp(-subRadAnalytic_fc_LL(xs, beta, jet_type=JET_TYPE,
+                                                maxRadius=mean_theta_crit))
     elif z_cut == 0.:
         # Finding cdf and pdf
         if fixed_coupling:

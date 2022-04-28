@@ -57,7 +57,7 @@ def b_i_sing(jet_type):
 M_Z = 91.19 # GeV
 P_T = 3000. # GeV
 
-# Euler constant, emerges for multiple emissions
+# Euler constant "gamma", emerges for multiple emissions
 euler_constant = 0.5772156649
 
 # ---------------------------------------------------

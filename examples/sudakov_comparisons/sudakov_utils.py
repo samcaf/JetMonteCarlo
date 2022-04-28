@@ -2,6 +2,8 @@ from __future__ import absolute_import
 import dill as pickle
 from pathlib import Path
 
+from scipy.misc import derivative
+
 # Local utilities for comparison
 from jetmontecarlo.utils.montecarlo_utils import *
 from jetmontecarlo.jets.observables import *
@@ -58,6 +60,10 @@ else:
     extra_label = '_rc_num_'
     plot_label = '_rc_num_'+str(OBS_ACC)
 
+if MULTIPLE_EMISSIONS:
+    extra_label += 'ME_'
+    plot_label += 'ME_'
+
 plot_label += '_showerbeta'+str(SHOWER_BETA)
 if F_SOFT:
     plot_label += '_f{}'.format(F_SOFT)
@@ -105,7 +111,7 @@ def pre_sample_file_path(z_cut):
 # Correlation files
 def ps_correlations(beta, f_soft, verbose=5):
     # Getting filenames using proxy shower:
-    shower_beta = SHOWER_BETA if FIXED_COUPLING else beta
+    shower_beta = beta # SHOWER_BETA if FIXED_COUPLING else beta
     shower = parton_shower(fixed_coupling=FIXED_COUPLING,
                            shower_cutoff=SHOWER_CUTOFF,
                            shower_beta=shower_beta,
@@ -238,15 +244,37 @@ def pre_sample_file_path(z_cut):
 # ------------------------------------
 def load_radiators():
     print("Loading pickled radiator functions:")
-    print("    Loading critical radiator from "
-          +str(critrad_path)+"...", flush=True)
     if True in [COMPARE_CRIT, COMPARE_PRE_AND_CRIT,
                 COMPARE_CRIT_AND_SUB, COMPARE_ALL]:
+        print("    Loading critical radiator from "
+              +str(critrad_path)+"...", flush=True)
         with open(critrad_path, 'rb') as file:
             rad_crit_list = pickle.load(file)
         global rad_crit
         def rad_crit(theta, z_cut):
             return rad_crit_list[INDEX_ZC[z_cut]](theta)
+
+        # Using scipy to get radiator (linear) derivatives
+        # for multiple emissions computations.
+        def deriv_rad_crit(theta, z_cut):
+            this_rad = lambda t: rad_crit(t, z_cut)
+            try:
+                this_drad = derivative(this_rad, theta, dx=theta * 1e-5)
+            except RuntimeWarning:
+                print("theta:", theta)
+                print("this_drad", derivative(this_rad, theta, dx=theta * 1e-5))
+            return this_drad
+
+        global cdf_crit
+        def cdf_crit(theta, z_cut):
+            me_factor = 1.
+            if MULTIPLE_EMISSIONS:
+                # Getting multiple emissions expression for the CDF
+                me_factor = np.exp(euler_constant * theta
+                                   * deriv_rad_crit(theta, z_cut))
+            return me_factor * np.exp(-1.*rad_crit(theta, z_cut))
+
+
 
     if COMPARE_SUB:
         print("    Loading subsequent/ungroomed radiator from "
@@ -257,12 +285,45 @@ def load_radiators():
         def rad_sub(c_sub, beta):
             return rad_sub_list[INDEX_BETA[beta]](c_sub)
 
+        def deriv_rad_sub(c_sub, beta):
+            this_rad = lambda c, beta: rad_sub(c, beta)
+            this_drad = derivative(this_rad, csub, dx=csub * 1e-5)
+            return this_drad
+
+        global cdf_sub
+        def cdf_sub(c_sub):
+            me_factor = 1.
+            if MULTIPLE_EMISSIONS:
+                me_factor = np.exp(euler_constant * c_sub
+                                   * deriv_rad_sub(c_sub))
+            return me_factor * np.exp(-1.*rad_sub(c_sub))
+
     if True in [COMPARE_CRIT_AND_SUB, COMPARE_ALL]:
         print("    Loading critical/subsequent radiator from "
               +str(subrad_path)+"...", flush=True)
         global rad_crit_sub
         with open(subrad_path, 'rb') as file:
-            rad_crit_sub = pickle.load(file)[0]
+            rad_crit_sub_list = pickle.load(file)
+        # DEBUG: Is this right? No z_cut dependence?
+        print("LENGTH OF RAD CRIT SUB LIST:", len(rad_crit_sub_list))
+        rad_crit_sub = rad_crit_sub_list[0]
+
+        if MULTIPLE_EMISSIONS:
+            def deriv_rad_crit_sub(c_sub, theta):
+                this_rad = lambda c: rad_crit_sub(c, theta)
+                this_drad = derivative(this_rad, c_sub, dx=c_sub * 1e-5)
+                return this_drad
+
+        global cdf_sub_conditional
+        def cdf_sub_conditional(c_sub, theta):
+            me_factor = 1.
+            if MULTIPLE_EMISSIONS:
+                me_factor = np.exp(euler_constant * c_sub
+                                   * deriv_rad_crit_sub(c_sub, theta))
+            return me_factor * np.exp(-1.*rad_crit_sub(c_sub, theta))
+
+
+
 
     if True in [COMPARE_PRE_AND_CRIT, COMPARE_ALL]:
         print("    Loading pre-critical radiator from "
@@ -272,6 +333,21 @@ def load_radiators():
         global rad_pre
         def rad_pre(z_pre, theta, z_cut):
             return rad_pre_list[INDEX_ZC[z_cut]](z_pre, theta)
+        
+        def deriv_rad_pre(z_pre, theta, z_cut):
+            this_rad = lambda z: rad_pre(z, theta, z_cut)
+            this_drad = derivative(this_rad, z_pre, dx=z_pre * 1e-5)
+            return this_drad
+
+        global cdf_pre_conditional
+        def cdf_pre_conditional(z_pre, theta, z_cut):
+            me_factor = 1.
+            if MULTIPLE_EMISSIONS:
+                me_factor = np.exp(euler_constant * z_pre
+                                   * deriv_rad_pre(z_pre, theta, z_cut)) 
+            return me_factor * np.exp(-1.*rad_pre(z_pre, theta, z_cut))
+
+
 
 if not(LOAD_MC_EVENTS):
     load_radiators()
@@ -290,6 +366,8 @@ def plot_mc_banded(ax, ys, err, bins, label, col):
         err = xs * err * np.log(10) # delta( dY / d log10 C)
 
     line = ax.plot(xs, ys, ls='-', lw=2., color=col, label=label)
+    # DEBUG: Some weird features in some plots, look like they could be
+    #        misplaced bands
     band = draw_error_band(ax, xs, ys, err, color=col, alpha=.4)
 
     return line, band
@@ -334,11 +412,11 @@ def plot_mc_crit(axes_pdf, axes_cdf, z_cut, beta, f_soft, col,
     if not load:
         print("    Making critical samples with z_c="+str(z_cut)+"...",
               flush=True)
+        def this_cdf_crit(theta):
+            return cdf_crit(theta, z_cut)
 
-        def cdf_crit(theta):
-            return np.exp(-1.*rad_crit(theta, z_cut))
-
-        theta_crits = samples_from_cdf(cdf_crit, NUM_MC_EVENTS, domain=[0.,1.],
+        theta_crits = samples_from_cdf(this_cdf_crit, NUM_MC_EVENTS,
+                                       domain=[0.,1.],
                                        verbose=3)
         theta_crits = np.where(np.isinf(theta_crits), 0, theta_crits)
 
@@ -401,14 +479,11 @@ def plot_mc_all(axes_pdf, axes_cdf, z_cut, beta, f_soft, col,
     if not load:
         print("    Making critical samples with z_c="+str(z_cut)+"...",
               flush=True)
+        def this_cdf_crit(theta):
+            return cdf_crit(theta, z_cut)
 
-        with open(critrad_path, 'rb') as file:
-            rad_crit = pickle.load(file)[INDEX_ZC[z_cut]]
-
-        def cdf_crit(theta):
-            return np.exp(-1.*rad_crit(theta))
-
-        theta_crits = samples_from_cdf(cdf_crit, NUM_MC_EVENTS, domain=[0.,1.],
+        theta_crits = samples_from_cdf(this_cdf_crit, NUM_MC_EVENTS, 
+                                       domain=[0.,1.],
                                        verbose=3)
         theta_crits = np.where(np.isinf(theta_crits), 0, theta_crits)
 
@@ -432,14 +507,14 @@ def plot_mc_all(axes_pdf, axes_cdf, z_cut, beta, f_soft, col,
         c_subs = []
 
         for i, theta in enumerate(theta_crits):
-            def cdf_sub_conditional(c_sub):
-                return np.exp(-1.*rad_crit_sub(c_sub, theta))
+            def this_cdf_sub(c_sub):
+                return cdf_sub_conditional(c_sub, theta)
 
             if theta**beta/2. < 1e-10:
                 # Assigning to an underflow bin for small observable values
                 c_sub = 1e-100
             else:
-                c_sub = samples_from_cdf(cdf_sub_conditional, 1,
+                c_sub = samples_from_cdf(this_cdf_sub, 1,
                                      domain=[0.,theta**beta/2.],
                                      verbose=3)[0]
             c_subs.append(c_sub)
@@ -469,10 +544,10 @@ def plot_mc_all(axes_pdf, axes_cdf, z_cut, beta, f_soft, col,
         z_pres = []
 
         for i, theta in enumerate(theta_crits):
-            def cdf_pre_conditional(z_pre):
-                return np.exp(-1.*rad_pre(z_pre, theta, z_cut))
+            def this_cdf_pre(z_pre):
+                return cdf_pre_conditional(z_pre, theta, z_cut)
 
-            z_pre = samples_from_cdf(cdf_pre_conditional, 1,
+            z_pre = samples_from_cdf(this_cdf_pre, 1,
                                      domain=[0,z_cut],
                                      verbose=3)[0]
             z_pres.append(z_pre)
@@ -539,14 +614,11 @@ def plot_mc_ivs(axes_pdf, axes_cdf, z_cut, beta, f_soft, col,
     if not load:
         print("    Making critical samples with z_c="+str(z_cut)+"...",
               flush=True)
+        def this_cdf_crit(theta):
+            return cdf_crit(theta, z_cut)
 
-        with open(critrad_path, 'rb') as file:
-            rad_crit = pickle.load(file)[INDEX_ZC[z_cut]]
-
-        def cdf_crit(theta):
-            return np.exp(-1.*rad_crit(theta))
-
-        theta_crits = samples_from_cdf(cdf_crit, NUM_MC_EVENTS, domain=[0.,1.],
+        theta_crits = samples_from_cdf(this_cdf_crit, NUM_MC_EVENTS, 
+                                       domain=[0.,1.],
                                        verbose=3)
         theta_crits = np.where(np.isinf(theta_crits), 0, theta_crits)
 
@@ -570,14 +642,14 @@ def plot_mc_ivs(axes_pdf, axes_cdf, z_cut, beta, f_soft, col,
         c_subs = []
 
         for i, theta in enumerate(theta_crits):
-            def cdf_sub_conditional(c_sub):
-                return np.exp(-1.*rad_crit_sub(c_sub, theta))
+            def this_cdf_sub(c_sub):
+                return cdf_sub_conditional(c, theta)
 
             if theta**beta/2. < 1e-10:
                 # Assigning to an underflow bin for small observable values
                 c_sub = 1e-100
             else:
-                c_sub = samples_from_cdf(cdf_sub_conditional, 1,
+                c_sub = samples_from_cdf(this_cdf_sub, 1,
                                      domain=[0.,theta**beta/2.],
                                      verbose=3)[0]
             c_subs.append(c_sub)
@@ -607,10 +679,10 @@ def plot_mc_ivs(axes_pdf, axes_cdf, z_cut, beta, f_soft, col,
         z_pres = []
 
         for i, theta in enumerate(theta_crits):
-            def cdf_pre_conditional(z_pre):
-                return np.exp(-1.*rad_pre(z_pre, theta, z_cut))
+            def this_cdf_pre(z_pre):
+                return cdf_pre_conditional(z_pre, theta, z_cut)
 
-            z_pre = samples_from_cdf(cdf_pre_conditional, 1,
+            z_pre = samples_from_cdf(this_cdf_pre, 1,
                                      domain=[0,z_cut],
                                      verbose=3)[0]
             z_pres.append(z_pre)
@@ -681,10 +753,10 @@ def plot_mc_sub(axes_pdf, axes_cdf, beta):
     if not LOAD_INV_SAMPLES:
         print("    Making subsequent samples with beta="+str(beta)+"...",
               flush=True)
-        def cdf_sub(c_sub):
-            return np.exp(-1.*rad_sub(c_sub, beta))
+        def this_cdf_sub(c_sub):
+            return rad_sub(c_sub, beta)
 
-        c_subs = samples_from_cdf(cdf_sub, NUM_MC_EVENTS, domain=[0.,.5],
+        c_subs = samples_from_cdf(this_cdf_sub, NUM_MC_EVENTS, domain=[0.,.5],
                                   verbose=3)
         c_subs = np.where(np.isinf(c_subs), 0, c_subs)
         np.save(sub_sample_file_path(beta), c_subs)
@@ -726,11 +798,11 @@ def plot_mc_crit_and_sub(axes_pdf, axes_cdf, z_cut, beta):
 
     if not LOAD_INV_SAMPLES:
         print("    Making critical samples with z_c="+str(z_cut)+"...", flush=True)
+        def this_cdf_crit(theta):
+            return cdf_crit(theta, z_cut)
 
-        def cdf_crit(theta):
-            return np.exp(-1.*rad_crit(theta, z_cut))
-
-        theta_crits = samples_from_cdf(cdf_crit, NUM_MC_EVENTS, domain=[0.,1.],
+        theta_crits = samples_from_cdf(this_cdf_crit, NUM_MC_EVENTS, 
+                                       domain=[0.,1.],
                                        verbose=3)
         theta_crits = np.where(np.isinf(theta_crits), 0, theta_crits)
 
@@ -754,14 +826,14 @@ def plot_mc_crit_and_sub(axes_pdf, axes_cdf, z_cut, beta):
         c_subs = []
 
         for i, theta in enumerate(theta_crits):
-            def cdf_sub_conditional(c_sub):
-                return np.exp(-1.*rad_crit_sub(c_sub, theta))
+            def this_cdf_sub(c_sub):
+                return cdf_sub_conditional(c, theta)
 
             if theta**beta/2. < 1e-10:
                 # Assigning to an underflow bin for small observable values
                 c_sub = 1e-100
             else:
-                c_sub = samples_from_cdf(cdf_sub_conditional, 1,
+                c_sub = samples_from_cdf(this_cdf_sub, 1,
                                      domain=[0.,theta**beta/2.],
                                      verbose=3)[0]
             c_subs.append(c_sub)
@@ -818,11 +890,10 @@ def plot_mc_pre_and_crit(axes_pdf, axes_cdf, z_cut, beta):
     if not LOAD_INV_SAMPLES:
         print("    Making critical samples with z_c="+str(z_cut)+"...",
               flush=True)
+        def this_cdf_crit(theta):
+            return cdf_crit(theta, z_cut)
 
-        def cdf_crit(theta):
-            return np.exp(-1.*rad_crit(theta, z_cut))
-
-        theta_crits = samples_from_cdf(cdf_crit, NUM_MC_EVENTS, domain=[0.,1.],
+        theta_crits = samples_from_cdf(this_cdf_crit, NUM_MC_EVENTS, domain=[0.,1.],
                                        verbose=3)
         theta_crits = np.where(np.isinf(theta_crits), 0, theta_crits)
 
@@ -847,10 +918,10 @@ def plot_mc_pre_and_crit(axes_pdf, axes_cdf, z_cut, beta):
         z_pres = []
 
         for i, theta in enumerate(theta_crits):
-            def cdf_pre_conditional(z_pre):
-                return np.exp(-1.*rad_pre(z_pre, theta, z_cut))
+            def this_cdf_pre(z_pre):
+                return cdf_pre_conditional(z, theta, z_cut)
 
-            z_pre = samples_from_cdf(cdf_pre_conditional, 1,
+            z_pre = samples_from_cdf(this_cdf_pre, 1,
                                      domain=[0.,z_cut], verbose=3)[0]
             z_pres.append(z_pre)
             if (i+1)%(len(theta_crits)/10)==0:

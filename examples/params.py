@@ -3,18 +3,17 @@ from pathlib import Path
 import dill as pickle
 
 # Local imports
-from jetmontecarlo.analytics.QCD_utils import MU_NP
+from jetmontecarlo.analytics.QCD_utils import MU_NP, LAMBDA_QCD
 
 VERBOSE = 3
 
 ###########################################
 # Notes:
 ###########################################
-# To Do
+# Done:
+
 # Run with running coupling, LL, with 5e6
 # Run with running coupling, MLL, with 5e6
-
-# Done:
 # Run with fixed coupling, LL, with 5e6
     # Something funky with crit results
 # Run with running coupling, LL, with 1e6
@@ -26,17 +25,14 @@ VERBOSE = 3
 # =====================================
 # Physics Inputs
 # =====================================
-FIXED_COUPLING = False
+FIXED_COUPLING = True
+MULTIPLE_EMISSIONS = False
 
 # Observable accuracy
 OBS_ACC = 'LL'
-if FIXED_COUPLING:
-    OBS_ACC = 'LL'
 
 # Splitting Function generation accuracy
-SPLITFN_ACC = 'MLL'
-if FIXED_COUPLING:
-    SPLITFN_ACC = 'MLL'
+SPLITFN_ACC = 'LL'
 
 # Angular ordering takes more time, and
 # does not change the agreement between our
@@ -54,9 +50,10 @@ F_SOFTS = [.5, .75, 1]
 # Getting the allowed values of f*z_cut for our calculations modulo duplicates
 Z_CUTS = sorted(set([f*zc for zc in Z_CUTS for f in F_SOFTS]))
 
-# List of betas for the C_1^{(betas)} we will calculate:
+# List of betas for the C_1^{(betas)} in which we are interested:
 # (use ints when possible for consistency across files)
-BETAS = [2, 1, 3, 4, 1./2.] # [1./2., 1, 2, 3, 4]
+BETAS = [1./2., 1, 2, 3, 4]
+# BETAS = [2, 1, 3, 4, 1./2.]
 
 # Setting up dictionaries to facilitate calling functions of z_cut and beta.
 # In particular, the radiators are organized as lists, ordered by z_cut but without
@@ -225,6 +222,7 @@ if __name__ == '__main__':
         print("    # -----------------------------\n    # Physics:\n    # -----------------------------")
         print("    # Jet type: "+str(JET_TYPE))
         print("    # Fixed coupling: "+str(FIXED_COUPLING))
+        print("    # Multiple Emissions:", MULTIPLE_EMISSIONS)
         print("    # Observable accuracy: "+str(OBS_ACC))
         print("    # Splitting function accuracy: "+str(OBS_ACC))
 

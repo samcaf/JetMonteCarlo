@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+import itertools
 
 # Parameters
 from examples.params import *
@@ -51,7 +52,7 @@ def compare_ecf_pdf(z_cut, beta, emission='crit', plot_ivs=True):
     axes_cdf[0].set_xscale('log')
 
     if FIXED_COUPLING:
-        axes_pdf[0].set_ylim(0, .2)
+        axes_pdf[0].set_ylim(0, .7)
     else:
         axes_pdf[0].set_xlim(xlim_dict[beta], 1)
         axes_pdf[0].set_ylim(0, ylim_dict[beta])
@@ -153,8 +154,8 @@ def compare_ecf_pdf(z_cut, beta, emission='crit', plot_ivs=True):
                      + '\n' + r'$p_T$ = 3 TeV'
                      +'\n'+r'$R$ = 1.0, $z_{\rm cut}$ = '+str(z_cut),
                      ha='center')
-    axes_pdf[0].text(0.006, .93, r'$\bf{Preliminary}$',
-                     ha='center', color='red')
+    #axes_pdf[0].text(0.006, .93, r'$\bf{Preliminary}$',
+    #                 ha='center', color='red')
 
     this_plot_label = plot_label
     if BIN_SPACE == 'log':
@@ -185,13 +186,10 @@ def compare_ecf_pdf(z_cut, beta, emission='crit', plot_ivs=True):
 # Main:
 ###########################################
 if __name__ == '__main__':
-    #compare_ecf_pdf(.1, 2, 'crit')
-    #compare_ecf_pdf(.1, 2, 'all')
-    for zc in [.1, .2]:
-        for b in [.5, 1, 2]:#, 3, 4]:
-            #try:
-            compare_ecf_pdf(zc, b, 'crit', plot_ivs=False)
-            #except KeyError as k:
-            #    print("KeyError for beta = "+str(b)+": ")
-            #    print(k)
-            #    continue
+    # Arguments:
+    # (zcut, beta, emission, plot_ivs)
+    args_list = itertools.product([.1, .2], [.5, 1, 2],
+                                  ['crit', 'all'], [False])  #, True])
+    for args in args_list:
+        compare_ecf_pdf(*args)
+

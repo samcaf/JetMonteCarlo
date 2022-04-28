@@ -17,6 +17,7 @@ supercloud_syntax=true
 # Help message:
 # -------------------------
 usage() {
+chmod +x setup/set_params.sh; ./setup/set_params.sh --help
 printf "###################################
 # Parton Shower Generation:
 ###################################
@@ -44,13 +45,14 @@ Options for $0:
 # Setting Parameters:
 # ============================
 # Transform long options to short ones
-args=( )
-for arg; do
+args="$@"
+for arg in "$@"; do
+    shift
     case "$arg" in
-	--set_params)		 args+=( -t ) ;;
-	--logfile)		 args+=( -l ) ;;
+	--set_params)		 set -- "$@" "-t" ;;
+	--logfile)		 set -- "$@" "-l" ;;
         --help|-h)               usage ;;
-        *)                       args+=( "$arg" ) ;;
+        *)                       set -- "$@" "$arg" ;;
     esac
 done
 
@@ -108,9 +110,8 @@ printf "# ============================
 # ============================\n\n"
 
 printf 'Running '"$0"' with options:'"\n"
-printf '%q ' "$@"
+printf '%q ' "$args"
 printf "\n\n"
-set -- "${args[@]}"
 
 printf "
 # ============================

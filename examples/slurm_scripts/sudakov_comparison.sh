@@ -10,103 +10,119 @@
 ###################################
 # Preparation
 ###################################
+# Determining whether we use the syntax required for sbatch on the MIT supercloud
+supercloud_syntax=true
 
-# ============================
-# Misc. Preparation
-# ============================
-# Physics parameters
-fixedcoup='False'
-jet_type='quark'
+# -------------------------
+# Help message:
+# -------------------------
+usage() {
+chmod +x setup/set_params.sh; ./setup/set_params.sh --help
+printf "###################################
+# Sudakov Exponent Plotting:
+###################################
 
-obsacc='MLL'
-splitacc='MLL'
+Options for $0:
+  # ============================
+  # Setting Parameters:
+  # ============================
+  [<--set_params|-t> <int>] :                           Set params:
+                                                        0) Using the given inputs (see setup/set_params.sh);
+                                                        1) With a particular choice of parameters for a non-perturbative shower:
+                                                          * Running coupling and MLL accuracy for observables;
+                                                          * Shower cutoff of LAMBDA_QCD ~ 340 MeV.
+                                                        (see setup/set_np1.sh)
+  # ============================
+  # Other Options:
+  # ============================
+  [<--make_rad_plot|d> ] :				Make radiator plots;
+  [<--make_sudakov|k> ] :				Make Sudakov plots;
+  [<--logfile|-l> ] :                                   Set log file;
+  [<--help|-h> ] :                                      Get this help message!\n\n"
+  1>&2; exit 1; }
 
-# Parameters for event and function generation
-nsamples='5e6'
-nbins='5e3'
-
-# Code Switches:
-load_events='True'
-load_fns='False'
-
-save_events='True'
-save_rads='True'
-save_splitfns='True'
-
+# Extra parameters
+logfile='sudakov_logfile'
 make_rad_plot=false
-make_sudakov=true
+make_sudakov=false
 
-# -------------------------
-# Supercloud Preparation:
-# -------------------------
-# Preparation for running in supercloud cluster:
-module load anaconda/2021b
-# pip install --user pynverse
 
-# Preparing log file
-logfile='sudakov_fixedcoup'$fixedcoup'_'$nsamples'samples_'$nbins'bins'
+# ============================
+# Setting Parameters:
+# ============================
+# Transform long options to short ones
+args="$@"
+for arg in "$@"; do
+    shift
+    case "$arg" in
+        --set_params)            set -- "$@" "-t" ;;
+	--make_rad_plot)         set -- "$@" "-k" ;;
+	--dont_make_sudakov)     set -- "$@" "-d" ;;
+        --logfile)               set -- "$@" "-l" ;;
+        --help|-h)               usage ;;
+        *)                       set -- "$@" "$arg" ;;
+    esac
+done
 
-# Linking log files to more precisely named logs
-ln -f logs/zlog-${SLURM_JOB_ID}.out logs/$logfile.out.${SLURM_JOB_ID}
-ln -f logs/zlog-${SLURM_JOB_ID}.err logs/$logfile.err.${SLURM_JOB_ID}
+while getopts "t:l:kd" OPTION; do
+    case $OPTION in
+    t)
+    case $OPTARG in
+      0) chmod +x setup/set_params.sh; ./setup/set_params.sh $@ ;;
+      1) chmod +x setup/set_params_NP1.sh; ./setup/set_params_NP1.sh ;;
+    esac
+    ;;
+    l) logfile=${OPTARG};;
+    k) make_rad_plot=true;;
+    d) make_sudakov=false;;
+    esac
+done
+
 
 # ============================
 # Path preparation:
 # ============================
-# Should be run from the root folder /JetMonteCarlo
 
 # -------------------------
 # PYTHONPATH:
 # -------------------------
 # Adding the JetMonteCarlo directory to the PYTHONPATH
 # Must be used in the directory /path/to/JetMonteCarlo/
-chmod +x examples/slurm_scripts/prepare_path.sh
-./examples/slurm_scripts/prepare_path.sh
+chmod +x setup/prepare_path.sh
+./setup/prepare_path.sh
 
+# -------------------------
+# Log File Preparation:
+# -------------------------
+if [ supercloud_syntax = true ] ;
+then
+  # Preparation for running in supercloud cluster:
+  module load anaconda/2021b
+
+  # Linking slurm log files to more precisely named logs
+  ln -f logs/zlog-${SLURM_JOB_ID}.out logs/$logfile.out.${SLURM_JOB_ID}
+  ln -f logs/zlog-${SLURM_JOB_ID}.err logs/$logfile.err.${SLURM_JOB_ID}
+else
+  # Writing to log files without slurm
+  exec 1>logs/$logfile.out
+  exec 2>logs/$logfile.err
+fi
 
 ###################################
 # Beginning to log workflow
 ###################################
 printf "# ============================
 # Date: "`date '+%F'`"-("`date '+%T'`")
-# ============================"
+# ============================\n\n"
 
-# ============================
-# Setting desired accuracy:
-# ============================
-# Fixed coupling:
-sed -i "s/FIXED_COUPLING = .*/FIXED_COUPLING = "$fixedcoup"/" examples/params.py
-# Accuracy for f.c. observables and splitting functions is LL by default
-sed -i "s/OBS_ACC = .*/OBS_ACC = '"$obsacc"'/" examples/params.py
-sed -i "s/SPLITFN_ACC = .*/SPLITFN_ACC = '"$splitacc"'/" examples/params.py
+printf 'Running '"$0"' with options:'"\n"
+printf '%q ' "$args"
+printf "\n\n"
 
-# ============================
-# Setting jet type:
-# ============================
-sed -i "s/JET_TYPE = .*/JET_TYPE = '"$jet_type"'/" examples/params.py
-
-# ============================
-# Setting MC parameters:
-# ============================
-sed -i "s/NUM_MC_EVENTS = .*/NUM_MC_EVENTS = int("$nsamples")/" examples/params.py
-sed -i "s/NUM_RAD_BINS = .*/NUM_RAD_BINS = int("$nbins")/" examples/params.py
-sed -i "s/NUM_SPLITFN_BINS = .*/NUM_SPLITFN_BINS = int("$nbins")/" examples/params.py
-
-# -------------------------
-# Deciding whether to produce or reuse samples
-# -------------------------
-# Set all True if using already generated samples, and False otherwise
-sed -i "s/LOAD_MC_EVENTS = .*/LOAD_MC_EVENTS = "$load_events"/" examples/params.py
-sed -i "s/SAVE_MC_EVENTS = .*/SAVE_MC_EVENTS = "$save_events"/" examples/params.py
-
-sed -i "s/LOAD_MC_RADS = .*/LOAD_MC_RADS = "$load_fns"/" examples/params.py
-sed -i "s/SAVE_MC_RADS = .*/SAVE_MC_RADS = "$save_rads"/" examples/params.py
-
-sed -i "s/LOAD_SPLITTING_FNS = .*/LOAD_SPLITTING_FNS = "$load_fns"/" examples/params.py
-sed -i "s/SAVE_SPLITTING_FNS = .*/SAVE_SPLITTING_FNS = "$save_splitfns"/" examples/params.py
-
-
-python examples/params.py
+if [ verbose = true ] ;
+then
+    python3 examples/params.py
+fi
 
 if $make_rad_plot
 then
@@ -129,6 +145,13 @@ then
 # Plotting Sudakov Exponents:
 # ============================
 \n"
+
+printf "# ----------------------------
+# Old Script:
+# ----------------------------
+\n"
+        python examples/sudakov_comparisons/sudakov_comparison_numeric.py
+
 
 
 printf "# ----------------------------

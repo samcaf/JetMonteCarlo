@@ -13,8 +13,11 @@ fi
 # ============================
 # Default Parameters:
 # ============================
+verbose=false
+
 # Physics parameters
 fixedcoup='False'
+multiple_emissions='False'
 jet_type='quark'
 
 obsacc='LL'
@@ -43,26 +46,28 @@ save_correlations='True'
 # Getting input parameters
 # ============================
 # Transform long options to short ones
-args=( )
-for arg; do
+
+for arg in "$@"; do
+    shift
     case "$arg" in
-        --fc|--fixed_coupling)   args+=( -f ) ;;
-        --type|--jet_type)       args+=( -j ) ;;
-        --obs|--obs_acc)         args+=( -o ) ;;
-        --split|--split_acc)     args+=( -p ) ;;
-        --nmc|--nsamples)        args+=( -m ) ;;
-	--nshowers)              args+=( -n ) ;;
-        --nbins)                 args+=( -b ) ;;
-        --cutoff)                args+=( -c ) ;;
-        --save_events|--save_mc) args+=( -s ) ;;
-        --save_showers)          args+=( -w ) ;;
-        --save_rads)             args+=( -r ) ;;
-        --save_splitfns)         args+=( -v ) ;;
-        --save_correlations)     args+=( -i ) ;;
-        --load_events)           args+=( -e ) ;;
-	--load_fns)		 args+=( -a )  ;;
-        --help)                  args+=( -h ) ;;
-        *)                       args+=( "$arg" ) ;;
+	--fc|--fixed_coupling)		set -- "$@" "-f" ;;
+	--me|--multiple_emissions)	multiple_emissions='True' ;;
+        --type|--jet_type)		set -- "$@" "-j" ;;
+        --obs|--obs_acc)		set -- "$@" "-o" ;;
+        --split|--split_acc)		set -- "$@" "-p" ;;
+        --nmc|--nsamples)		set -- "$@" "-m" ;;
+        --nshowers)			set -- "$@" "-n" ;;
+        --nbins)			set -- "$@" "-b" ;;
+        --cutoff)			set -- "$@" "-c" ;;
+        --save_events|--save_mc)	set -- "$@" "-s" ;;
+        --save_showers)			set -- "$@" "-w" ;;
+        --save_rads)			set -- "$@" "-r" ;;
+        --save_splitfns)		set -- "$@" "-v" ;;
+        --save_correlations)		set -- "$@" "-i" ;;
+        --load_events)			set -- "$@" "-e" ;;
+        --load_fns)			set -- "$@" "-a" ;;
+        --help)				set -- "$@" "-h" ;;
+        *)				set -- "$@" "$arg" ;;
     esac
 done
 
@@ -79,6 +84,7 @@ Options for $0:
   # Physics Flags:
   # ================================================
   [<--fixed_coupling|-f> <string: True|False>] :        Determines if the parton shower is evaluated with fixed coupling (default False);               ..
+  [<--me|--multiple_emissions> <string: True|False>] :  Turns on multiple emissions in perturbative QCD calculations (default False);
   [<--type|--jet_type|-j> <string: JET_TYPE>]:          Determines type of jet to be used in parton shower (default quark);
   [<--obs|obs_acc|-o> <string: LL|MLL>]:                Determines accuracy of angularity ordering variable (default LL);
   [<--split|split_acc|-p> <string: LL|MLL>]:            Determines accuracy of angularity ordering variable (default MLL);
@@ -120,7 +126,7 @@ Options for $0:
 # ============================
 # Reading options
 # ============================
-while getopts "f:j:o:p:m:n:b:c:s:r:v:t:e:a:h" OPTION; do
+while getopts "f:j:o:p:m:n:b:c:s:r:v:t:e:a:vh" OPTION; do
     #echo "option : ${OPTION}"
     #echo "optarg : ${OPTARG}"
     case $OPTION in
@@ -149,8 +155,9 @@ while getopts "f:j:o:p:m:n:b:c:s:r:v:t:e:a:h" OPTION; do
     w) save_showers=${OPTARG};;
     i) save_correlations=${OPTARG};;
     # --------------------
-    # Help Message:
+    # Misc:
     # --------------------
+    v) verbose=true ;;
     h) usage ;;
     esac
 done
@@ -165,6 +172,8 @@ done
 # ============================
 # Fixed coupling:
 sed -i "s/FIXED_COUPLING = .*/FIXED_COUPLING = "$fixedcoup"/" examples/params.py
+# Multiple emissions:
+sed -i "s/MULTIPLE_EMISSIONS = .*/MULTIPLE_EMISSIONS = "$multiple_emissions"/" examples/params.py
 # Accuracy for f.c. observables and splitting functions is LL by default
 sed -i "s/OBS_ACC = .*/OBS_ACC = '"$obsacc"'/" examples/params.py
 sed -i "s/SPLITFN_ACC = .*/SPLITFN_ACC = '"$splitacc"'/" examples/params.py
@@ -207,5 +216,8 @@ sed -i "s/SAVE_SHOWER_CORRELATIONS = .*/SAVE_SHOWER_CORRELATIONS = "$save_correl
 # ============================
 # Printing out useful output information
 # ============================
-python examples/params.py
+if [ "$verbose" = true ] ;
+then
+    python3 examples/params.py
+fi
 

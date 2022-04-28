@@ -244,7 +244,7 @@ def plot_mc_crit(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
 crit_pdfs, crit_pdferrs = [], []
 
 def compare_crit(pdfs=None, pdferrs=None,
-                 num_ems='crit',  show_pythia_level=None):
+                 num_ems='crit', show_pythia_level=None):
     # Preparing figures
     fig_pdf, axes_pdf, fig_cdf, axes_cdf = \
             get_axes('crit', ratio_plot=False)
@@ -293,12 +293,12 @@ def compare_crit(pdfs=None, pdferrs=None,
 
     this_plot_label = plot_label
     if show_pythia_level is not None:
-        this_plot_label += '_PYTHIA'+show_pythia_level
+        this_plot_label += 'PYTHIA'+show_pythia_level+'_'
     else:
-        this_plot_label += '_'+num_ems+'psEms'
+        this_plot_label += ''+num_ems+'psEms'+'_'
     if BIN_SPACE == 'log':
-        this_plot_label += '{:.0e}cutoff'.format(EPSILON)
-    this_plot_label += '_{:.0e}shower'.format(SHOWER_CUTOFF)
+        this_plot_label += '{:.0e}mccutoff_'.format(EPSILON)
+    this_plot_label += '{:.0e}shower'.format(SHOWER_CUTOFF)
 
     fig_pdf.savefig(JET_TYPE+'_softdrop_crit_'+BIN_SPACE+'_pdf_comp'
                     +'_beta'+str(BETA)
