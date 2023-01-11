@@ -5,6 +5,9 @@ from scipy.interpolate import griddata, interp2d, NearestNDInterpolator
 
 import matplotlib.pyplot as plt
 
+from sympy import Symbol, S
+from sympy.calculus.util import continuous_domain
+
 # Local utils:
 from jetmontecarlo.montecarlo.integrator import *
 
@@ -29,6 +32,22 @@ def lin_log_mixed_list(lower_bound, upper_bound, num_bins):
     mixed_list = np.sort(mixed_list[1:-1])
     return mixed_list
 
+
+def test_monotonicity(obj):
+    if hasattr(obj, '__iter__'):
+        is_monotone = (obj[1:] <= obj[:-1]).all()
+                       or (obj[1:] >= obj[:-1]).all()
+        print(f"{is_monotone = }")
+        return is_monotone
+    elif hasattr(obj, '__call__'):
+        x = Symbol("x")
+        domain = continuous_domain(obj, x, S.Reals)
+        print(f"{domain}")
+        # xs = lin_log_mixed_list(domain[0], domain[1], 1000)
+        # vals = obj(xs)
+        # return test_monotonicity(vals)
+        
+
 ###########################################
 # Numerical Radiator Calculations:
 ###########################################
@@ -43,7 +62,8 @@ def gen_numerical_radiator(rad_sampler, emission_type,
                            bin_space='lin',
                            fixed_coupling=True,
                            save=True,
-                           num_bins=100):
+                           num_bins=100,
+                           force_monotone=False):
     """A function which takes in a sampler with generated data,
     and returns the associated numerically integrated radiator
     (dependent on a single parameter).
@@ -120,6 +140,7 @@ def gen_numerical_radiator(rad_sampler, emission_type,
     rad_integrator.integrate()
 
     radiator = rad_integrator.integral
+    test_monotonicity(radiator)
     radiator_error = rad_integrator.integralErr
     xs = rad_integrator.bins[:-1]
 
@@ -152,6 +173,7 @@ def gen_numerical_radiator(rad_sampler, emission_type,
         return rad
 
     rad_integrator.interpFn = bounded_interp_function
+    test_monotonicity(bounded_interp_function)
 
     # Saving data and interpolating function
     if save:
@@ -177,7 +199,8 @@ def gen_pre_num_rad(rad_sampler, crit_rad_sampler,
                     obs_accuracy='LL', splitfn_accuracy='LL',
                     bin_space='lin',
                     fixed_coupling=True,
-                    num_bins=100):
+                    num_bins=100,
+                    force_monotone=False):
     """A function which takes in a sampler with generated data,
     and returns the associated numerically integrated pre-critical
     radiator (dependent on two parameters).
@@ -276,7 +299,8 @@ def gen_crit_sub_num_rad(rad_sampler,
                          beta=2., epsilon=1e-15,
                          bin_space='log',
                          fixed_coupling=True,
-                         num_bins=1000):
+                         num_bins=1000,
+                         force_monotone=False):
     """A function which takes in a sampler with generated data,
     and returns the associated numerically integrated radiator
     dependent on the variables over a sampled phase space as

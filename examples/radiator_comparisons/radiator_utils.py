@@ -68,6 +68,17 @@ def compare_crit_rad():
         # Plotting numerical result
         num_result = rad_crit(pnts, zcut)
 
+        # DEBUG: monotonicity
+        where_monotonic = num_result[1:] <= num_result[:-1]
+        print(f"is_monotonic : {where_monotonic.all()}")
+        if not where_monotonic.all():
+            print(f"{pnts[:-1][~where_monotonic] = }")
+            print("Non-monotonic values: ")
+            print(np.transpose([num_result[:-1][~where_monotonic],
+                                num_result[1:][~where_monotonic]]))
+            print("percentage non-monotonic: " +
+                  f"{len(pnts[:-1][~where_monotonic])/(len(pnts)-1)}")
+
         axes[0].plot(pnts, num_result,
                     **style_solid, color=compcolors[(izc, 'dark')],
                     label=r'Numeric, $z_{{\rm cut}}$={}'.format(zcut))
@@ -137,6 +148,17 @@ def compare_pre_rad(fill_between=False):
             #num_error =rad_pre_err(pnts, theta, zcut)
             err_low, err_high = num_result-num_error, num_result+num_error
 
+            # DEBUG: monotonicity
+            where_monotonic = num_result[1:] <= num_result[:-1]
+            print(f"is_monotonic : {where_monotonic.all()}")
+            if not where_monotonic.all():
+                print(f"{pnts[:-1][~where_monotonic] = }")
+                print("Non-monotonic values: ")
+                print(np.transpose([num_result[:-1][~where_monotonic],
+                                       num_result[1:][~where_monotonic]]))
+                print("percentage non-monotonic: " +
+                      f"{len(pnts[:-1][~where_monotonic])/(len(pnts)-1)}")
+
             # Analytic
             if FIXED_COUPLING:
                 an_result = preRadAnalytic_fc_LL(pnts, theta, zcut, jet_type=JET_TYPE)
@@ -202,8 +224,10 @@ def compare_sub_rad(fill_between=False):
         # Setting up plot
         fig, axes = aestheticfig(xlabel=r'$C$',
                                  ylabel=r'$R_{{\rm sub}}(C)$',
-                                 xlim=(1e-8,1),
-                                 ylim=(0,ylims[JET_TYPE][0]),
+                                 # xlim=(1e-8,1),
+                                 # ylim=(0,ylims[JET_TYPE][0]),
+                                 xlim=(.2, .25),
+                                 ylim=(0,1e-4),
                                  title = 'Subsequent '+JET_TYPE
                                  + ('fixed' if FIXED_COUPLING else 'running')
                                  + r' $\alpha_s$, $\beta$={}'.format(beta),
@@ -214,12 +238,26 @@ def compare_sub_rad(fill_between=False):
 
         for i, theta in enumerate(theta_list):
             # Plotting numerical result
+            num_result = rad_sub(pnts, theta, beta)
+
+
+            # DEBUG: monotonicity
+            where_monotonic = num_result[1:] <= num_result[:-1]
+            print(f"is_monotonic : {where_monotonic.all()}")
+            if not where_monotonic.all():
+                print(f"{pnts[:-1][~where_monotonic] = }")
+                print("Non-monotonic values: ")
+                print(np.transpose([num_result[:-1][~where_monotonic],
+                                       num_result[1:][~where_monotonic]]))
+                print("percentage non-monotonic: " +
+                      f"{len(pnts[:-1][~where_monotonic])/(len(pnts)-1)}")
+
             if fill_between:
-                axes[0].fill_between(pnts, rad_sub(pnts, theta, beta),
+                axes[0].fill_between(pnts, num_result,
                         **style_solid, color=compcolors[(i, 'dark')],
                         label=r'Numeric, $\theta$={}'.format(theta))
             else:
-                axes[0].plot(pnts, rad_sub(pnts, theta, beta),
+                axes[0].plot(pnts, num_result,
                              **style_solid, color=compcolors[(i, 'dark')],
                              label=r'Numeric, $\theta$={}'.format(theta))
 
