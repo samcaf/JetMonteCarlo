@@ -20,7 +20,7 @@ fixedcoup='False'
 multiple_emissions='False'
 jet_type='quark'
 
-obsacc='LL'
+obsacc='MLL'
 splitacc='MLL'
 
 # Default shower cutoff for comparisons
@@ -50,8 +50,8 @@ save_correlations='True'
 for arg in "$@"; do
     shift
     case "$arg" in
-	--fc|--fixed_coupling)		set -- "$@" "-f" ;;
-	--me|--multiple_emissions)	multiple_emissions='True' ;;
+        --fc|--fixed_coupling)		set -- "$@" "-f" ;;
+        --me|--multiple_emissions)	multiple_emissions='True' ;;
         --type|--jet_type)		set -- "$@" "-j" ;;
         --obs|--obs_acc)		set -- "$@" "-o" ;;
         --split|--split_acc)		set -- "$@" "-p" ;;
@@ -87,7 +87,7 @@ Options for $0:
   [<--me|--multiple_emissions> <string: True|False>] :  Turns on multiple emissions in perturbative QCD calculations (default False);
   [<--type|--jet_type|-j> <string: JET_TYPE>]:          Determines type of jet to be used in parton shower (default quark);
   [<--obs|obs_acc|-o> <string: LL|MLL>]:                Determines accuracy of angularity ordering variable (default LL);
-  [<--split|split_acc|-p> <string: LL|MLL>]:            Determines accuracy of angularity ordering variable (default MLL);
+  [<--split|split_acc|-p> <string: LL|MLL>]:            Determines accuracy of splitting function (default MLL, including non-singular pieces);
 
   [<--nmc|--nsamples|-m> <int>] :                       Number of MC samples/events used (default 5e6);
   [<--nshowers|-n> <int>] :  		                Number of parton shower events (default 5e5);
@@ -220,4 +220,3 @@ if [ "$verbose" = true ] ;
 then
     python3 examples/params.py
 fi
-

@@ -15,6 +15,7 @@ from jetmontecarlo.montecarlo.partonshower import *
 
 # Parameters
 from examples.params import *
+from examples.sudakov_comparisons.sudakov_utils import pythia_data
 
 ###########################################
 # Definitions and Parameters
@@ -147,11 +148,20 @@ def load_radiators():
 if not(LOAD_MC_EVENTS):
     load_radiators()
 
+"""
 # Pythia Data
-pythiafile = open('pythiadata/groomed_pythia_obs.pkl', 'rb')
-pythiadata = pickle.load(pythiafile)
+#pythiafile = open('pythiadata/groomed_pythia_obs.pkl', 'rb')
+
+raw_file = open('pythiadata/raw_Zq_pT3TeV_noUE_'+level+'.pkl', 'rb')
+raw_data = pickle.load(raw_file)
+
+rss_file = open('pythiadata/rss_Zq_pT3TeV_noUE_'+level+'.pkl', 'rb')
+rss_data = pickle.load(rss_file)
+
+
 pythiafile.close()
-         
+"""
+
 ###########################################
 # Critical Emission Only
 ###########################################
@@ -234,13 +244,20 @@ def compare_crit(beta=BETA, plot_approx=False):
                                 axes_pdf, axes_cdf,
                                 label='Parton Shower', colnum=i)
 
-            pythia_c2s = pythiadata['rss']['hadron'][z_cut][F_SOFT][beta]
-            print(pythiadata['rss']['hadron'][z_cut][F_SOFT].keys())
+            # Narrowing in on jets with P_T between 3 and 3.5 TeV
+            cond_floor = (3000 < np.array(pythia_data['raw'][plot_level]['pt'][beta]))
+            cond_ceil = (np.array(pythia_data['raw'][plot_level]['pt'][beta]) < 3500)
+            inds = np.where(cond_floor * cond_ceil)[0]
+
+            # Getting substructure
+            pythia_c2s = pythia_data['rss'][plot_level][params]['C1'][beta]
+            pythia_c2s = np.array(pythia_c2s)[inds]
+            # print(pythiadata['rss']['hadron'][z_cut][F_SOFT].keys())
             plot_pythia_pdf_cdf(pythia_c2s,
                                 axes_pdf, axes_cdf,
                                 label='Pythia', colnum=i)
 
-    lightlabel='Analytic f.c. crit'
+    lightlabel='Analytic'
 
     # Saving plots/
     legend_darklight(axes_pdf[0], darklabel='pQCD',
@@ -273,6 +290,10 @@ def compare_crit(beta=BETA, plot_approx=False):
                     +'.pdf',
                     format='pdf')
     """
+    
+    plt.close(fig_pdf)
+    plt.close(fig_cdf)
+
     print("Plotting complete!")
 
 ###########################################

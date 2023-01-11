@@ -68,39 +68,6 @@ plot_label += '_showerbeta'+str(SHOWER_BETA)
 if F_SOFT:
     plot_label += '_f{}'.format(F_SOFT)
 
-def sub_sample_file_path(beta):
-    beta=float(beta)
-    sub_sample_file = ("c_subs"
-                        +"_obs"+str(OBS_ACC)
-                        +"_splitfn"+str(SPLITFN_ACC)
-                       +"_beta"+str(beta)
-                       +"_{:.0e}".format(NUM_MC_EVENTS)
-                       +extra_label
-                       +"samples.npy")
-    return sample_folder / sub_sample_file
-
-def crit_sub_sample_file_path(z_cut, beta):
-    beta=float(beta)
-    crit_sub_sample_file = ("c_subs_from_crits"
-                            +"_obs"+str(OBS_ACC)
-                            +"_splitfn"+str(SPLITFN_ACC)
-                            +"_zc"+str(z_cut)
-                            +"_beta"+str(beta)
-                            +"_{:.0e}".format(NUM_MC_EVENTS)
-                            +extra_label
-                            +"samples.npy")
-    return sample_folder / crit_sub_sample_file
-
-def pre_sample_file_path(z_cut):
-    pre_sample_file = ("z_pres_from_crits"
-                       +"_obs"+str(OBS_ACC)
-                       +"_splitfn"+str(SPLITFN_ACC)
-                       +"_zc"+str(z_cut)
-                       +"_{:.0e}".format(NUM_MC_EVENTS)
-                       +extra_label
-                       +"samples.npy")
-    return sample_folder / pre_sample_file
-
 
 # ==========================================
 # Loading Files
@@ -138,7 +105,7 @@ def ps_correlations(beta, f_soft, verbose=5):
         print("        JET_TYPE:", JET_TYPE)
         print("    (Few pre-critical emissions)")
     if verbose > 3:
-        print("        ps_data.keys():", ps_data.keys())
+        print("        Shower data keys:", ps_data.items())
         print("        len(ps_data['softdrop_c1s_crit']):",
               len(ps_data['softdrop_c1s_crit']))
         print("        len(ps_data['softdrop_c1s_two']):",
@@ -204,6 +171,8 @@ def crit_sample_file_path(z_cut, beta):
                         +"_{:.0e}".format(NUM_MC_EVENTS)
                         +extra_label
                         +"samples.npy")
+    if VERBOSE > 2:
+        print("  crit sample file path:", sample_folder / crit_sample_file)
     return sample_folder / crit_sample_file
 
 def sub_sample_file_path(beta):
@@ -215,6 +184,8 @@ def sub_sample_file_path(beta):
                        +"_{:.0e}".format(NUM_MC_EVENTS)
                        +extra_label
                        +"samples.npy")
+    if VERBOSE > 2:
+        print("  sub sample file path:", sample_folder / sub_sample_file)
     return sample_folder / sub_sample_file
 
 def crit_sub_sample_file_path(z_cut, beta):
@@ -227,6 +198,8 @@ def crit_sub_sample_file_path(z_cut, beta):
                             +"_{:.0e}".format(NUM_MC_EVENTS)
                             +extra_label
                             +"samples.npy")
+    if VERBOSE > 2:
+        print("  crit sub sample file path:", sample_folder / crit_sub_sample_file)
     return sample_folder / crit_sub_sample_file
 
 def pre_sample_file_path(z_cut):
@@ -237,6 +210,8 @@ def pre_sample_file_path(z_cut):
                        +"_{:.0e}".format(NUM_MC_EVENTS)
                        +extra_label
                        +"samples.npy")
+    if VERBOSE > 2:
+        print("  pre sample file path:", sample_folder / pre_sample_file)
     return sample_folder / pre_sample_file
 
 # ------------------------------------
@@ -273,8 +248,6 @@ def load_radiators():
                 me_factor = np.exp(euler_constant * theta
                                    * deriv_rad_crit(theta, z_cut))
             return me_factor * np.exp(-1.*rad_crit(theta, z_cut))
-
-
 
     if COMPARE_SUB:
         print("    Loading subsequent/ungroomed radiator from "
@@ -322,9 +295,6 @@ def load_radiators():
                                    * deriv_rad_crit_sub(c_sub, theta))
             return me_factor * np.exp(-1.*rad_crit_sub(c_sub, theta))
 
-
-
-
     if True in [COMPARE_PRE_AND_CRIT, COMPARE_ALL]:
         print("    Loading pre-critical radiator from "
               +str(prerad_path)+"...", flush=True)
@@ -332,8 +302,15 @@ def load_radiators():
             rad_pre_list = pickle.load(file)
         global rad_pre
         def rad_pre(z_pre, theta, z_cut):
-            return rad_pre_list[INDEX_ZC[z_cut]](z_pre, theta)
-        
+            try:
+                return rad_pre_list[INDEX_ZC[z_cut]](z_pre, theta)
+            except TypeError as m:
+                print(f"TypeError: {m}")
+                print("\nExtra info:")
+                print("rad_pre_list:", rad_pre_list)
+                print("rad_pre_list[INDEX_ZC[z_cut]]:", rad_pre_list[INDEX_ZC[z_cut]])
+                return rad_pre_list[INDEX_ZC[z_cut]][0](z_pre, theta)
+
         def deriv_rad_pre(z_pre, theta, z_cut):
             this_rad = lambda z: rad_pre(z, theta, z_cut)
             this_drad = derivative(this_rad, z_pre, dx=z_pre * 1e-5)
@@ -355,7 +332,7 @@ if not(LOAD_MC_EVENTS):
 ###########################################
 # Additional Plot Utils
 ###########################################
-def plot_mc_banded(ax, ys, err, bins, label, col):
+def plot_mc_banded(ax, ys, err, bins, label, col, drawband=False):
     if BIN_SPACE == 'lin':
         xs = (bins[:-1] + bins[1:])/2.
         xerr = (bins[1:] - bins[:-1])
@@ -368,24 +345,33 @@ def plot_mc_banded(ax, ys, err, bins, label, col):
     line = ax.plot(xs, ys, ls='-', lw=2., color=col, label=label)
     # DEBUG: Some weird features in some plots, look like they could be
     #        misplaced bands
-    band = draw_error_band(ax, xs, ys, err, color=col, alpha=.4)
+    if drawband:
+        band = draw_error_band(ax, xs, ys, err, color=col, alpha=.4)
+        return line, band
+    return line, None
 
-    return line, band
-
-def full_legend(ax, labels, loc='upper left'):
+def full_legend(ax, labels, loc='upper left', drawband=False):
     ax.plot(-100, -100, **style_dashed, color=compcolors[(-1, 'medium')],
             label=labels[0])
-    line, band = plot_mc_banded(ax, [-100,-100], [1,1], np.array([-100,-99,-98]),
-                                label=labels[1], col=compcolors[(-1, 'dark')])
-    ax.errorbar(-100., -100, yerr=1., xerr=1., **modstyle,
-                color=compcolors[(-1, 'dark')],
-                label=labels[2])
-    ax.hist(np.arange(-100,-90), 5,
-            histtype='step', lw=2, edgecolor=compcolors[(-1, 'dark')],
-            label=labels[3])
+    line, _ = plot_mc_banded(ax, [-100,-100], [1,1], np.array([-100,-99,-98]),
+                             label=labels[1], col=compcolors[(-1, 'dark')],
+                             drawband=drawband)
+    if len(labels)>=3:
+        ax.errorbar(-100., -100, yerr=1., xerr=1., **modstyle,
+                    color=compcolors[(-1, 'dark')],
+                    label=labels[2])
+    if len(labels)>=4:
+        ax.hist(np.arange(-100,-90), 5,
+                histtype='step', lw=2, edgecolor=compcolors[(-1, 'dark')],
+                label=labels[3])
 
     handles, _ = ax.get_legend_handles_labels()
-    new_handles = [handles[0], handles[1], handles[3], handles[2]]
+    if len(handles)>=4:
+        new_handles = [handles[0], handles[1], handles[3], handles[2]]
+    elif len(handles)>=3:
+        new_handles = [handles[0], handles[1], handles[2]]
+    elif len(handles)>=2:
+        new_handles = [handles[0], handles[1]]
 
     ax.legend(new_handles, labels, loc=loc)
 
@@ -433,7 +419,8 @@ def plot_mc_crit(axes_pdf, axes_cdf, z_cut, beta, f_soft, col,
     if BIN_SPACE == 'lin':
         sud_integrator.bins = np.linspace(0, .5, NUM_BINS)
     if BIN_SPACE == 'log':
-        sud_integrator.bins = np.logspace(np.log10(EPSILON)-1, np.log10(.5),
+        sud_integrator.bins = np.logspace(np.log10(EPSILON)-1,
+                                          np.log10(.75),
                                           NUM_BINS)
     sud_integrator.hasBins = True
 
@@ -441,19 +428,38 @@ def plot_mc_crit(axes_pdf, axes_cdf, z_cut, beta, f_soft, col,
     sud_integrator.integrate()
 
     pdf = sud_integrator.density
-    pdferr = sud_integrator.densityErr
+    pdf_err = sud_integrator.densityErr
     integral = sud_integrator.integral
     integralerr = sud_integrator.integralErr
+    bins = sud_integrator.bins
 
-    pdfline, pdfband = plot_mc_banded(axes_pdf[0], pdf, 2.*pdferr,
-                                      sud_integrator.bins,
+    if BIN_SPACE == 'log':
+        xs = np.sqrt(bins[:-1]*bins[1:])
+        print("Critical MC normalization:", np.sum(pdf * (np.log10(xs) - np.log10(xs))))
+
+    # DEBUG
+    """
+    if BIN_SPACE == 'log':
+        xs = np.sqrt(bins[:-1]*bins[1:])
+
+        pdf = xs*pdf * np.log(10) # d sigma / d log10 C
+        pdf_err = xs*pdf_err * np.log(10) # d sigma / d log10 C
+    """
+
+    pdfline, pdfband = plot_mc_banded(axes_pdf[0], pdf,
+                                      2.*pdf_err, bins,
                                       label=None, col=col)
-    cdfline, cdfband = plot_mc_banded(axes_cdf[0], integral, integralerr,
-                                      sud_integrator.bins,
+    cdfline, cdfband = plot_mc_banded(axes_cdf[0], integral,
+                                      integralerr, bins,
                                       label=None, col=col)
+
+    if BIN_SPACE == 'log':
+        pdf = xs*pdf * np.log(10) # d sigma / d log10 C
+        pdf_err = xs*pdf_err * np.log(10) # d sigma / d log10 C
+        print("Critical MC adjusted normalization:", np.sum(pdf * (np.log10(xs) - np.log10(xs))))
+
 
     return pdfline, pdfband, cdfline, cdfband
-
 
 
 ###########################################
@@ -512,7 +518,7 @@ def plot_mc_all(axes_pdf, axes_cdf, z_cut, beta, f_soft, col,
 
             if theta**beta/2. < 1e-10:
                 # Assigning to an underflow bin for small observable values
-                c_sub = 1e-100
+                c_sub = 1e-50
             else:
                 c_sub = samples_from_cdf(this_cdf_sub, 1,
                                      domain=[0.,theta**beta/2.],
@@ -531,7 +537,7 @@ def plot_mc_all(axes_pdf, axes_cdf, z_cut, beta, f_soft, col,
                   flush=True)
             z_pres = np.load(pre_sample_file_path(z_cut))
         else:
-            print("    Unable to find file "+str(pre_sample_file_path(z_cut, beta)))
+            print("    Unable to find file "+str(pre_sample_file_path(z_cut)))
             load = False
             if LOAD_MC_EVENTS:
                 load_radiators()
@@ -578,16 +584,36 @@ def plot_mc_all(axes_pdf, axes_cdf, z_cut, beta, f_soft, col,
     sud_integrator.integrate()
 
     pdf = sud_integrator.density
-    pdferr = sud_integrator.densityErr
+    pdf_err = sud_integrator.densityErr
     integral = sud_integrator.integral
     integralerr = sud_integrator.integralErr
+    bins = sud_integrator.bins
 
-    pdfline, pdfband = plot_mc_banded(axes_pdf[0], pdf, 2.*pdferr,
-                                      sud_integrator.bins,
+    if BIN_SPACE == 'log':
+        xs = np.sqrt(bins[:-1]*bins[1:])
+        print("All MC normalization:", np.sum(pdf * (np.log10(xs) - np.log10(xs))))
+
+    # DEBUG
+    """
+    if BIN_SPACE == 'log':
+        xs = np.sqrt(bins[:-1]*bins[1:])
+
+        pdf = xs*pdf * np.log(10) # d sigma / d log10 C
+        pdf_err = xs*pdf_err * np.log(10) # d sigma / d log10 C
+    """
+
+    pdfline, pdfband = plot_mc_banded(axes_pdf[0], pdf,
+                                      2.*pdf_err, bins,
                                       label=None, col=col)
-    cdfline, cdfband = plot_mc_banded(axes_cdf[0], integral, integralerr,
-                                      sud_integrator.bins,
+    cdfline, cdfband = plot_mc_banded(axes_cdf[0], integral,
+                                      integralerr, bins,
                                       label=None, col=col)
+
+    if BIN_SPACE == 'log':
+        pdf = xs*pdf * np.log(10) # d sigma / d log10 C
+        pdf_err = xs*pdf_err * np.log(10) # d sigma / d log10 C
+
+        print("All MC adjusted normalization:", np.sum(pdf * (np.log10(xs) - np.log10(xs))))
 
     return pdfline, pdfband, cdfline, cdfband
 
@@ -647,7 +673,7 @@ def plot_mc_ivs(axes_pdf, axes_cdf, z_cut, beta, f_soft, col,
 
             if theta**beta/2. < 1e-10:
                 # Assigning to an underflow bin for small observable values
-                c_sub = 1e-100
+                c_sub = 1e-50
             else:
                 c_sub = samples_from_cdf(this_cdf_sub, 1,
                                      domain=[0.,theta**beta/2.],
@@ -666,7 +692,7 @@ def plot_mc_ivs(axes_pdf, axes_cdf, z_cut, beta, f_soft, col,
                   flush=True)
             z_pres = np.load(pre_sample_file_path(z_cut))
         else:
-            print("    Unable to find file "+str(pre_sample_file_path(z_cut, beta)))
+            print("    Unable to find file "+str(pre_sample_file_path(z_cut)))
             load = False
             if LOAD_MC_EVENTS:
                 load_radiators()
@@ -719,11 +745,11 @@ def plot_mc_ivs(axes_pdf, axes_cdf, z_cut, beta, f_soft, col,
     sud_integrator.integrate()
 
     pdf = sud_integrator.density
-    pdferr = sud_integrator.densityErr
+    pdf_err = sud_integrator.densityErr
     integral = sud_integrator.integral
     integralerr = sud_integrator.integralErr
 
-    pdfline, pdfband = plot_mc_banded(axes_pdf[0], pdf, 2.*pdferr,
+    pdfline, pdfband = plot_mc_banded(axes_pdf[0], pdf, 2.*pdf_err,
                                       sud_integrator.bins,
                                       label=None, col=col)
     cdfline, cdfband = plot_mc_banded(axes_cdf[0], integral, integralerr,
@@ -771,12 +797,12 @@ def plot_mc_sub(axes_pdf, axes_cdf, beta):
     sud_integrator.integrate()
 
     pdf = sud_integrator.density
-    pdferr = sud_integrator.densityErr
+    pdf_err = sud_integrator.densityErr
 
     integral = sud_integrator.integral
     integralerr = sud_integrator.integralErr
 
-    plot_mc_pdf(axes_pdf, pdf, pdferr, sud_integrator.bins, icol)
+    plot_mc_pdf(axes_pdf, pdf, pdf_err, sud_integrator.bins, icol)
     plot_mc_cdf(axes_cdf, integral, integralerr, sud_integrator.bins, icol)
 
 
@@ -831,7 +857,7 @@ def plot_mc_crit_and_sub(axes_pdf, axes_cdf, z_cut, beta):
 
             if theta**beta/2. < 1e-10:
                 # Assigning to an underflow bin for small observable values
-                c_sub = 1e-100
+                c_sub = 1e-50
             else:
                 c_sub = samples_from_cdf(this_cdf_sub, 1,
                                      domain=[0.,theta**beta/2.],
@@ -863,11 +889,11 @@ def plot_mc_crit_and_sub(axes_pdf, axes_cdf, z_cut, beta):
     sud_integrator.integrate()
 
     pdf = sud_integrator.density
-    pdferr = sud_integrator.densityErr
+    pdf_err = sud_integrator.densityErr
     integral = sud_integrator.integral
     integralerr = sud_integrator.integralErr
 
-    plot_mc_pdf(axes_pdf, pdf, pdferr, sud_integrator.bins, icol)
+    plot_mc_pdf(axes_pdf, pdf, pdf_err, sud_integrator.bins, icol)
     plot_mc_cdf(axes_cdf, integral, integralerr, sud_integrator.bins, icol)
 
 ###########################################
@@ -950,11 +976,11 @@ def plot_mc_pre_and_crit(axes_pdf, axes_cdf, z_cut, beta):
     sud_integrator.integrate()
 
     pdf = sud_integrator.density
-    pdferr = sud_integrator.densityErr
+    pdf_err = sud_integrator.densityErr
     integral = sud_integrator.integral
     integralerr = sud_integrator.integralErr
 
-    plot_mc_pdf(axes_pdf, pdf, pdferr, sud_integrator.bins, icol)
+    plot_mc_pdf(axes_pdf, pdf, pdf_err, sud_integrator.bins, icol)
     plot_mc_cdf(axes_cdf, integral, integralerr, sud_integrator.bins, icol)
 
 """

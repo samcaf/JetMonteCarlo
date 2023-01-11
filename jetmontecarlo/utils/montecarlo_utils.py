@@ -123,13 +123,14 @@ def samples_from_cdf(cdf, num_samples, domain=None,
             #----------------------------------------------------
             # If it is always 1, simply return zeros (the zero bin)!
             #----------------------------------------------------
-            if all(cdf(pnts)==1):
+            cdf_vals = np.nan_to_num(cdf(pnts))
+            if all(cdf_vals == 1.):
                 if verbose > 4:
                     print("CDF always 1. Returning zero bin.")
                 return np.zeros(num_samples)
 
             # Otherwise, find where it is not monotone
-            monotone = cdf(pnts[:-1]) <= cdf(pnts[1:])
+            monotone = cdf_vals[:-1] <= cdf_vals[1:]
 
             bad_xvals_low = np.array([pnts[i] for i in range(len(monotone))
                                       if not monotone[i]])
@@ -138,7 +139,7 @@ def samples_from_cdf(cdf, num_samples, domain=None,
             bad_cdf_low, bad_cdf_high = cdf(bad_xvals_low), cdf(bad_xvals_high)
 
 
-            if (all(monotone == True) and cdf(domain[1]) < 1e-20) or all(cdf(pnts) < 1e-20):
+            if (all(monotone == True) and cdf(domain[1]) < 1e-20) or all(cdf_vals < 1e-20):
                 # Another situation I've run into is that the CDF is monotone,
                 # but close to zero everywhere in the domain.
                 # I've also run into situations where every CDF value is miniscule.

@@ -3,6 +3,7 @@ import itertools
 
 # Parameters
 from examples.params import *
+from examples.sudakov_comparisons.sudakov_utils import pythia_data
 from examples.sudakov_comparisons.sudakov_utils import *
 
 save_cdf = False
@@ -106,7 +107,15 @@ def compare_ecf_pdf(z_cut, beta, emission='crit', plot_ivs=True):
         if BIN_SPACE == 'log':
             bins = np.logspace(np.log10(EPSILON)-1, np.log10(.5), 100)
         params = (z_cut, f_soft)
+
+        # Narrowing in on jets with P_T between 3 and 3.5 TeV
+        cond_floor = (3000 < np.array(pythia_data['raw'][plot_level]['pt'][beta]))
+        cond_ceil = (np.array(pythia_data['raw'][plot_level]['pt'][beta]) < 3500)
+        inds = np.where(cond_floor * cond_ceil)[0]
+
+        # Gettings substructure observables
         pythia_c2s = pythia_data['rss'][plot_level][params]['C1'][beta]
+        pythia_c2s = np.array(pythia_c2s)[inds]
         height, _ = np.histogram(pythia_c2s, bins)
         norm = np.sum(height * (np.log10(bins[1:]) - np.log10(bins[:-1])))
         axes_pdf[0].hist(pythia_c2s, bins=bins,
@@ -126,7 +135,7 @@ def compare_ecf_pdf(z_cut, beta, emission='crit', plot_ivs=True):
         plot_mc_ivs(axes_pdf, axes_cdf, z_cut, beta, f_soft,
                     col=plot_colors['ivs']['num'])
         params = z_cut
-        pythia_c2s = pythia_data['ivs'][plot_level][params]['C1'][beta]
+        pythia_c2s = pythia_data['ivs'][plot_level][params]['C1'][beta][inds]
         height, _ = np.histogram(pythia_c2s, bins)
         
         height, _ = np.histogram(pythia_c2s, bins)

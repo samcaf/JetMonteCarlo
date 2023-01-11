@@ -456,7 +456,7 @@ def getECFs_ungroomed(jet_list, beta=2.,
         return z * (1.-z) * theta**beta
 
     for i, jet in enumerate(jet_list):
-        cs = [1e-100]
+        cs = [1e-50]
 
         for mother in jet.partons:
             # LL calculation of angularity.
@@ -582,11 +582,11 @@ def getECFs_rss(jet_list, z_cut, beta=2., f=1.,
         scale_factor = 1.
 
         # Setting up for different emission types:
-        c_crit = 1e-100
-        theta_crit = 1e-100
+        c_crit = 1e-50
+        theta_crit = 1e-50
         use_precrit = True
-        z_pres = [1e-100]
-        c_subs = [1e-100]
+        z_pres = [1e-50]
+        c_subs = [1e-50]
 
         # Setting up the amount to which the hard branch is affected/rescaled
         # due to the grooming procedure if f=/=1
@@ -748,7 +748,7 @@ def getECFs_softdrop(jet_list, z_cut, beta=2., beta_sd=0.,
                 soft_drop = False
                 c_list.append(ecf_val(z, theta))
 
-        c_list.append(1e-100); c_list.append(1e-100)
+        c_list.append(1e-50); c_list.append(1e-50)
 
         if n_emissions == 'all':
             ecf = sum(c_list)

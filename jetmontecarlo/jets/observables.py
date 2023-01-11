@@ -64,14 +64,11 @@ def C_groomed(z_crit, theta_crit, z_cut, beta,
     if acc == 'LL':
         z_crit = np.minimum(z_crit, 1.-z_crit)
         return ((z_crit - f*z_cut_g) * (1.-(1.-f)*z_cut_g)
-                * theta_crit**beta)
+                * theta_crit**beta) / (1.-z_cut)**2.
     # MLL accuracy in the observable:
-    #z_crit = np.minimum(z_crit, 1./2.-z_crit)
-    #return ((z_crit - f*z_cut_g) * (1./2. - z_crit - (1.-f)*z_cut_g)
-    #        * theta_crit**beta)
     z_crit = np.minimum(z_crit, 1.-z_crit)
     C = ((z_crit - f*z_cut_g) * (1. - z_crit - (1.-f)*z_cut_g)
-         * theta_crit**beta)
+         * theta_crit**beta) / (1.-z_cut)**2.
     if verbose > 0:
         print("    zcrit: "+str(z_crit))
         print("    z_crit - f*z_c: "+str(z_crit - f*z_cut_g))

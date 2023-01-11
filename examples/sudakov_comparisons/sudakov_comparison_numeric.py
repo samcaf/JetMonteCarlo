@@ -329,6 +329,10 @@ def compare_crit(beta=BETA, plot_approx=False):
                         +str(this_plot_label)
                         +'.pdf',
                         format='pdf')
+    
+    plt.close(fig_pdf)
+    plt.close(fig_cdf)
+
     print("Plotting complete!", flush=True)
 
 ###########################################
@@ -432,6 +436,10 @@ def compare_sub():
                         +str(this_plot_label)
                         +'.pdf',
                         format='pdf')
+
+    plt.close(fig_pdf)
+    plt.close(fig_cdf)
+
     print("Plotting complete!", flush=True)
 
 ###########################################
@@ -580,6 +588,10 @@ def compare_crit_and_sub(beta=BETA):
                         +str(this_plot_label)
                         +'.pdf',
                         format='pdf')
+
+    plt.close(fig_pdf)
+    plt.close(fig_cdf)
+
     print("Plotting complete!", flush=True)
 
 ###########################################
@@ -727,6 +739,10 @@ def compare_pre_and_crit(beta=BETA):
                         +str(this_plot_label)
                         +'.pdf',
                         format='pdf')
+
+    plt.close(fig_pdf)
+    plt.close(fig_cdf)
+
     print("Plotting complete!", flush=True)
 
 ###########################################
@@ -923,6 +939,10 @@ def compare_all(beta=BETA, plot_approx=False):
                         +str(this_plot_label)
                         +'.pdf',
                         format='pdf')
+
+    plt.close(fig_pdf)
+    plt.close(fig_cdf)
+
     print("Plotting complete!", flush=True)
 
 ###########################################

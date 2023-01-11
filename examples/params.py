@@ -100,9 +100,9 @@ LOAD_INV_SAMPLES = LOAD_MC_EVENTS
 # Sampling Parameters
 # ------------------------------------
 # -----------------
-# MC Integration
+# MC Integration (DEBUG: EPSILON WAS 1e-10 before)
 # -----------------
-EPSILON = 1e-10
+EPSILON = 1e-15 if FIXED_COUPLING else 1e-10
 BIN_SPACE = 'log'
 
 # -----------------

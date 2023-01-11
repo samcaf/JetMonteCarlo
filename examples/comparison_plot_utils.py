@@ -78,6 +78,7 @@ def get_axes(title_info, ratio_plot=False):
                                    showdate=False,
                                    ratio_plot=ratio_plot,
                                    labeltext=None)
+
     axespdf[0].set_ylabel(ylabel, rotation=90, fontsize=21)
     axespdf[0].set_xlabel(xlabel, fontsize=20)
     axespdf[0].set_title(None)
@@ -178,7 +179,7 @@ def plot_crit_approx(axespdf, axescdf, z_cut, beta=BETA,
 def plot_crit_analytic(axespdf, axescdf, z_cut, beta=BETA, f_soft=1.,
                        jet_type='quark', icol=-1, label='Analytic',
                        fixed_coupling=True, col=None,
-                       extra_emission=True):
+                       extra_emission=False):
     """Plot the critical emission analytic result."""
     # Preparing the bins
     if BIN_SPACE == 'lin':
@@ -283,18 +284,27 @@ def plot_shower_pdf_cdf(vals, axespdf, axescdf,
     set of correlators (vals) on axespdf and axescdf.
     """
     if BIN_SPACE == 'lin':
+        # Bins
         bins = np.linspace(0, 1., NUM_BINS)
+
+        # Bin midpoints
+        xs = (bins[:-1] + bins[1:])/2.
     else:
+        # Bins
         bins = np.logspace(-10, 0., NUM_BINS) if SHOWER_CUTOFF == MU_NP\
                else np.logspace(-18, 0., NUM_BINS)
-        if FIXED_COUPLING:
-            bins = np.append(1e-100, bins)
         bins = np.insert(bins, 0, 1e-100)
+
+        # Bin midpoints
+        xs = np.sqrt(bins[1:-1] * bins[2:])
+        xs = np.insert(xs, 0, 1e-100) # zero bin
+        # DEBUG: remains to be seen whether zero bin will throw off normalization
+
     ps_integrator = integrator()
     ps_integrator.setLastBinBndCondition([1., 'minus'])
     ps_integrator.bins = bins
 
-    if verbose > 2:
+    if verbose > 3:
         print("bins:", bins)
         print("vals:", vals)
     try:
@@ -317,9 +327,6 @@ def plot_shower_pdf_cdf(vals, axespdf, axescdf,
         col = compcolors[(colnum, 'dark')]
         # col = compcolors[(colnum, 'medium')]
 
-    # Analytic cdf and pdf:
-    xs = (bins[:-1] + bins[1:])/2.
-
     # Numerically obtaining pdf for comparison plots:
     cdf_an = critSudakov_fc_LL(xs, z_cut, beta, f=F_SOFT,
                                jet_type=JET_TYPE)
@@ -339,6 +346,11 @@ def plot_shower_pdf_cdf(vals, axespdf, axescdf,
                         xerr=(bins[1:] - bins[:-1])/2.,
                         **style, color=col,
                         label=label)
+
+    if verbose > 2:
+        print("Shower normalization:",
+              np.sum(pdf * (np.log10(xs) - np.log10(xs))))
+
 
     if len(axespdf) > 1:
         axespdf[1].errorbar(xs, pdf/pdf_an,
@@ -378,16 +390,28 @@ def plot_pythia_pdf_cdf(vals, axespdf, axescdf,
     set of correlators (vals) on axespdf and axescdf.
     """
     if BIN_SPACE == 'lin':
+        # Bins
         bins = np.linspace(0, 1., NUM_BINS)
+
+        # Bin midpoints
+        xs = (bins[:-1] + bins[1:])/2.
     else:
+        # Bins
         bins = np.logspace(-10, 0., NUM_BINS) if SHOWER_CUTOFF == MU_NP\
                else np.logspace(-18, 0., NUM_BINS)
-        bins = np.append(1e-100, bins)
+        bins = np.insert(bins, 0, 1e-100)
+
+        # Bin midpoints
+        xs = np.sqrt(bins[1:-1] * bins[2:])
+        xs = np.insert(xs, 0, 1e-100) # zero bin
+        # DEBUG: remains to be seen whether zbin will throw off normalization
+
+    bins = np.append(1e-100, bins)
     ps_integrator = integrator()
     ps_integrator.setLastBinBndCondition([1., 'minus'])
     ps_integrator.bins = bins
 
-    if verbose > 2:
+    if verbose > 3:
         print("bins:", bins)
         print("vals:", vals)
     num_in_bin, _ = np.histogram(np.array(vals), bins)
@@ -419,6 +443,9 @@ def plot_pythia_pdf_cdf(vals, axespdf, axescdf,
                         xerr=(bins[1:] - bins[:-1])/2.,
                         **modstyle_ps, color=col,
                         label=label)
+    if verbose > 2:
+        print("Pythia normalization:",
+              np.sum(pdf * (np.log10(xs) - np.log10(xs))))
 
     # ------------------
     # CDF plots:
