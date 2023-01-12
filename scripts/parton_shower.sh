@@ -72,7 +72,7 @@ while getopts "t:l:v" OPTION; do
     chmod +x setup/set_params.sh
     source setup/params_list.sh
     case $OPTARG in
-      0) ./setup/set_params.sh "$@" ;; 
+      0) ./setup/set_params.sh "$@" ;;
       FCLL) ./setup/set_params.sh "${_fc_ll_params[@]}" --load_events False ;;
       RCLL) ./setup/set_params.sh "${_rc_ll_params[@]}" --load_events False ;;
       MU_NP) ./setup/set_params.sh "${_munp_params[@]}" --load_events False ;;
@@ -95,7 +95,7 @@ done
 # Adding the JetMonteCarlo directory to the PYTHONPATH
 # Must be used in the directory /path/to/JetMonteCarlo/
 chmod +x setup/prepare_path.sh
-./setup/prepare_path.sh
+source setup/prepare_path.sh
 
 # -------------------------
 # Log File Preparation:
@@ -151,4 +151,3 @@ fi
 printf "# ============================
 # End time: "`date '+%F'`"-("`date '+%T'`")
 # ============================"
-

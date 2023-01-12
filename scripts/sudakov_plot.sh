@@ -126,7 +126,7 @@ done
 # Adding the JetMonteCarlo directory to the PYTHONPATH
 # Must be used in the directory /path/to/JetMonteCarlo/
 chmod +x setup/prepare_path.sh
-./setup/prepare_path.sh
+source setup/prepare_path.sh
 
 # -------------------------
 # Log File Preparation:
