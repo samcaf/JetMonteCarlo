@@ -74,7 +74,7 @@ while getopts "t:l:vkd" OPTION; do
     source setup/params_list.sh
     case $OPTARG in
       0) ./setup/set_params.sh "$@" ;;
-      TEST) ./setup/set_params.sh "${_test_params[@]}" --load_events True ;;
+      TEST) ./setup/set_params.sh "${_test_params[@]}" --load_events False ;;
       FCLL) ./setup/set_params.sh "${_fc_ll_params[@]}" --load_events True ;;
       RCLL) ./setup/set_params.sh "${_rc_ll_params[@]}" --load_events True ;;
       MU_NP) ./setup/set_params.sh "${_munp_params[@]}" --load_events True ;;
