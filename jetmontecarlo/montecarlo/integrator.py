@@ -8,6 +8,7 @@ from jetmontecarlo.montecarlo.sampler import simpleSampler
 
 MIN_LOG_BIN = 1e-15
 
+
 #######################################
 # Integrator Class:
 #######################################
@@ -40,15 +41,24 @@ class integrator():
 
     def setLastBinBndCondition(self, bndCond):
         """Sets a boundary condition on the value of the integral at the
-        rightmost bin."""
+        rightmost bin.
+        """
         self.lastBinBndCond = bndCond
         self.useLastBinBndCond = True
 
     def setFirstBinBndCondition(self, bndCond):
         """Sets a boundary condition on the value of the integral at the
-        rightmost bin."""
+        rightmost bin.
+        """
         self.firstBinBndCond = bndCond
         self.useFirstBinBndCond = True
+
+    def setMonotone(self, monotone=True):
+        """If monotone is true, the integrator will enforce monotonicity
+        of the integral and any interpolating functions.
+        """
+        self.monotone = monotone
+
 
     # ------------------
     # Actual Integration:
@@ -157,6 +167,13 @@ class integrator():
         # Telling the integrator that it has an integral evaulated with MC:
         self.hasMCIntegral = True
 
+        # Checking for monotonicity, if specified by user:
+        if self.monotone:
+            is_monotone = ((self.integral[1:] <= self.integral[:-1]).all() or
+                            (self.integral[1:] >= self.integral[:-1]).all())
+            assert is_monotone, "User asked for a monotone integral,"\
+                " but the integral is not monotone!"
+
     # ------------------
     # Integral Interpolation:
     # ------------------
@@ -172,8 +189,22 @@ class integrator():
         if self.useLastBinBndCond:
             xs = bins[:-1]
 
-        self.interpFn = interpolate.interp1d(x=xs, y=self.integral,
-                                             fill_value="extrapolate")
+        if self.monotone:
+            # Need to use special methods if we want monotone
+            # interpolation
+            self.interpFn = interpolate.PchipInterpolator(xs, self.integral,
+                                                          extrapolate=True)
+            print("testm2")
+            # Testing monotonicity:
+            interp_vals = self.interpFn(xs)
+            is_monotone = ((interp_vals[1:] <= interp_vals[:-1]).all() or
+                            (interp_vals[1:] >= interp_vals[:-1]).all())
+            assert is_monotone, "User asked for a monotone integral,"\
+                " but the integral's interpolating function is not monotone!"
+        else:
+            # If we do not need to enforce monotonicity
+            self.interpFn = interpolate.interp1d(x=xs, y=self.integral,
+                                                 fill_value="extrapolate")
         self.hasInterpIntegral = True
 
     def saveInterpolatingFn(self, fileName):
@@ -325,6 +356,7 @@ class integrator():
         self.useFirstBinBndCond = False
         self.lastBinBndCond = None
         self.useLastBinBndCond = False
+        self.monotone = False
         self.hasAnalyticIntegral = False
         self.hasAnalyticDensity = False
 
