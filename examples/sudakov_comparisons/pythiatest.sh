@@ -61,4 +61,3 @@ printf "# ============================
 python examples/params.py
 
 python examples/sudakov_comparisons/sudakov_comparison_pythia_numeric.py
-

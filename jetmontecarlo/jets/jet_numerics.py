@@ -5,11 +5,19 @@ from scipy.interpolate import griddata, interp2d, NearestNDInterpolator
 
 import matplotlib.pyplot as plt
 
-from sympy import Symbol, S
-from sympy.calculus.util import continuous_domain
+# Using sympy for smooth performance with monotonicity checks
+import sympy as sp
+from sympy import sympify, lambdify
 
-# Local utils:
+# Integration utils:
 from jetmontecarlo.montecarlo.integrator import *
+
+# Utils for monotonicity checks
+from jetmontecarlo.utils.interp_utils import lin_log_mixed_list
+from jetmontecarlo.utils.interp_utils import where_monotonic_arr
+from jetmontecarlo.utils.interp_utils import is_monotonic_arr
+from jetmontecarlo.utils.interp_utils import is_monotonic_func
+from jetmontecarlo.utils.interp_utils import monotonic_domain
 
 # Local jet tools
 from jetmontecarlo.jets.jetSamplers import *
@@ -21,36 +29,16 @@ from jetmontecarlo.analytics.radiators import *
 from jetmontecarlo.analytics.radiators_fixedcoupling import *
 
 
+# ------------------------------------
+# Local variables
+# ------------------------------------
+# Verbosity of local functions
 local_verbose = 1
+# Defining variables for later sympy use
+# DEBUG
+x = sp.Symbol('x')
+th = sp.Symbol('theta')
 
-def lin_log_mixed_list(lower_bound, upper_bound, num_bins):
-    # Mixing linear and logarithmic bins for the list of thetas
-    mixed_list = np.logspace(np.log10(lower_bound), np.log10(upper_bound),
-                             int(num_bins/2)+2)
-    mixed_list = np.append(mixed_list,
-                           np.linspace(lower_bound, upper_bound,
-                                       int(num_bins/2)))
-    # Sorting and removing the duplicate values of upper and lower bound
-    mixed_list = np.sort(mixed_list[1:-1])
-    mixed_list = mixed_list[~np.isnan(mixed_list)]
-    return mixed_list
-
-
-def test_monotonicity(obj, domain=None):
-    if hasattr(obj, '__iter__'):
-        is_monotone = ((obj[1:] <= obj[:-1]).all() or
-            (obj[1:] >= obj[:-1]).all())
-        print(f"{is_monotone = }")
-        return is_monotone
-    elif hasattr(obj, '__call__'):
-        assert domain is not None,\
-            "Testing montonicity of a function requires a domain."
-        xs = lin_log_mixed_list(domain[0], domain[1], 1000)
-        vals = obj(xs)
-        #print(xs)
-        #print(vals)
-        return test_monotonicity(vals)
-        
 
 ###########################################
 # Numerical Radiator Calculations:
@@ -66,8 +54,7 @@ def gen_numerical_radiator(rad_sampler, emission_type,
                            bin_space='lin',
                            fixed_coupling=True,
                            save=True,
-                           num_bins=100,
-                           force_monotone=False):
+                           num_bins=100):
     """A function which takes in a sampler with generated data,
     and returns the associated numerically integrated radiator
     (dependent on a single parameter).
@@ -151,7 +138,7 @@ def gen_numerical_radiator(rad_sampler, emission_type,
     # DEBUG: testing monotonicity
     if local_verbose >= 2:
         print("crit ints:")
-        test_monotonicity(radiator)
+        print(is_monotonic_arr(radiator, 'decreasing'))
 
     # Reminding the radiator where it needs to stop
     if emission_type == 'crit':
@@ -170,6 +157,10 @@ def gen_numerical_radiator(rad_sampler, emission_type,
     rad_integrator.makeInterpolatingFn()
 
     unbounded_interp_function = rad_integrator.interpFn
+    bounds = monotonic_domain(unbounded_interp_function, bounds)
+
+    if local_verbose >= 2:
+        print(f"monotonic domain: {bounds}")
 
     # Checking the interpolating function against our numerics
     # assert(unbounded_interp_function(xs) == radiator).all(),\
@@ -177,16 +168,45 @@ def gen_numerical_radiator(rad_sampler, emission_type,
     #     +"obtained with numerical integration."
 
     # Bounding the interpolating function
+    # bounded_interp_function = sp.Piecewise(
+    #     (0, x < bounds[0]),
+    #     (0, x > bounds[1]),
+    #     (unbounded_interp_function(x), True))
+    # bounded_interp_function = lambdify(x, bounded_interp_function)
+
+    # def bounded_interp_function(x):
+    #     vals = np.piecewise(np.array(x),
+    #             [x < bounds[0], bounds[0] <= x <= bounds[1] , x > bounds[1]],
+    #             [0, unbounded_interp_function(x), 0])
+    #     if len(vals) == 1:
+    #         return vals[0]
+    #     return vals
+    # DEBUG
+    # remove if stuff works
     def bounded_interp_function(x):
-        rad = (bounds[0] < x) * (x < bounds[1]) * unbounded_interp_function(x)
-        return rad
+        return unbounded_interp_function(bounds[0]) * (x <= bounds[0]) \
+            + (bounds[0] <= x) * (x <= bounds[1]) * unbounded_interp_function(x)
+        # try:
+        #     return list(map(bounded_interp_function, x))
+        # except TypeError:
+        #     pass
+        # if x < bounds[0]:
+        #     return 0
+        # if x > bounds[1]:
+        #     return 0
+        # return unbounded_interp_function(x)
 
     rad_integrator.interpFn = bounded_interp_function
 
     # DEBUG: testing monotonicity
-    if local_verbose >= 1:
+    if local_verbose >= 2:
         print("crit interps:")
-        test_monotonicity(bounded_interp_function, bounds)
+        print(is_monotonic_func(bounded_interp_function, bounds,
+                                'decreasing'))
+        print("    Monotonic domain: ",
+              monotonic_domain(bounded_interp_function, [0, 1],
+                               None, 'decreasing'))
+        print()
 
     # Saving data and interpolating function
     if save:
@@ -301,19 +321,47 @@ def gen_pre_num_rad(rad_sampler, crit_rad_sampler,
 
     unbounded_interp_function = rad_integrator.interpFn
 
-    # Bounding the interpolating function
-    def bounded_interp_function(x, theta):
-        # Pre-critical emission boundaries
-        rad = ((0 <= x) * (x <= rad_sampler.zc) * (0 <= theta)
-               * unbounded_interp_function(x, theta))
-        return rad
-
     # DEBUG: testing monotonicity
-    if local_verbose >= 1:
+    if local_verbose >= 2:
         print("pre interps:")
         for theta in lin_log_mixed_list(np.min(theta_crit), np.max(theta_crit), 250):
-            rad1d_fn = lambda x: bounded_interp_function(x, theta)
-            test_monotonicity(rad1d_fn, [1e-15, rad_sampler.zc])
+            print(f"pre, zc = {rad_sampler.zc}, {theta = }")
+            rad1d_fn = lambda x: unbounded_interp_function(x, theta)
+            # print("    Monotonic? ", is_monotonic_func(rad1d_fn,
+            #                         [1e-15, rad_sampler.zc],
+            #                         'decreasing'))
+            print("    Monotonic domain: ",
+                  monotonic_domain(rad1d_fn, [0, rad_sampler.zc],
+                                   rad_sampler.zc/2,
+                                   'decreasing'))
+            print()
+
+
+    # Bounding the interpolating function
+    # bounded_interp_function = sp.Piecewise(
+    #     (0, x < 0),
+    #     (0, th < 0),
+    #     (0, x > rad_sampler.zc),
+    #     (unbounded_interp_function(x, th), True))
+    # bounded_interp_function = lambdify((x, th), bounded_interp_function)
+
+    # DEBUG
+    # remove if stuff works
+    def bounded_interp_function(x, theta):
+        return unbounded_interp_function(x, theta) * (x >= 0) *\
+            (x <= rad_sampler.zc) * (theta >= 0)
+        # Applying to each given argument
+        # DEBUG
+        # try:
+        #     return map(bounded_interp_function, x, theta)
+        # Pre-critical emission boundaries
+        # if x < 0:
+        #     return 0
+        # if x > rad_sampler.zc:
+        #     return 0
+        # if theta < 0:
+        #     return 0
+        # return unbounded_interp_function(x, theta)
 
     rad_integrator.interpFn = bounded_interp_function
 
@@ -412,7 +460,7 @@ def gen_crit_sub_num_rad(rad_sampler,
         # DEBUG: testing monotonicity
         if local_verbose >= 3:
             print("crit sub integral 0:")
-            test_monotonicity(radiator)
+            print(is_monotone_arr(radiator, 'decreasing'))
 
         radiator = np.append(radiator, 0)
         # radiator_error = np.append(radiator_error, 0)
@@ -422,7 +470,7 @@ def gen_crit_sub_num_rad(rad_sampler,
         # DEBUG: testing monotonicity
         if local_verbose >= 2:
             print("crit sub int:")
-            test_monotonicity(radiator)
+            print(is_monotone_arr(radiator, 'decreasing'))
 
         # Saving the function/radiator values, bin edges, and theta value
         rads_all.append(np.array(radiator))
@@ -438,21 +486,46 @@ def gen_crit_sub_num_rad(rad_sampler,
     points = np.array([xs_all.flatten(), thetas_all.flatten()]).T
     unbounded_interp_function = NearestNDInterpolator(points, rads_all.flatten())
 
+    # Bounding the interpolating function
+    # bounded_interp_function = sp.Piecewise(
+    #     (0, x < 0),
+    #     (0, th < 0),
+    #     (0, x > C_ungroomed_max(beta, radius=th, acc=obs_accuracy)),
+    #     (unbounded_interp_function(x, th), True))
+    # bounded_interp_function = lambdify((x, th), bounded_interp_function)
+
+    # DEBUG
+    # remove if stuff works
     def bounded_interp_function(x, theta):
         # Subsequent emission boundaries
-        bnds = (x <= C_ungroomed_max(beta, radius=theta, acc=obs_accuracy))
-        rad = ((0 <= x) * bnds * (0 <= theta)
-               * unbounded_interp_function(x, theta))
-        return rad
+        # try:
+        #     return map(bounded_interp_function, x, theta)
+        return unbounded_interp_function(x, theta) * (x >= 0) * (theta >= 0) *\
+            (x <= C_ungroomed_max(beta, radius=theta, acc=obs_accuracy))
+        # if x < 0:
+        #     return 0
+        # if x > C_ungroomed_max(beta, radius=theta, acc=obs_accuracy):
+        #     return 0
+        # if theta < 0:
+        #     return 0
+        # return unbounded_interp_function(x, theta)
 
     # DEBUG: testing monotonicity
-    if local_verbose >= 1:
+    if local_verbose >= 2:
         print("crit sub interps:")
-        for theta in lin_log_mixed_list(np.min(theta_crit), np.max(theta_crit), 250):
+        for theta in lin_log_mixed_list(epsilon, 1, 250):
             rad1d_fn = lambda x: bounded_interp_function(x, theta)
-            test_monotonicity(rad1d_fn, [1e-15, C_ungroomed_max(beta, radius=theta,
-                                                            acc=obs_accuracy)])
-
+            min_arg = theta**beta * 1e-15
+            max_arg = C_ungroomed_max(beta, radius=theta, acc=obs_accuracy)
+            if max_arg < 1.1e-8:
+                continue
+            print(f"crit sub, {theta = }, bounds = {(min_arg, max_arg)}")
+            # print(is_monotonic_func(rad1d_fn, [min_arg, max_arg],
+            #                         'decreasing'))
+            print("    Monotonic domain: ",
+                  monotonic_domain(rad1d_fn, [min_arg, max_arg],
+                                   1.05e-8, 'decreasing'))
+            print()
     return bounded_interp_function
 
 ###########################################

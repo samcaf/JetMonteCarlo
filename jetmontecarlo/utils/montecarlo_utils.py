@@ -2,7 +2,10 @@ import warnings
 import random
 import numpy as np
 from scipy import interpolate
+from scipy.misc import derivative
 from pynverse import inversefunc
+
+from jetmontecarlo.utils.interp_utils import lin_log_mixed_list
 
 def getLinSample(sample_min, sample_max):
     """
@@ -84,7 +87,9 @@ def getLogSample_zerobin(sample_min, sample_max, cum_dist,
     return sample_min + np.exp(logsample)
 
 def samples_from_cdf(cdf, num_samples, domain=None,
-                     catch_turnpoint=False, verbose=5):
+                     catch_turnpoint=False,
+                     backup_cdf=None,
+                     verbose=5):
     """A function which takes in a functional form for a cdf,
     inverts it, and generates samples using the inverse transform
     method.
@@ -106,6 +111,7 @@ def samples_from_cdf(cdf, num_samples, domain=None,
         An array of num_samples samples generated from the
         given cdf.
     """
+    used_backup = False
     with warnings.catch_warnings():
         # Common but usually uniformative warning we would like to ignore:
         warnings.filterwarnings("ignore",
@@ -118,7 +124,15 @@ def samples_from_cdf(cdf, num_samples, domain=None,
             #==========================================================
             # Logging Errors and Correcting Common Use Cases
             #==========================================================
-            pnts = np.linspace(domain[0], domain[1], 1000)
+            # Getting a variety of points from the domain
+            if domain[0] < 0:
+                pnts = np.linspace(domain[0], domain[1], 1000)
+            else:
+                if domain[0] == 0:
+                    pnts = lin_log_mixed_list(domain[0]+1e-10, domain[1], 1000)
+                    pnts = [0, *pnts]
+                else:
+                    pnts = lin_log_mixed_list(domain[0], domain[1], 1000)
 
             #----------------------------------------------------
             # If it is always 1, simply return zeros (the zero bin)!
@@ -136,18 +150,45 @@ def samples_from_cdf(cdf, num_samples, domain=None,
                                       if not monotone[i]])
             bad_xvals_high = np.array([pnts[i+1] for i in range(len(monotone))
                                        if not monotone[i]])
-            bad_cdf_low, bad_cdf_high = cdf(bad_xvals_low), cdf(bad_xvals_high)
+            bad_cdf_low = cdf(np.unique(bad_xvals_low))
+            bad_cdf_high = cdf(np.unique(bad_xvals_high))
 
 
-            if (all(monotone == True) and cdf(domain[1]) < 1e-20) or all(cdf_vals < 1e-20):
-                # Another situation I've run into is that the CDF is monotone,
-                # but close to zero everywhere in the domain.
-                # I've also run into situations where every CDF value is miniscule.
-                # In both cases, I'll do the reverse of the above, and always
-                # return the highest value in the domain:
+            # Another situation I've run into is that the CDF is monotone,
+            # but close to zero everywhere in the domain, or a part of
+            # the domain.
+            # We can solve this type of issue by removing the "bad" part
+            # of the domain:
+            cdf_threshold = 1e-20
+
+            # * if the CDF is _always_ miniscule, I return the highest
+            #   value in the domain:
+            if all(cdf_vals < cdf_threshold):
                 if verbose > 4:
                     print("CDF always negligible. Returning highest point in domain.")
                 return np.full(num_samples, domain[1])
+
+            # * if the CDF is miniscule up to some point in the domain, but
+            #   monotone increasing afterwards, I remove the "bad" part
+            #   from the domain and try again
+            for i, cdf_val, point in enumerate(zip(cdf_vals, pnts)):
+                # If we find a point where the CDF is no longer
+                # miniscule
+                if cdf_val > cdf_threshold:
+                    if not all(monotone[i:]):
+                        # If the CDF is not monotone after this point,
+                        # this approach won't work
+                        break
+                    # If the CDF is monotone after this point, we can
+                    # remove the "bad" part of the domain and try again!
+                    if verbose > 4:
+                        print("CDF always negligible up to a certain " +
+                              "point. Removing 'bad' part from the domain.")
+                    return samples_from_cdf(cdf, num_samples,
+                                            domain=[point, domain[1]],
+                                            catch_turnpoint=catch_turnpoint,
+                                            backup_cdf=backup_cdf,
+                                            verbose=verbose)
 
             #----------------------------------------------------
             # Verbose comments pointing out features of cdf
@@ -198,11 +239,32 @@ def samples_from_cdf(cdf, num_samples, domain=None,
                                         catch_turnpoint=catch_turnpoint,
                                         verbose=verbose)
 
-            inv_cdf = inversefunc(cdf, domain=domain, image=[0,1])
+            # After trying to catch the above cases, try to invert the
+            # CDF again
+            try:
+                inv_cdf = inversefunc(cdf, domain=domain, image=[0,1])
+            except ValueError as e:
+                # If none of the above worked, try to use the backup CDF
+                # and adjust the weighting scheme
+                if backup_cdf is None:
+                    raise e
+                used_backup = True
+                inv_cdf = inversefunc(backup_cdf, domain=domain, image=[0,1])
 
         rands = np.random.rand(num_samples)
         samples = inv_cdf(rands)
-        return samples
+
+        if used_backup:
+            dxs = [1e-6*min(domain[1]-sample, sample-domain[0])
+                   for sample in samples]
+            assert all(dx > 0 for dx in dxs)
+            weights = [ (derivative(cdf, sample, dx) /
+                         derivative(backup_cdf, sample, dx))
+                        for sample, dx in zip(samples, dxs)]
+        else:
+            weights = np.ones_like(samples)
+
+        return samples, weights
 
 def inverse_transform_samples(cdf_vals, x_vals, num_samples):
     """A function which takes in a set of cdf values and associated x

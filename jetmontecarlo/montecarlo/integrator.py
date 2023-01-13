@@ -194,7 +194,6 @@ class integrator():
             # interpolation
             self.interpFn = interpolate.PchipInterpolator(xs, self.integral,
                                                           extrapolate=True)
-            print("testm2")
             # Testing monotonicity:
             interp_vals = self.interpFn(xs)
             is_monotone = ((interp_vals[1:] <= interp_vals[:-1]).all() or
@@ -529,7 +528,7 @@ class integrator_2d():
         binAreas = binAreas.T
 
         areafactor = area / (len(observables[0]) * binAreas)
-        
+
         self.density = weightHist * areafactor
         self.densityErr = np.sqrt(square_weightHist) * areafactor
 

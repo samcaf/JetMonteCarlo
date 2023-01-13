@@ -71,11 +71,11 @@ PS_INDEX_ZC = {zc: i for i, zc in enumerate([.05, .1, .2])}
 # MC Event Parameters
 # ------------------------------------
 # Number of generated events
-NUM_MC_EVENTS = int(5e6)
+NUM_MC_EVENTS = int(1e4)
 NUM_SHOWER_EVENTS = int(5e5)
 
 # MC Sampling Switches:
-LOAD_MC_EVENTS = True
+LOAD_MC_EVENTS = False
 # Default True: phase space doesn't change, only weights do
 SAVE_MC_EVENTS = True
 
@@ -90,8 +90,8 @@ LOAD_SPLITTING_FNS = False
 SAVE_SPLITTING_FNS = True
 
 # Number of bins for integration of radiators and splitting functions:
-NUM_RAD_BINS = int(5e3)
-NUM_SPLITFN_BINS = int(5e3)
+NUM_RAD_BINS = int(5e2)
+NUM_SPLITFN_BINS = int(5e2)
 
 # Determining whether to load inverse transform samples for full computation
 LOAD_INV_SAMPLES = LOAD_MC_EVENTS
@@ -100,7 +100,7 @@ LOAD_INV_SAMPLES = LOAD_MC_EVENTS
 # Sampling Parameters
 # ------------------------------------
 # -----------------
-# MC Integration (DEBUG: EPSILON WAS 1e-10 before)
+# MC Integration (DEBUG NOTE: EPSILON WAS 1e-10 before)
 # -----------------
 EPSILON = 1e-15 if FIXED_COUPLING else 1e-10
 BIN_SPACE = 'log'

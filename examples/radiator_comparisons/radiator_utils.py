@@ -177,7 +177,7 @@ def compare_pre_rad(fill_between=False):
                         **style_solid, color=compcolors[(i, 'dark')],
                         label=r'Numeric, $\theta$={}'.format(theta))
             if fill_between:
-                axes[0].fill_between(np.append(pnts[::500], zcut), err_low, err_high, 
+                axes[0].fill_between(np.append(pnts[::500], zcut), err_low, err_high,
                                      **style_solid, color=compcolors[(i, 'dark')],
                                      alpha=.3)
 

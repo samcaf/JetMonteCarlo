@@ -277,7 +277,6 @@ def load_radiators():
         global rad_crit_sub
         with open(subrad_path, 'rb') as file:
             rad_crit_sub_list = pickle.load(file)
-        # DEBUG: Is this right? No z_cut dependence?
         print("LENGTH OF RAD CRIT SUB LIST:", len(rad_crit_sub_list))
         rad_crit_sub = rad_crit_sub_list[0]
 
@@ -321,7 +320,7 @@ def load_radiators():
             me_factor = 1.
             if MULTIPLE_EMISSIONS:
                 me_factor = np.exp(euler_constant * z_pre
-                                   * deriv_rad_pre(z_pre, theta, z_cut)) 
+                                   * deriv_rad_pre(z_pre, theta, z_cut))
             return me_factor * np.exp(-1.*rad_pre(z_pre, theta, z_cut))
 
 
@@ -343,8 +342,6 @@ def plot_mc_banded(ax, ys, err, bins, label, col, drawband=False):
         err = xs * err * np.log(10) # delta( dY / d log10 C)
 
     line = ax.plot(xs, ys, ls='-', lw=2., color=col, label=label)
-    # DEBUG: Some weird features in some plots, look like they could be
-    #        misplaced bands
     if drawband:
         band = draw_error_band(ax, xs, ys, err, color=col, alpha=.4)
         return line, band
@@ -435,16 +432,9 @@ def plot_mc_crit(axes_pdf, axes_cdf, z_cut, beta, f_soft, col,
 
     if BIN_SPACE == 'log':
         xs = np.sqrt(bins[:-1]*bins[1:])
-        print("Critical MC normalization:", np.sum(pdf * (np.log10(xs) - np.log10(xs))))
-
-    # DEBUG
-    """
-    if BIN_SPACE == 'log':
-        xs = np.sqrt(bins[:-1]*bins[1:])
-
-        pdf = xs*pdf * np.log(10) # d sigma / d log10 C
-        pdf_err = xs*pdf_err * np.log(10) # d sigma / d log10 C
-    """
+        print("Critical MC normalization:",
+              np.sum(pdf * (np.log10(bins[1:])-np.log10(bins[:-1]))))
+        print("    Method 2: ", integral[-1])
 
     pdfline, pdfband = plot_mc_banded(axes_pdf[0], pdf,
                                       2.*pdf_err, bins,
@@ -456,7 +446,8 @@ def plot_mc_crit(axes_pdf, axes_cdf, z_cut, beta, f_soft, col,
     if BIN_SPACE == 'log':
         pdf = xs*pdf * np.log(10) # d sigma / d log10 C
         pdf_err = xs*pdf_err * np.log(10) # d sigma / d log10 C
-        print("Critical MC adjusted normalization:", np.sum(pdf * (np.log10(xs) - np.log10(xs))))
+        print("Critical MC adjusted normalization:",
+              np.sum(pdf * (np.log10(bins[1:])-np.log10(bins[:-1]))))
 
 
     return pdfline, pdfband, cdfline, cdfband
@@ -488,7 +479,7 @@ def plot_mc_all(axes_pdf, axes_cdf, z_cut, beta, f_soft, col,
         def this_cdf_crit(theta):
             return cdf_crit(theta, z_cut)
 
-        theta_crits = samples_from_cdf(this_cdf_crit, NUM_MC_EVENTS, 
+        theta_crits = samples_from_cdf(this_cdf_crit, NUM_MC_EVENTS,
                                        domain=[0.,1.],
                                        verbose=3)
         theta_crits = np.where(np.isinf(theta_crits), 0, theta_crits)
@@ -591,16 +582,8 @@ def plot_mc_all(axes_pdf, axes_cdf, z_cut, beta, f_soft, col,
 
     if BIN_SPACE == 'log':
         xs = np.sqrt(bins[:-1]*bins[1:])
-        print("All MC normalization:", np.sum(pdf * (np.log10(xs) - np.log10(xs))))
-
-    # DEBUG
-    """
-    if BIN_SPACE == 'log':
-        xs = np.sqrt(bins[:-1]*bins[1:])
-
-        pdf = xs*pdf * np.log(10) # d sigma / d log10 C
-        pdf_err = xs*pdf_err * np.log(10) # d sigma / d log10 C
-    """
+        print("All MC normalization:",
+              np.sum(pdf * (np.log10(bins[1:])-np.log10(bins[:-1]))))
 
     pdfline, pdfband = plot_mc_banded(axes_pdf[0], pdf,
                                       2.*pdf_err, bins,
@@ -613,7 +596,8 @@ def plot_mc_all(axes_pdf, axes_cdf, z_cut, beta, f_soft, col,
         pdf = xs*pdf * np.log(10) # d sigma / d log10 C
         pdf_err = xs*pdf_err * np.log(10) # d sigma / d log10 C
 
-        print("All MC adjusted normalization:", np.sum(pdf * (np.log10(xs) - np.log10(xs))))
+        print("All MC adjusted normalization:",
+              np.sum(pdf * (np.log10(bins[1:])-np.log10(bins[:-1]))))
 
     return pdfline, pdfband, cdfline, cdfband
 
@@ -643,7 +627,7 @@ def plot_mc_ivs(axes_pdf, axes_cdf, z_cut, beta, f_soft, col,
         def this_cdf_crit(theta):
             return cdf_crit(theta, z_cut)
 
-        theta_crits = samples_from_cdf(this_cdf_crit, NUM_MC_EVENTS, 
+        theta_crits = samples_from_cdf(this_cdf_crit, NUM_MC_EVENTS,
                                        domain=[0.,1.],
                                        verbose=3)
         theta_crits = np.where(np.isinf(theta_crits), 0, theta_crits)
@@ -827,7 +811,7 @@ def plot_mc_crit_and_sub(axes_pdf, axes_cdf, z_cut, beta):
         def this_cdf_crit(theta):
             return cdf_crit(theta, z_cut)
 
-        theta_crits = samples_from_cdf(this_cdf_crit, NUM_MC_EVENTS, 
+        theta_crits = samples_from_cdf(this_cdf_crit, NUM_MC_EVENTS,
                                        domain=[0.,1.],
                                        verbose=3)
         theta_crits = np.where(np.isinf(theta_crits), 0, theta_crits)

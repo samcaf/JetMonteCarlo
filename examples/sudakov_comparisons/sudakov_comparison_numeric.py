@@ -52,6 +52,7 @@ Z_CUT_PLOT = [F_SOFT * zc for zc in Z_CUT_PLOT]
 
 save_cdf = False
 
+
 # ------------------------------------
 # Comparison parameters
 # ------------------------------------
@@ -72,6 +73,7 @@ else:
 plot_label += '_showerbeta'+str(SHOWER_BETA)
 if F_SOFT:
     plot_label += '_f{}'.format(F_SOFT)
+
 
 # ==========================================
 # Loading Files
@@ -95,6 +97,7 @@ def ps_correlations(beta):
 
     return ps_data
 
+
 # ------------------------------------
 # MC integration files:
 # ------------------------------------
@@ -104,6 +107,7 @@ with open(splitfn_path, 'rb') as f:
 # Index of z_cut values in the splitting function file
 def split_fn_num(z, theta, z_cut):
     return splitting_fns[INDEX_ZC[z_cut]](z, theta)
+
 
 # Sample file paths:
 sample_folder = Path("jetmontecarlo/utils/samples/inverse_transform_samples")
@@ -119,7 +123,7 @@ def crit_sample_file_path(z_cut, beta):
                         +extra_label
                         +"samples.npy")
     return sample_folder / crit_sample_file
-print(crit_sample_file_path(.1, 2))
+
 
 def sub_sample_file_path(beta):
     beta=float(beta)
@@ -132,6 +136,7 @@ def sub_sample_file_path(beta):
                        +"samples.npy")
     return sample_folder / sub_sample_file
 
+
 def crit_sub_sample_file_path(z_cut, beta):
     beta=float(beta)
     crit_sub_sample_file = ("c_subs_from_crits"
@@ -143,6 +148,7 @@ def crit_sub_sample_file_path(z_cut, beta):
                             +extra_label
                             +"samples.npy")
     return sample_folder / crit_sub_sample_file
+
 
 def pre_sample_file_path(z_cut):
     pre_sample_file = ("z_pres_from_crits"
@@ -209,7 +215,16 @@ def plot_mc_crit(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
         if crit_sample_file_path(z_cut, beta).is_file():
             print("    Loading critical samples with z_c="+str(z_cut)+"...",
                   flush=True)
-            theta_crits = np.load(crit_sample_file_path(z_cut, beta))
+            try:
+                # Loading files and samples:
+                sample_dict = np.load(crit_sample_file_path(z_cut, beta),
+                                      allow_pickle=True)
+                theta_crits = sample_dict['samples']
+                theta_crit_weights = sample_dict['weights']
+            except:
+                # Old syntax for loading files, for backwards compatibility
+                theta_crits = np.load(crit_sample_file_path(z_cut, beta))
+                theta_crit_weights = np.ones_like(theta_crits)
         else:
             load = False
             if LOAD_MC_EVENTS:
@@ -222,24 +237,37 @@ def plot_mc_crit(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
         def cdf_crit(theta):
             return np.exp(-1.*rad_crit(theta, z_cut))
 
-        theta_crits = samples_from_cdf(cdf_crit, NUM_MC_EVENTS, domain=[0.,1.],
-                                       verbose=3)
+        theta_crits, theta_crit_weights = samples_from_cdf(cdf_crit, NUM_MC_EVENTS,
+                                                domain=[0.,1.],
+                                                # DEBUG
+                                                backup_cdf=None,
+                                                verbose=3)
+        theta_crit_weights = np.where(np.isinf(theta_crits), 0.,
+                                      theta_crit_weights)
         theta_crits = np.where(np.isinf(theta_crits), 0, theta_crits)
 
-        np.save(crit_sample_file_path(z_cut, beta), theta_crits)
+        # Save samples and weights
+        np.savez(crit_sample_file_path(z_cut, beta),
+                 samples=theta_crits,
+                 weights=theta_crit_weights)
 
     z_crits = np.array([getLinSample(z_cut, 1./2.)
                         for i in range(NUM_MC_EVENTS)])
-    weights = split_fn_num(z_crits, theta_crits, z_cut)
 
     obs = C_groomed(z_crits, theta_crits, z_cut, beta,
                     z_pre=0., f=F_SOFT, acc=OBS_ACC)
 
+    weights = split_fn_num(z_crits, theta_crits, z_cut)
+    weights *= theta_crit_weights
+
     if verbose > 1:
         arg = np.argmax(obs)
+        print(f"{len(obs) = }")
+        print(f"{arg = }")
+        print(f"{obs = }")
         print("zc: " + str(z_cut))
         print("obs_acc: " + OBS_ACC)
-        print("maximum observable: " + str(max(obs)))
+        print("maximum observable: " + str(obs[arg]))
         print("associated with\n    z = "+str(z_crits[arg])
               +"\n    theta = "+str(theta_crits[arg]))
         print('', flush=True)
@@ -329,7 +357,7 @@ def compare_crit(beta=BETA, plot_approx=False):
                         +str(this_plot_label)
                         +'.pdf',
                         format='pdf')
-    
+
     plt.close(fig_pdf)
     plt.close(fig_cdf)
 
@@ -347,7 +375,16 @@ def plot_mc_sub(axes_pdf, axes_cdf, beta, icol=0,
         if sub_sample_file_path(beta).is_file():
             print("    Loading subsequent samples with beta="+str(beta)+"...",
                   flush=True)
-            c_subs = np.load(sub_sample_file_path(beta))
+            try:
+                # Loading files and samples:
+                sample_dict = np.load(sub_sample_file_path(beta),
+                                      allow_pickle=True)
+                c_subs = sample_dict['samples']
+                c_sub_weights = sample_dict['weights']
+            except:
+                # Old syntax for loading files, for backwards compatibility
+                c_subs = np.load(sub_sample_file_path(beta))
+                c_sub_weights = np.ones_like(c_subs)
         else:
             load = False
             if LOAD_MC_EVENTS:
@@ -359,18 +396,29 @@ def plot_mc_sub(axes_pdf, axes_cdf, beta, icol=0,
         def cdf_sub(c_sub):
             return np.exp(-1.*rad_sub(c_sub, beta))
 
-        c_subs = samples_from_cdf(cdf_sub, NUM_MC_EVENTS, domain=[0.,.5],
-                                  verbose=3)
+        c_subs, c_sub_weights = samples_from_cdf(cdf_sub, NUM_MC_EVENTS,
+                                        domain=[0.,.5],
+                                        # DEBUG
+                                        backup_cdf=None,
+                                        verbose=3)
+        c_sub_weights = np.where(np.isinf(c_subs), 0,
+                                 c_sub_weights)
         c_subs = np.where(np.isinf(c_subs), 0, c_subs)
-        np.save(sub_sample_file_path(beta), c_subs)
+
+        # Save samples and weights
+        np.savez(sub_sample_file_path(beta),
+                 samples=c_subs,
+                 weights=c_sub_weights)
 
     obs = c_subs
+
+    weights = c_sub_weights
 
     # Weights, binned observables, and area
     sud_integrator.bins = np.logspace(np.log10(EPSILON)-1, np.log10(.5),
                                       NUM_BINS)
     sud_integrator.hasBins = True
-    sud_integrator.setDensity(obs, np.ones(len(obs)), 1.)
+    sud_integrator.setDensity(obs, weights, 1.)
     sud_integrator.integrate()
 
     pdf = sud_integrator.density
@@ -453,7 +501,16 @@ def plot_mc_crit_and_sub(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
     if load:
         if crit_sample_file_path(z_cut, beta).is_file():
             print("    Loading critical samples with z_c="+str(z_cut)+"...", flush=True)
-            theta_crits = np.load(crit_sample_file_path(z_cut, beta))
+            try:
+                # Loading files and samples:
+                sample_dict = np.load(crit_sample_file_path(z_cut, beta),
+                                      allow_pickle=True)
+                theta_crits = sample_dict['samples']
+                theta_crit_weights = sample_dict['weights']
+            except:
+                # Old syntax for loading files, for backwards compatibility
+                theta_crits = np.load(crit_sample_file_path(z_cut, beta))
+                theta_crit_weights = np.ones_like(theta_crits)
         else:
             load = False
             if LOAD_MC_EVENTS:
@@ -465,18 +522,35 @@ def plot_mc_crit_and_sub(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
         def cdf_crit(theta):
             return np.exp(-1.*rad_crit(theta, z_cut))
 
-        theta_crits = samples_from_cdf(cdf_crit, NUM_MC_EVENTS, domain=[0.,1.],
-                                       verbose=3)
+        theta_crits, theta_crit_weights = samples_from_cdf(cdf_crit, NUM_MC_EVENTS,
+                                                domain=[0.,1.],
+                                                # DEBUG
+                                                backup_cdf=None,
+                                                verbose=3)
+        theta_crit_weights = np.where(np.isinf(theta_crits), 0.,
+                                      theta_crit_weights)
         theta_crits = np.where(np.isinf(theta_crits), 0, theta_crits)
 
-        np.save(crit_sample_file_path(z_cut, beta), theta_crits)
+        # Save samples and weights
+        np.savez(crit_sample_file_path(z_cut, beta),
+                 samples=theta_crits,
+                 weights=theta_crit_weights)
 
     if load:
         if crit_sub_sample_file_path(z_cut, beta).is_file():
             print("    Loading subsequent samples with beta="+str(beta)+
                   " from crit samples with z_cut="+str(z_cut)+"...",
                   flush=True)
-            c_subs = np.load(crit_sub_sample_file_path(z_cut, beta))
+            try:
+                # Loading files and samples:
+                sample_dict = np.load(crit_sub_sample_file_path(z_cut, beta),
+                                      allow_pickle=True)
+                c_subs = sample_dict['samples']
+                c_sub_weights = sample_dict['weights']
+            except:
+                # Old syntax for loading files, for backwards compatibility
+                c_subs = np.load(crit_sub_sample_file_path(z_cut, beta))
+                c_sub_weights = np.ones_like(c_subs)
         else:
             load = False
             if LOAD_MC_EVENTS:
@@ -486,6 +560,7 @@ def plot_mc_crit_and_sub(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
         print("    Making subsequent samples with beta="+str(beta)+"...",
               flush=True)
         c_subs = []
+        c_sub_weights = []
 
         for i, theta in enumerate(theta_crits):
             def cdf_sub_conditional(c_sub):
@@ -494,24 +569,36 @@ def plot_mc_crit_and_sub(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
             if theta**beta/2. < 1e-10:
                 # Assigning to an underflow bin for small observable values
                 c_sub = 1e-100
+                c_sub_weight = 1
             else:
-                c_sub = samples_from_cdf(cdf_sub_conditional, 1,
-                                     domain=[0.,theta**beta/2.],
-                                     verbose=3)[0]
-            c_subs.append(c_sub)
+                c_sub, c_sub_weight = samples_from_cdf(cdf_sub_conditional, 1,
+                                                domain=[0.,theta**beta/2.],
+                                                # DEBUG
+                                                backup_cdf=None,
+                                                verbose=3)
+            c_subs.append(c_sub[0])
+            c_sub_weights.append(c_sub_weight[0])
             if (i+1)%(len(theta_crits)/10)==0:
                 print("        Generated "+str(i+1)+" events...", flush=True)
         c_subs = np.array(c_subs)
+        c_sub_weights = np.array(c_sub_weights)
+        c_sub_weights = np.where(np.isinf(c_subs), 0, c_sub_weights)
         c_subs = np.where(np.isinf(c_subs), 0, c_subs)
-        np.save(crit_sub_sample_file_path(z_cut, beta), c_subs)
+
+        # Save samples and weights
+        np.savez(crit_sub_sample_file_path(z_cut, beta),
+                 samples=c_subs,
+                 weights=c_sub_weights)
 
     z_crits = np.array([getLinSample(z_cut, 1./2.)
                         for i in range(NUM_MC_EVENTS)])
-    weights = split_fn_num(z_crits, theta_crits, z_cut)
 
     c_crits = C_groomed(z_crits, theta_crits, z_cut, beta,
                         z_pre=0., f=F_SOFT, acc=OBS_ACC)
     obs = np.maximum(c_crits, c_subs)
+
+    weights = split_fn_num(z_crits, theta_crits, z_cut)
+    weights *= theta_crit_weights * c_sub_weights
 
     # Weights, binned observables, and area
     if BIN_SPACE == 'lin':
@@ -606,7 +693,16 @@ def plot_mc_pre_and_crit(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
         if crit_sample_file_path(z_cut, beta).is_file():
             print("    Loading critical samples with z_c="+str(z_cut)+"...",
                   flush=True)
-            theta_crits = np.load(crit_sample_file_path(z_cut, beta))
+            try:
+                # Loading files and samples:
+                sample_dict = np.load(crit_sample_file_path(z_cut, beta),
+                                      allow_pickle=True)
+                theta_crits = sample_dict['samples']
+                theta_crit_weights = sample_dict['weights']
+            except:
+                # Old syntax for loading files, for backwards compatibility
+                theta_crits = np.load(crit_sample_file_path(z_cut, beta))
+                theta_crit_weights = np.ones_like(theta_crits)
         else:
             load = False
             if LOAD_MC_EVENTS:
@@ -619,18 +715,35 @@ def plot_mc_pre_and_crit(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
         def cdf_crit(theta):
             return np.exp(-1.*rad_crit(theta, z_cut))
 
-        theta_crits = samples_from_cdf(cdf_crit, NUM_MC_EVENTS, domain=[0.,1.],
-                                       verbose=3)
+        theta_crits, theta_crit_weights = samples_from_cdf(cdf_crit, NUM_MC_EVENTS,
+                                                domain=[0.,1.],
+                                                # DEBUG
+                                                backup_cdf=None,
+                                                verbose=3)
+        theta_crit_weights = np.where(np.isinf(theta_crits), 0.,
+                                      theta_crit_weights)
         theta_crits = np.where(np.isinf(theta_crits), 0, theta_crits)
 
-        np.save(crit_sample_file_path(z_cut, beta), theta_crits)
+        # Save samples and weights
+        np.savez(crit_sample_file_path(z_cut, beta),
+                 samples=theta_crits,
+                 weights=theta_crit_weights)
 
     if load:
         if pre_sample_file_path(z_cut).is_file():
             print("    Loading pre-critical samples"
                   +" from crit samples with z_cut="+str(z_cut)+"...",
                   flush=True)
-            z_pres = np.load(pre_sample_file_path(z_cut))
+            try:
+                # Loading files and samples:
+                sample_dict = np.load(pre_sample_file_path(z_cut),
+                                      allow_pickle=True)
+                z_pres = sample_dict['samples']
+                z_pre_weights = sample_dict['weights']
+            except:
+                # Old syntax for loading files, for backwards compatibility
+                z_pres = np.load(pre_sample_file_path(z_cut))
+                z_pre_weights = np.ones_like(z_pres)
         else:
             load = False
             if LOAD_MC_EVENTS:
@@ -642,27 +755,41 @@ def plot_mc_pre_and_crit(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
               flush=True)
 
         z_pres = []
+        z_pre_weights = []
 
         for i, theta in enumerate(theta_crits):
             def cdf_pre_conditional(z_pre):
                 return np.exp(-1.*rad_pre(z_pre, theta, z_cut))
 
-            z_pre = samples_from_cdf(cdf_pre_conditional, 1,
-                                     domain=[0.,z_cut], verbose=3)[0]
-            z_pres.append(z_pre)
+            z_pre, z_pre_weight = samples_from_cdf(cdf_pre_conditional, 1,
+                                                domain=[0.,z_cut],
+                                                # DEBUG
+                                                backup_cdf=None,
+                                                verbose=3)
+            z_pres.append(z_pre[0])
+            z_pre_weights.append(z_pre_weight[0])
             if (i+1)%(len(theta_crits)/10)==0:
                 print("        Generated "+str(i+1)+" events...", flush=True)
+
         z_pres = np.array(z_pres)
+        z_pre_weights = np.array(z_pre_weights)
+        z_pre_weights = np.where(np.isinf(z_pres), 0., z_pre_weights)
         z_pres = np.where(np.isinf(z_pres), 0, z_pres)
-        np.save(pre_sample_file_path(z_cut), z_pres)
+
+        # Save samples and weights
+        np.savez(pre_sample_file_path(z_cut),
+                 samples=z_pres,
+                 weights=z_pre_weights)
 
     z_crits = np.array([getLinSample(z_cut, 1./2.)
                         for i in range(NUM_MC_EVENTS)])
-    weights = split_fn_num(z_crits, theta_crits, z_cut)
 
     c_crits = C_groomed(z_crits, theta_crits, z_cut, beta,
                         z_pre=z_pres, f=F_SOFT, acc=OBS_ACC)
     obs = c_crits
+
+    weights = split_fn_num(z_crits, theta_crits, z_cut)
+    weights *= theta_crit_weights * z_pre_weights
 
     # Weights, binned observables, and area
     if BIN_SPACE == 'lin':
@@ -757,7 +884,16 @@ def plot_mc_all(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
         if crit_sample_file_path(z_cut, beta).is_file():
             print("    Loading critical samples with z_c="+str(z_cut)+"...",
                   flush=True)
-            theta_crits = np.load(crit_sample_file_path(z_cut, beta))
+            try:
+                # Loading files and samples:
+                sample_dict = np.load(crit_sample_file_path(z_cut, beta),
+                                      allow_pickle=True)
+                theta_crits = sample_dict['samples']
+                theta_crit_weights = sample_dict['weights']
+            except:
+                # Old syntax for loading files, for backwards compatibility
+                theta_crits = np.load(crit_sample_file_path(z_cut, beta))
+                theta_crit_weights = np.ones_like(theta_crits)
         else:
             load = False
             if LOAD_MC_EVENTS:
@@ -773,18 +909,35 @@ def plot_mc_all(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
         def cdf_crit(theta):
             return np.exp(-1.*rad_crit(theta))
 
-        theta_crits = samples_from_cdf(cdf_crit, NUM_MC_EVENTS, domain=[0.,1.],
-                                       verbose=3)
+        theta_crits, theta_crit_weights = samples_from_cdf(cdf_crit, NUM_MC_EVENTS,
+                                                domain=[0.,1.],
+                                                # DEBUG
+                                                backup_cdf=None,
+                                                verbose=3)
+        theta_crit_weights = np.where(np.isinf(theta_crits), 0,
+                                      theta_crit_weights)
         theta_crits = np.where(np.isinf(theta_crits), 0, theta_crits)
 
-        np.save(crit_sample_file_path(z_cut, beta), theta_crits)
+        # Save samples and weights
+        np.savez(crit_sample_file_path(z_cut, beta),
+                 samples=theta_crits,
+                 weights=theta_crit_weights)
 
     if load:
         if crit_sub_sample_file_path(z_cut, beta).is_file():
             print("    Loading subsequent samples with beta="+str(beta)+
                   " from crit samples with z_cut="+str(z_cut)+"...",
                   flush=True)
-            c_subs = np.load(crit_sub_sample_file_path(z_cut, beta))
+            try:
+                # Loading files and samples:
+                sample_dict = np.load(crit_sub_sample_file_path(z_cut, beta),
+                                      allow_pickle=True)
+                c_subs = sample_dict['samples']
+                c_sub_weights = sample_dict['weights']
+            except:
+                # Old syntax for loading files, for backwards compatibility
+                c_subs = np.load(crit_sub_sample_file_path(z_cut, beta))
+                c_sub_weights = np.ones_like(c_subs)
         else:
             load = False
             if LOAD_MC_EVENTS:
@@ -794,6 +947,7 @@ def plot_mc_all(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
         print("    Making subsequent samples with beta="+str(beta)+"...",
               flush=True)
         c_subs = []
+        c_sub_weights = []
 
         for i, theta in enumerate(theta_crits):
             def cdf_sub_conditional(c_sub):
@@ -802,23 +956,42 @@ def plot_mc_all(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
             if theta**beta/2. < 1e-10:
                 # Assigning to an underflow bin for small observable values
                 c_sub = 1e-100
+                c_sub_weight = 1.
             else:
-                c_sub = samples_from_cdf(cdf_sub_conditional, 1,
-                                     domain=[0.,theta**beta/2.],
-                                     verbose=3)[0]
-            c_subs.append(c_sub)
+                c_sub, c_sub_weight = samples_from_cdf(cdf_sub_conditional, 1,
+                                                domain=[0.,theta**beta/2.],
+                                                # DEBUG
+                                                backup_cdf=None,
+                                                verbose=3)
+            c_subs.append(c_sub[0])
+            c_sub_weights.append(c_sub_weight[0])
             if (i+1)%(len(theta_crits)/10) == 0:
                 print("        Generated "+str(i+1)+" events...", flush=True)
         c_subs = np.array(c_subs)
+        c_sub_weights = np.array(c_sub_weights)
+        c_sub_weights = np.where(np.isinf(c_subs), 0, c_sub_weights)
         c_subs = np.where(np.isinf(c_subs), 0, c_subs)
-        np.save(crit_sub_sample_file_path(z_cut, beta), c_subs)
+
+        # Save samples and weights
+        np.savez(crit_sub_sample_file_path(z_cut, beta),
+                 samples=c_subs,
+                 weights=c_sub_weights)
 
     if load:
         if pre_sample_file_path(z_cut).is_file():
             print("    Loading pre-critical samples"
                   +" from crit samples with z_cut="+str(z_cut)+"...",
                   flush=True)
-            z_pres = np.load(pre_sample_file_path(z_cut))
+            try:
+                # Loading files and samples:
+                sample_dict = np.load(pre_sample_file_path(z_cut),
+                                      allow_pickle=True)
+                z_pres = sample_dict['samples']
+                z_pre_weights = sample_dict['weights']
+            except:
+                # Old syntax for loading files, for backwards compatibility
+                z_pres = np.load(pre_sample_file_path(z_cut))
+                z_pre_weights = np.ones_like(z_pres)
         else:
             load = False
             if LOAD_MC_EVENTS:
@@ -830,29 +1003,41 @@ def plot_mc_all(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
               flush=True)
 
         z_pres = []
+        z_pre_weights = []
 
         for i, theta in enumerate(theta_crits):
             def cdf_pre_conditional(z_pre):
                 return np.exp(-1.*rad_pre(z_pre, theta, z_cut))
 
-            z_pre = samples_from_cdf(cdf_pre_conditional, 1,
-                                     domain=[0,z_cut],
-                                     verbose=3)[0]
-            z_pres.append(z_pre)
+            z_pre, z_pre_weight = samples_from_cdf(cdf_pre_conditional, 1,
+                                                domain=[0,z_cut],
+                                                # DEBUG
+                                                backup_cdf=None,
+                                                verbose=3)
+            z_pres.append(z_pre[0])
+            z_pre_weights.append(z_pre_weight[0])
             if (i+1)%(len(theta_crits)/10) == 0:
                 print("        Generated "+str(i+1)+" events...",
                       flush=True)
         z_pres = np.array(z_pres)
+        z_pre_weights = np.array(z_pre_weights)
+        z_pre_weights = np.where(np.isinf(z_pres), 0, z_pre_weights)
         z_pres = np.where(np.isinf(z_pres), 0, z_pres)
-        np.save(pre_sample_file_path(z_cut), z_pres)
+
+        # Save samples and weights
+        np.savez(pre_sample_file_path(z_cut),
+                 samples=z_pres,
+                 weights=z_pre_weights)
 
     z_crits = np.array([getLinSample(z_cut, 1./2.)
                         for i in range(NUM_MC_EVENTS)])
-    weights = split_fn_num(z_crits, theta_crits, z_cut)
 
     c_crits = C_groomed(z_crits, theta_crits, z_cut, beta,
                         z_pre=z_pres, f=F_SOFT, acc=OBS_ACC)
     obs = np.maximum(c_crits, c_subs)
+
+    weights = split_fn_num(z_crits, theta_crits, z_cut)
+    weights *= theta_crit_weights * c_sub_weights * z_pre_weights
 
     # Weights, binned observables, and area
     if BIN_SPACE == 'lin':

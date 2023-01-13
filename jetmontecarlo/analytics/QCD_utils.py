@@ -155,7 +155,8 @@ LAMBDA_QCD = .3/(P_T*R0)  # Unitless constant associated with Lambda_QCD
 
 # For comparison to fixed coupling:
 # If an emission occurs with z*theta ~ 1/10, then the scale of the emission is ~1/10 the jet scale
-alpha_fc = alpha1loop(P_T*R0/10)
+# alpha_fc = alpha1loop(P_T*R0/10)
+alpha_fc = alpha_fixed
 
 # ---------------------------------------------------
 # Other useful function definitions
