@@ -293,11 +293,11 @@ def plot_shower_pdf_cdf(vals, axespdf, axescdf,
         # Bins
         bins = np.logspace(-10, 0., NUM_BINS) if SHOWER_CUTOFF == MU_NP\
                else np.logspace(-18, 0., NUM_BINS)
-        bins = np.insert(bins, 0, 1e-100)
+        bins = np.insert(bins, 0, 1e-100) # zero bin
 
         # Bin midpoints
         xs = np.sqrt(bins[1:-1] * bins[2:])
-        xs = np.insert(xs, 0, 1e-100) # zero bin
+        xs = np.insert(xs, 0, 1e-50) # zero bin
         # DEBUG: remains to be seen whether zero bin will throw off normalization
 
     ps_integrator = integrator()
@@ -399,12 +399,12 @@ def plot_pythia_pdf_cdf(vals, axespdf, axescdf,
         # Bins
         bins = np.logspace(-10, 0., NUM_BINS) if SHOWER_CUTOFF == MU_NP\
                else np.logspace(-18, 0., NUM_BINS)
-        bins = np.insert(bins, 0, 1e-100)
+        bins = np.insert(bins, 0, 1e-100) # zero bin
 
         # Bin midpoints
         xs = np.sqrt(bins[1:-1] * bins[2:])
-        xs = np.insert(xs, 0, 1e-100) # zero bin
-        # DEBUG: remains to be seen whether zbin will throw off normalization
+        xs = np.insert(xs, 0, 1e-50) # zero bin
+        # DEBUG: remains to be seen whether zero bin will throw off normalization
 
     bins = np.append(1e-100, bins)
     ps_integrator = integrator()
