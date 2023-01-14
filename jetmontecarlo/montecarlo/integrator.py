@@ -192,8 +192,10 @@ class integrator():
         if self.monotone:
             # Need to use special methods if we want monotone
             # interpolation
-            self.interpFn = interpolate.PchipInterpolator(xs, self.integral,
-                                                          extrapolate=True)
+            # self.interpFn = interpolate.PchipInterpolator(xs, self.integral,
+            #                                               extrapolate=True)
+            self.interpFn = lambda x: np.interp(x, xs, self.integral)
+
             # Testing monotonicity:
             interp_vals = self.interpFn(xs)
             is_monotone = ((interp_vals[1:] <= interp_vals[:-1]).all() or
@@ -648,11 +650,15 @@ class integrator_2d():
                 zerr = np.array(zerr).T
 
         z = z.flatten()
-        self.interpFn = interpolate.interp2d(x=x, y=y, z=z)
+        self.interpFn = interpolate.RegularGridInterpolator((x, y), z,
+                                    method='linear', bounds_error=False,
+                                    fill_value=None)
 
         if interpolate_error:
             zerr = zerr.flatten()
-            self.interpErr = interpolate.interp2d(x=x, y=y, z=zerr)
+            self.interpFn = interpolate.RegularGridInterpolator((x, y), zerr,
+                                        method='linear', bounds_error=False,
+                                        fill_value=None)
         else:
             self.interpErr = None
 
@@ -667,14 +673,23 @@ class integrator_2d():
             "Need MC density to produce interpolation"
         bins = self.bins
 
-        if binspacing == 'lin':
-            xs = (bins[1:] + bins[:-1])/2.
-        elif binspacing == 'log':
-            xs = np.exp((np.log(bins[1:])
-                         +np.log(bins[:-1]))/2.)
+        assert False, "Unsupported function."
 
-        self.interpDensity = interpolate.interp1d(x=xs, y=self.density,
-                                                  fill_value="extrapolate")
+        xs, ys = self.bins[0], self.bins[1]
+
+        if binspacing == 'lin':
+            xs = (xs[1:] + xs[:-1])/2
+            ys = (ys[1:] + ys[:-1])/2
+        elif binspacing == 'log':
+            xs = np.exp((np.log(xs[1:])
+                         +np.log(xs[:-1]))/2.)
+            ys = np.exp((np.log(ys[1:])
+                         +np.log(ys[:-1]))/2.)
+
+        self.interpDensity = interpolate.RegularGridInterpolator(
+                                    (x, y), self.density,
+                                    method='linear', bounds_error=False,
+                                    fill_value=None)
         self.hasInterpDensity = True
 
     # ------------------
