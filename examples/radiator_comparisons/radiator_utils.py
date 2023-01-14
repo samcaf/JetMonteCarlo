@@ -57,7 +57,7 @@ def compare_crit_rad():
                         xlim=(1e-8,1),
                         ylim=(0, ylims[JET_TYPE][2]),
                         title = 'Critical '+JET_TYPE+' radiator, '
-                                + ('fixed' if FIXED_COUPLING else 'running')
+                                + (' fixed' if FIXED_COUPLING else ' running')
                                 + r' $\alpha_s$',
                         showdate=False,
                         ratio_plot=False)
@@ -112,8 +112,11 @@ def compare_pre_rad(fill_between=False):
         print("INDEX_ZC:", INDEX_ZC)
     def rad_pre(z_pre, theta, z_cut):
         if FIXED_COUPLING:
-            rad_pre, rad_err = rad_pre_list[INDEX_ZC[z_cut]]
-            return rad_pre(z_pre, theta), rad_err(z_pre, theta)
+            try:
+                rad_pre, rad_err = rad_pre_list[INDEX_ZC[z_cut]]
+                return rad_pre(z_pre, theta), rad_err(z_pre, theta)
+            except TypeError:
+                return rad_pre_list[INDEX_ZC[z_cut]](z_pre, theta)
         else:
             rad_pre = rad_pre_list[INDEX_ZC[z_cut]]
             return rad_pre(z_pre, theta)
@@ -127,7 +130,7 @@ def compare_pre_rad(fill_between=False):
                             xlim=(1e-8, zcut),
                             ylim=(-.01,ylims[JET_TYPE][izc]),
                             title = 'Pre-Critical '+JET_TYPE+', '
-                                    + ('fixed' if FIXED_COUPLING else 'running')
+                                    + (' fixed' if FIXED_COUPLING else ' running')
                                     + r' $\alpha_s$, $z_c$='+str(zcut),
                             showdate=False,
                             ratio_plot=True)
@@ -141,7 +144,11 @@ def compare_pre_rad(fill_between=False):
         for i, theta in enumerate(theta_list):
             # Numerical
             if FIXED_COUPLING:
-                num_result, num_error = rad_pre(pnts, theta, zcut)
+                try:
+                    num_result, num_error = rad_pre(pnts, theta, zcut)
+                except ValueError:
+                    num_result = rad_pre(pnts, theta, zcut)
+                    num_error = [0]*len(pnts)
             else:
                 num_result = rad_pre(pnts, theta, zcut)
                 num_error = [0]*len(pnts)
@@ -229,7 +236,7 @@ def compare_sub_rad(fill_between=False):
                                  xlim=(.2, .25),
                                  ylim=(0,1e-4),
                                  title = 'Subsequent '+JET_TYPE
-                                 + ('fixed' if FIXED_COUPLING else 'running')
+                                 + (' fixed' if FIXED_COUPLING else ' running')
                                  + r' $\alpha_s$, $\beta$={}'.format(beta),
                                  showdate=False,
                                  ratio_plot=False)
