@@ -16,7 +16,7 @@ THETAS = [.03, .1, 0.3, 1.]
 Z_CUT = .1
 Z_CUTS = [.003, .01, .03, .1, .2]
 
-splitfn_folder = Path("jetmontecarlo/utils/functions/splitting_fns/")
+splitfn_folder = Path("output/serialized_functions/splitting_functions/")
 
 splitfn_file = 'split_fns_{:.0e}events_{:.0e}bins.pkl'.format(NUM_MC_EVENTS,
                                                               NUM_SPLITFN_BINS)

@@ -81,7 +81,7 @@ def split_fn_num(z, theta, z_cut):
     return splitting_fns[INDEX_ZC[z_cut]](z, theta)
 
 # Sample file paths:
-sample_folder = Path("jetmontecarlo/utils/samples/inverse_transform_samples")
+sample_folder = Path("output/montecarlo_samples/sudakov_functions")
 
 def crit_sample_file_path(z_cut, beta):
     beta=float(beta)
@@ -290,7 +290,7 @@ def compare_crit(beta=BETA, plot_approx=False):
                     +'.pdf',
                     format='pdf')
     """
-    
+
     plt.close(fig_pdf)
     plt.close(fig_cdf)
 

@@ -4,6 +4,13 @@ from pathlib import Path
 
 from jetmontecarlo.utils.partonshower_utils import *
 
+
+# Defining the folder in which we store the parton shower data
+shower_folder = Path("output/montecarlo_samples/parton_showers/")
+ps_sample_folder = shower_folder
+# Used to be different with old file structure, now the same.
+# Keeping names for flexibility.
+
 class parton_shower():
     # ------------------------------------
     # Event generation
@@ -22,7 +29,6 @@ class parton_shower():
         """Sets up a path for loading or saving shower events."""
         info += '' if self.jet_type == 'quark' else '_'+self.jet_type
 
-        shower_folder = Path("jetmontecarlo/utils/samples/parton_showers/")
         if self.fixed_coupling:
             showerfile = 'jet_list_shower_{:.0e}_fc_{:.0e}cutoff'.format(
                                         self.num_events, self.shower_cutoff)
@@ -45,7 +51,6 @@ class parton_shower():
         info += '' if self.jet_type == 'quark' else '_'+self.jet_type
 
         # Preparing filename
-        ps_sample_folder = Path("jetmontecarlo/utils/samples/shower_correlations/")
         ps_file = 'shower_{:.0e}_c1_'.format(self.num_events)+str(beta)
 
         ps_file = ps_file + '_f{}'.format(f_soft)

@@ -60,7 +60,7 @@ else:
 # MC paths
 # ------------------------------------
 # File folders
-rad_folder = Path("jetmontecarlo/utils/functions/radiators/")
+rad_folder = Path("output/serialized_functions/radiators/")
 
 # Radiator paths:
 rad_extension = ("_{:.0e}events".format(NUM_RAD_EVENTS)
@@ -95,7 +95,7 @@ def split_fn_num(z, theta, z_cut):
 
 
 # Sample file paths:
-sample_folder = Path("jetmontecarlo/utils/samples/inverse_transform_samples")
+sample_folder = Path("output/montecarlo_samples/sudakov_functions")
 
 def crit_sample_file_path(z_cut, beta):
     beta=float(2)
@@ -285,7 +285,7 @@ def compare_crit(pdfs=None, pdferrs=None,
                3000 < np.array(pythia_data['raw'][plot_level]['pt'][beta]) *
                np.array(pythia_data['raw'][plot_level]['pt'][beta]) < 3500
                )[0]
-            
+
             # Getting substructure
             shower_correlations = pythia_data['softdrop'][show_pythia_level][(0.0, z_cut, 1.0)]['C1'][BETA][inds]
         plot_shower_pdf_cdf(shower_correlations,
@@ -324,7 +324,7 @@ def compare_crit(pdfs=None, pdferrs=None,
     #                 +str(this_plot_label)
     #                 +'.pdf',
     #                 format='pdf')
-    
+
     plt.close(fig_pdf)
     plt.close(fig_cdf)
 
@@ -460,7 +460,7 @@ def compare_crit_and_sub(pdfs=None, pdferrs=None,
 
             # Getting substructure
             shower_correlations = pythia_data['softdrop'][show_pythia_level][(0.0, z_cut, 1.0)]['C1'][BETA]
-            shower_correlations = np.array(shower_correlations)[inds] 
+            shower_correlations = np.array(shower_correlations)[inds]
         plot_shower_pdf_cdf(shower_correlations,
                             axes_pdf, axes_cdf,
                             label='Parton Shower', colnum=i)
@@ -497,7 +497,7 @@ def compare_crit_and_sub(pdfs=None, pdferrs=None,
     #                 +str(this_plot_label)
     #                 +'.pdf',
     #                 format='pdf')
-    
+
     plt.close(fig_pdf)
     plt.close(fig_cdf)
 

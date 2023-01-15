@@ -71,13 +71,14 @@ subradfile = 'sub_rads_{:.0e}events_{:.0e}bins.pkl'.format(NUM_MC_EVENTS,
                                                            NUM_RAD_BINS)
 
 # Relative paths
-sample_folder = Path("jetmontecarlo/utils/samples/")
-jetfile_path = sample_folder / jetfile
-critfile_path = sample_folder / critfile
-prefile_path = sample_folder / prefile
-subfile_path = sample_folder / subfile
+# DEBUG: Haven't checked this since changing file structure
+sample_folder = Path("output/montecarlo_samples/")
+jetfile_path = sample_folder / "parton_showers" / jetfile
+critfile_path = sample_folder / "radiators" / critfile
+prefile_path = sample_folder / "radiators" / prefile
+subfile_path = sample_folder / "radiators" / subfile
 
-fn_folder = Path("jetmontecarlo/utils/functions/")
+fn_folder = Path("output/serialized_functions/radiators/")
 critrad_path = fn_folder / critradfile
 prerad_path = fn_folder / preradfile
 subrad_path = fn_folder / subradfile

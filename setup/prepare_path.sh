@@ -1,3 +1,4 @@
+#!/bin/bash
 # ============================
 # Path preparation:
 # ============================
@@ -23,3 +24,43 @@ path_append() {
 }
 
 path_append PYTHONPATH $PWD
+
+
+# ============================
+# Folders:
+# ============================
+
+# -------------------------
+# Monte Carlo Samples/Output:
+# -------------------------
+# Creating folders for the output of Monte Carlo simulations;
+# Using different folders for samples, integrals, and functions.
+
+output_folder=output
+
+# Making a folder for output figures
+mkdir -p $output_folder/figures
+
+# Creating folders for generated Monte Carlo samples
+for data_type in phase_space radiators splitting_functions sudakov_functions parton_showers
+do
+    # Using different sub-folders for different data of interest
+    mkdir -p $output_folder/montecarlo_samples/$data_type
+done
+
+# Creating folders for numerical integrals and serialized functions
+for output_type in numerical_integrals serialized_functions
+do
+    for data_type in radiators splitting_functions sudakov_functions
+    do
+        # sub-folders only for data which are associated with integrals or functions
+        mkdir -p $output_folder/$output_type/$data_type
+    done
+done
+
+
+# -------------------------
+# Misc.:
+# -------------------------
+# Creating a folder for log files
+mkdir -p logs

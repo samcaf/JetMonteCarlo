@@ -130,8 +130,7 @@ MAKE_CRIT_RAD = True
 COMPARE_CRIT_AND_SUB = True
 COMPARE_PRE_AND_CRIT = True
 COMPARE_ALL = True
-COMPARE_UNGROOMED = True and not\
-                    True in [COMPARE_CRIT, COMPARE_CRIT_AND_SUB,
+COMPARE_UNGROOMED = True not in [COMPARE_CRIT, COMPARE_CRIT_AND_SUB,
                              COMPARE_PRE_AND_CRIT, COMPARE_ALL]
 
 ###########################################
@@ -193,23 +192,27 @@ if not COMPARE_UNGROOMED:
 # Relative paths
 # =====================================
 # Folders
-ps_folder = Path("jetmontecarlo/utils/samples/parton_showers/")
-sampler_folder = Path("jetmontecarlo/utils/samples/phase_space_samplers/")
-rad_folder = Path("jetmontecarlo/utils/functions/radiators/")
-splitfn_folder = Path("jetmontecarlo/utils/functions/splitting_fns/")
+sample_folder = Path("output/montecarlo_samples/")
+function_folder = Path("output/serialized_functions/")
+
+partonshower_folder = sample_folder / "parton_showers"
+phasespace_sampler_folder = sample_folder / "phase_space"
+
+radiator_function_folder = function_folder / "radiators"
+splitting_function_folder = function_folder / "splitting_functions"
 
 # Samplers
-critfile_path = sampler_folder / critfile
-prefile_path = sampler_folder / prefile
-subfile_path = sampler_folder / subfile
+critfile_path = phasespace_sampler_folder / critfile
+prefile_path = phasespace_sampler_folder / prefile
+subfile_path = phasespace_sampler_folder / subfile
 
 # Radiators
-critrad_path = rad_folder / critradfile
-prerad_path = rad_folder / preradfile
-subrad_path = rad_folder / subradfile
+critrad_path = radiator_function_folder / critradfile
+prerad_path = radiator_function_folder / preradfile
+subrad_path = radiator_function_folder / subradfile
 
 # Splitting functions
-splitfn_path = splitfn_folder / splitfn_file
+splitfn_path = splitting_function_folder / splitfn_file
 
 
 # ====================================
@@ -217,26 +220,31 @@ splitfn_path = splitfn_folder / splitfn_file
 # ====================================
 if __name__ == '__main__':
     if VERBOSE > 0:
-        print("\n# =====================================\n# Parameters:\n# =====================================")
+        print("\n# =====================================\n"+
+              "# Parameters:\n# =====================================")
 
-        print("    # -----------------------------\n    # Physics:\n    # -----------------------------")
+        print("    # -----------------------------\n"+
+              "# Physics:\n    # -----------------------------")
         print("    # Jet type: "+str(JET_TYPE))
         print("    # Fixed coupling: "+str(FIXED_COUPLING))
         print("    # Multiple Emissions:", MULTIPLE_EMISSIONS)
         print("    # Observable accuracy: "+str(OBS_ACC))
         print("    # Splitting function accuracy: "+str(OBS_ACC))
 
-        print("\n    # -----------------------------\n    # Grooming:\n    # -----------------------------")
+        print("\n    # -----------------------------\n"+
+              "# Grooming:\n    # -----------------------------")
         print("    # f * z_cut values: " + str(Z_CUTS))
         if VERBOSE > 2:
             print("        # z_cut dictionary: " + str(INDEX_ZC))
 
 
-        print("\n    # -----------------------------\n    # Monte Carlo:\n    # -----------------------------")
+        print("\n    # -----------------------------"
+              +"\n    # Monte Carlo:\n    # -----------------------------")
         print("    # Number of events for MC integration: {:.1e}".format(NUM_MC_EVENTS))
         if VERBOSE > 1:
             # Basic MC Integraion Information:
-            print("        # Integration space: " + str(BIN_SPACE) + " (if log, integration cutoff of " + str(EPSILON) + ")")
+            print("        # Integration space: " + str(BIN_SPACE) +
+                  " (if log, integration cutoff of " + str(EPSILON) + ")")
             if VERBOSE > 2:
                 print("            # Load MC events: " + str(LOAD_MC_EVENTS))
                 print("            # Save MC events: " + str(SAVE_MC_EVENTS))

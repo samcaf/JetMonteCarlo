@@ -110,7 +110,7 @@ def split_fn_num(z, theta, z_cut):
 
 
 # Sample file paths:
-sample_folder = Path("jetmontecarlo/utils/samples/inverse_transform_samples")
+sample_folder = Path("output/montecarlo_samples/sudakov_functions")
 
 def crit_sample_file_path(z_cut, beta):
     beta=float(beta)
@@ -262,9 +262,6 @@ def plot_mc_crit(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
 
     if verbose > 1:
         arg = np.argmax(obs)
-        print(f"{len(obs) = }")
-        print(f"{arg = }")
-        print(f"{obs = }")
         print("zc: " + str(z_cut))
         print("obs_acc: " + OBS_ACC)
         print("maximum observable: " + str(obs[arg]))
@@ -576,10 +573,12 @@ def plot_mc_crit_and_sub(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
                                                 # DEBUG
                                                 backup_cdf=None,
                                                 verbose=3)
-            c_subs.append(c_sub[0])
-            c_sub_weights.append(c_sub_weight[0])
+                c_sub, c_sub_weight = c_sub[0], c_sub_weight[0]
+            c_subs.append(c_sub)
+            c_sub_weights.append(c_sub_weight)
             if (i+1)%(len(theta_crits)/10)==0:
                 print("        Generated "+str(i+1)+" events...", flush=True)
+
         c_subs = np.array(c_subs)
         c_sub_weights = np.array(c_sub_weights)
         c_sub_weights = np.where(np.isinf(c_subs), 0, c_sub_weights)
@@ -766,8 +765,12 @@ def plot_mc_pre_and_crit(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
                                                 # DEBUG
                                                 backup_cdf=None,
                                                 verbose=3)
-            z_pres.append(z_pre[0])
-            z_pre_weights.append(z_pre_weight[0])
+            try:
+                z_pre, z_pre_weight = z_pre[0], z_pre_weight[0]
+            except ValueError:
+                print(f"{z_pre=}, {z_pre_weight=}")
+            z_pres.append(z_pre)
+            z_pre_weights.append(z_pre_weight)
             if (i+1)%(len(theta_crits)/10)==0:
                 print("        Generated "+str(i+1)+" events...", flush=True)
 
@@ -963,8 +966,9 @@ def plot_mc_all(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
                                                 # DEBUG
                                                 backup_cdf=None,
                                                 verbose=3)
-            c_subs.append(c_sub[0])
-            c_sub_weights.append(c_sub_weight[0])
+                c_sub, c_sub_weight = c_sub[0], c_sub_weight[0]
+            c_subs.append(c_sub)
+            c_sub_weights.append(c_sub_weight)
             if (i+1)%(len(theta_crits)/10) == 0:
                 print("        Generated "+str(i+1)+" events...", flush=True)
         c_subs = np.array(c_subs)
@@ -1013,9 +1017,13 @@ def plot_mc_all(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
                                                 domain=[0,z_cut],
                                                 # DEBUG
                                                 backup_cdf=None,
-                                                verbose=3)
-            z_pres.append(z_pre[0])
-            z_pre_weights.append(z_pre_weight[0])
+                                                verbose=10)
+            try:
+                z_pre, z_pre_weight = z_pre[0], z_pre_weight[0]
+            except ValueError:
+                print(f"{z_pre=}, {z_pre_weight=}")
+            z_pres.append(z_pre)
+            z_pre_weights.append(z_pre_weight)
             if (i+1)%(len(theta_crits)/10) == 0:
                 print("        Generated "+str(i+1)+" events...",
                       flush=True)
@@ -1137,10 +1145,10 @@ if __name__ == '__main__':
     # For each value of epsilon we want to use as an integration cutoff:
     if COMPARE_CRIT:
         compare_crit(plot_approx=False)
-    if COMPARE_SUB:
-        compare_sub()
-    if COMPARE_CRIT_AND_SUB:
-        compare_crit_and_sub()
+    # if COMPARE_SUB:
+    #     compare_sub()
+    # if COMPARE_CRIT_AND_SUB:
+    #     compare_crit_and_sub()
     if COMPARE_PRE_AND_CRIT:
         compare_pre_and_crit()
     if COMPARE_ALL:

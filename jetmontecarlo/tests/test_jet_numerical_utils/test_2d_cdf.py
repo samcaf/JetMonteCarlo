@@ -30,7 +30,7 @@ PLOT_PRE = True
 # File paths
 # ------------------------------------
 # File folders
-rad_folder = Path("jetmontecarlo/utils/functions/radiators/")
+rad_folder = Path("output/serialized_functions/radiators/")
 
 # Radiator paths:
 rad_extension = ("_{:.0e}events".format(NUM_MC_EVENTS)
