@@ -146,6 +146,7 @@ cython_debug/
 *.pkl
 output/**/*
 !output/**/*.md
+!output/figures/doc_figures/*
 
 # Log files
 *.out

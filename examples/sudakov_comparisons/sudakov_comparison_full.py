@@ -46,7 +46,7 @@ def compare_ecf_pdf(z_cut, beta, emission='crit', plot_ivs=True):
     fig_cdf, axes_cdf = aestheticfig(xlabel=xlabels[beta],
                             ylabel=r'$\Sigma(C)$',
                             title=None, showdate=False,
-                            xlim=(1e-8, 1), ylim=(0, 1), 
+                            xlim=(1e-8, 1), ylim=(0, 1),
                             ratio_plot=False, labeltext=None)
     axes_pdf[0].set_ylabel(ylabels[beta], size=20)
     axes_pdf[0].set_xscale('log')
@@ -70,8 +70,8 @@ def compare_ecf_pdf(z_cut, beta, emission='crit', plot_ivs=True):
         f_lines = [Line2D([0], [0], color=f_colors[f_soft], lw=2)
                    for f_soft in F_SOFT_PLOT]
         f_labels = [r'$f_{\rm RSS}=1/2$', r'$f_{\rm RSS}=1$']
-        leg1 = axes_pdf[0].legend(f_lines, f_labels, loc=(.0155, .545)) 
-        leg2 = axes_cdf[0].legend(f_lines, f_labels, loc=(.0155, .545)) 
+        leg1 = axes_pdf[0].legend(f_lines, f_labels, loc=(.0155, .545))
+        leg2 = axes_cdf[0].legend(f_lines, f_labels, loc=(.0155, .545))
         for i_f, text in enumerate(leg1.get_texts()):
             text.set_color(plot_colors[F_SOFT_PLOT[i_f]]['num'])
     elif plot_ivs:
@@ -83,7 +83,7 @@ def compare_ecf_pdf(z_cut, beta, emission='crit', plot_ivs=True):
         leg2 = axes_cdf[0].legend(lines, labels, loc=(.0155, .545))
         for i_f, text in enumerate(leg1.get_texts()):
             text.set_color(plot_colors[F_SOFT_PLOT_IVS[i_f]]['num'])
-    
+
     print("Getting samples...", flush=True)
     for i_f, f_soft in enumerate(F_SOFT_PLOT):
         # Monte Carlo Integration
@@ -137,7 +137,7 @@ def compare_ecf_pdf(z_cut, beta, emission='crit', plot_ivs=True):
         params = z_cut
         pythia_c2s = pythia_data['ivs'][plot_level][params]['C1'][beta][inds]
         height, _ = np.histogram(pythia_c2s, bins)
-        
+
         height, _ = np.histogram(pythia_c2s, bins)
         norm = np.sum(height * (np.log10(bins[1:]) - np.log10(bins[:-1])))
         axes_pdf[0].hist(pythia_c2s, bins=bins,
@@ -171,7 +171,7 @@ def compare_ecf_pdf(z_cut, beta, emission='crit', plot_ivs=True):
         this_plot_label += '_{:.0e}cutoff'.format(EPSILON)
     this_plot_label += '_{:.0e}shower'.format(SHOWER_CUTOFF)
 
-    fig_pdf.savefig(JET_TYPE+'_RSS_'+emission+'_full_pdf_comp'
+    fig_pdf.savefig(fig_folder / JET_TYPE+'_RSS_'+emission+'_full_pdf_comp'
                     +'_beta'+str(beta)+'_zc'+str(z_cut)
                     +'_{:.0e}showers_{:.0e}mc'.format(
                         NUM_SHOWER_EVENTS, NUM_MC_EVENTS)
@@ -179,7 +179,7 @@ def compare_ecf_pdf(z_cut, beta, emission='crit', plot_ivs=True):
                     +'.pdf',
                     format='pdf')
     if save_cdf:
-        fig_cdf.savefig(JET_TYPE+'_RSS_'+emission+'_full_pdf_comp'
+        fig_cdf.savefig(fig_folder / JET_TYPE+'_RSS_'+emission+'_full_pdf_comp'
                         +'_beta'+str(beta)+'_zc'+str(z_cut)
                         +'_{:.0e}showers_{:.0e}mc'.format(
                             NUM_SHOWER_EVENTS,  NUM_MC_EVENTS)

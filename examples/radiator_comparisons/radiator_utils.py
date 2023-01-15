@@ -93,7 +93,7 @@ def compare_crit_rad():
                     label=r'Analytic, $z_{{\rm cut}}$={}'.format(zcut))
 
     axes[0].legend()
-    plt.savefig(file_name('crit'), format='pdf')
+    plt.savefig(fig_folder / file_name('crit'), format='pdf')
 
     print("Plotting complete!")
 
@@ -205,7 +205,7 @@ def compare_pre_rad(fill_between=False):
 
         # Legend, saving
         axes[0].legend()
-        plt.savefig(pdffile, format='pdf')
+        plt.savefig(fig_folder / pdffile, format='pdf')
 
     pdffile.close()
 
@@ -279,7 +279,7 @@ def compare_sub_rad(fill_between=False):
 
         # Legend, saving
         axes[0].legend()
-        plt.savefig(pdffile, format='pdf')
+        plt.savefig(fig_folder / pdffile, format='pdf')
 
     pdffile.close()
 

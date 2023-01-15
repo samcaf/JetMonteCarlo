@@ -114,7 +114,7 @@ def plot_rss_pythia(z_cut, beta,
                      + '\n' + r'$p_T$ = 3 TeV, AKT1',
                      ha='center')
 
-    fig_pdf.savefig('paper/pythia_rss'+'_beta'+str(beta)+'_zc'+str(z_cut)
+    fig_pdf.savefig(fig_folder / 'pythia_rss'+'_beta'+str(beta)+'_zc'+str(z_cut)
                     +'.pdf',
                     format='pdf')
 

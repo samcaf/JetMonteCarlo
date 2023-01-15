@@ -39,7 +39,7 @@ path_append PYTHONPATH $PWD
 output_folder=output
 
 # Making a folder for output figures
-mkdir -p $output_folder/figures
+mkdir -p $output_folder/figures/current
 
 # Creating folders for generated Monte Carlo samples
 for data_type in phase_space radiators splitting_functions sudakov_functions parton_showers

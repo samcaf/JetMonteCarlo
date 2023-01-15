@@ -339,7 +339,8 @@ def compare_crit(beta=BETA, plot_approx=False):
         this_plot_label += '_{:.0e}cutoff'.format(EPSILON)
     this_plot_label += '_{:.0e}shower'.format(SHOWER_CUTOFF)
 
-    fig_pdf.savefig(JET_TYPE+'_RSS_crit_'+BIN_SPACE+'_pdf_comp'
+    fig_pdf.savefig(fig_folder / JET_TYPE+'_RSS_crit_'
+                    +BIN_SPACE+'_pdf_comp'
                     +'_beta'+str(beta)
                     +'_{:.0e}showers_{:.0e}mc'.format(
                         NUM_SHOWER_EVENTS, NUM_MC_EVENTS)
@@ -347,7 +348,8 @@ def compare_crit(beta=BETA, plot_approx=False):
                     +'.pdf',
                     format='pdf')
     if save_cdf:
-        fig_cdf.savefig(JET_TYPE+'_RSS_crit_'+BIN_SPACE+'_cdf_comp'
+        fig_cdf.savefig(fig_folder / JET_TYPE+'_RSS_crit_'
+                        +BIN_SPACE+'_cdf_comp'
                         +'_beta'+str(beta)
                         +'_{:.0e}showers_{:.0e}mc'.format(
                             NUM_SHOWER_EVENTS,  NUM_MC_EVENTS)
@@ -468,14 +470,16 @@ def compare_sub():
         this_plot_label += '_{:.0e}cutoff'.format(EPSILON)
     this_plot_label += '_{:.0e}shower'.format(SHOWER_CUTOFF)
 
-    fig_pdf.savefig(JET_TYPE+'_ungroomed_'+BIN_SPACE+'_pdf_comp'
+    fig_pdf.savefig(fig_folder / JET_TYPE+'_ungroomed_'
+                    +BIN_SPACE+'_pdf_comp'
                     +'_{:.0e}showers_{:.0e}mc'.format(
                         NUM_SHOWER_EVENTS, NUM_MC_EVENTS)
                     +str(this_plot_label)
                     +'.pdf',
                     format='pdf')
     if save_cdf:
-        fig_cdf.savefig(JET_TYPE+'_ungroomed_'+BIN_SPACE+'_cdf_comp'
+        fig_cdf.savefig(fig_folder / JET_TYPE+'_ungroomed_'
+                        +BIN_SPACE+'_cdf_comp'
                         +'_{:.0e}showers_{:.0e}mc'.format(
                             NUM_SHOWER_EVENTS,  NUM_MC_EVENTS)
                         +str(this_plot_label)
@@ -659,7 +663,8 @@ def compare_crit_and_sub(beta=BETA):
         this_plot_label += '_{:.0e}cutoff'.format(EPSILON)
     this_plot_label += '_{:.0e}shower'.format(SHOWER_CUTOFF)
 
-    fig_pdf.savefig(JET_TYPE+'_RSS_crit_and_sub_'+BIN_SPACE+'_pdf_comp'
+    fig_pdf.savefig(fig_folder / JET_TYPE+'_RSS_crit_and_sub_'
+                    +BIN_SPACE+'_pdf_comp'
                     +'_beta'+str(beta)
                     +'_{:.0e}showers_{:.0e}mc'.format(
                         NUM_SHOWER_EVENTS, NUM_MC_EVENTS)
@@ -667,7 +672,8 @@ def compare_crit_and_sub(beta=BETA):
                     +'.pdf',
                     format='pdf')
     if save_cdf:
-        fig_cdf.savefig(JET_TYPE+'_RSS_crit_and_sub_'+BIN_SPACE+'_cdf_comp'
+        fig_cdf.savefig(fig_folder / JET_TYPE+'_RSS_crit_and_sub_'
+                        +BIN_SPACE+'_cdf_comp'
                         +'_beta'+str(beta)
                         +'_{:.0e}showers_{:.0e}mc'.format(
                             NUM_SHOWER_EVENTS,  NUM_MC_EVENTS)
@@ -854,7 +860,8 @@ def compare_pre_and_crit(beta=BETA):
         this_plot_label += '_{:.0e}cutoff'.format(EPSILON)
     this_plot_label += '_{:.0e}shower'.format(SHOWER_CUTOFF)
 
-    fig_pdf.savefig(JET_TYPE+'_RSS_pre_and_crit_'+BIN_SPACE+'_pdf_comp'
+    fig_pdf.savefig(fig_folder / JET_TYPE+'_RSS_pre_and_crit_'
+                    +BIN_SPACE+'_pdf_comp'
                     +'_beta'+str(beta)
                     +'_{:.0e}showers_{:.0e}mc'.format(
                         NUM_SHOWER_EVENTS, NUM_MC_EVENTS)
@@ -862,7 +869,8 @@ def compare_pre_and_crit(beta=BETA):
                     +'.pdf',
                     format='pdf')
     if save_cdf:
-        fig_cdf.savefig(JET_TYPE+'_RSS_pre_and_crit_'+BIN_SPACE+'_cdf_comp'
+        fig_cdf.savefig(fig_folder / JET_TYPE+'_RSS_pre_and_crit_'
+                        +BIN_SPACE+'_cdf_comp'
                         +'_beta'+str(beta)
                         +'_{:.0e}showers_{:.0e}mc'.format(
                         NUM_SHOWER_EVENTS,  NUM_MC_EVENTS)
@@ -1117,7 +1125,8 @@ def compare_all(beta=BETA, plot_approx=False):
         this_plot_label += '_{:.0e}cutoff'.format(EPSILON)
     this_plot_label += '_{:.0e}shower'.format(SHOWER_CUTOFF)
 
-    fig_pdf.savefig(JET_TYPE+'_RSS_all_em_'+BIN_SPACE+'_pdf_comp'
+    fig_pdf.savefig(fig_folder / JET_TYPE+'_RSS_all_em_'
+                    +BIN_SPACE+'_pdf_comp'
                     +'_beta'+str(beta)
                     +'_{:.0e}showers_{:.0e}mc'.format(
                         NUM_SHOWER_EVENTS, NUM_MC_EVENTS)
@@ -1125,7 +1134,8 @@ def compare_all(beta=BETA, plot_approx=False):
                     +'.pdf',
                     format='pdf')
     if save_cdf:
-        fig_cdf.savefig(JET_TYPE+'_RSS_all_em_'+BIN_SPACE+'_cdf_comp'
+        fig_cdf.savefig(fig_folder / JET_TYPE+'_RSS_all_em_'
+                        +BIN_SPACE+'_cdf_comp'
                         +'_beta'+str(beta)
                         +'_{:.0e}showers_{:.0e}mc'.format(
                           NUM_SHOWER_EVENTS,  NUM_MC_EVENTS)

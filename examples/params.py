@@ -214,6 +214,9 @@ subrad_path = radiator_function_folder / subradfile
 # Splitting functions
 splitfn_path = splitting_function_folder / splitfn_file
 
+# Figures
+fig_folder = Path("output/figures/current/")
+
 
 # ====================================
 # Printing Information

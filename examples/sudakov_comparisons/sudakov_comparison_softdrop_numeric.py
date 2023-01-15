@@ -310,14 +310,16 @@ def compare_crit(pdfs=None, pdferrs=None,
         this_plot_label += '{:.0e}mccutoff_'.format(EPSILON)
     this_plot_label += '{:.0e}shower'.format(SHOWER_CUTOFF)
 
-    fig_pdf.savefig(JET_TYPE+'_softdrop_crit_'+BIN_SPACE+'_pdf_comp'
+    fig_pdf.savefig(fig_folder / JET_TYPE+'_softdrop_crit_'
+                    +BIN_SPACE+'_pdf_comp'
                     +'_beta'+str(BETA)
                     +'_{:.0e}showers_{:.0e}mc'.format(
                         NUM_SHOWER_EVENTS, NUM_MC_EVENTS)
                     +str(this_plot_label)
                     +'.pdf',
                     format='pdf')
-    # fig_cdf.savefig(JET_TYPE+'_softdrop_crit_'+BIN_SPACE+'_cdf_comp'
+    # fig_cdf.savefig(fig_folder / JET_TYPE+'_softdrop_crit_'
+    #                 +BIN_SPACE+'_cdf_comp'
     #                 +'_beta'+str(BETA)
     #                 +'_{:.0e}showers_{:.0e}mc'.format(
     #                     NUM_SHOWER_EVENTS,  NUM_MC_EVENTS)
@@ -483,14 +485,16 @@ def compare_crit_and_sub(pdfs=None, pdferrs=None,
         this_plot_label += '_{:.0e}cutoff'.format(EPSILON)
     this_plot_label += '_{:.0e}shower'.format(SHOWER_CUTOFF)
 
-    fig_pdf.savefig(JET_TYPE+'_softdrop_crit_and_sub_'+BIN_SPACE+'_pdf_comp'
+    fig_pdf.savefig(fig_folder / JET_TYPE+'_softdrop_crit_and_sub_'
+                    +BIN_SPACE+'_pdf_comp'
                     +'_beta'+str(BETA)
                     +'_{:.0e}showers_{:.0e}mc'.format(
                         NUM_SHOWER_EVENTS, NUM_MC_EVENTS)
                     +str(this_plot_label)
                     +'.pdf',
                     format='pdf')
-    # fig_cdf.savefig(JET_TYPE+'_softdrop_crit_and_sub_'+BIN_SPACE+'_cdf_comp'
+    # fig_cdf.savefig(fig_folder / JET_TYPE+'_softdrop_crit_and_sub_'
+    #                 +BIN_SPACE+'_cdf_comp'
     #                 +'_beta'+str(BETA)
     #                 +'_{:.0e}showers_{:.0e}mc'.format(
     #                     NUM_SHOWER_EVENTS,  NUM_MC_EVENTS)
