@@ -33,7 +33,7 @@ from jetmontecarlo.analytics.radiators_fixedcoupling import *
 # Local variables
 # ------------------------------------
 # Verbosity of local functions
-local_verbose = 1
+local_verbose = 3
 # Defining variables for later sympy use
 # DEBUG
 x = sp.Symbol('x')
@@ -136,7 +136,7 @@ def gen_numerical_radiator(rad_sampler, emission_type,
     xs = rad_integrator.bins[:-1]
 
     # DEBUG: testing monotonicity
-    if local_verbose >= 2:
+    if local_verbose >= 3:
         print("crit ints:")
         print(is_monotonic_arr(radiator, 'decreasing'))
 
@@ -311,14 +311,13 @@ def gen_pre_num_rad(rad_sampler, crit_rad_sampler,
     radiator_error = rad_integrator.integralErr
 
     # DEBUG: testing monotonicity
-    if local_verbose >= 2:
+    if local_verbose >= 3:
         print("pre ints:")
         for rad1d in radiator:
             test_monotonicity(rad1d)
 
     # Generating an interpolating function
     rad_integrator.makeInterpolatingFn()
-
     unbounded_interp_function = rad_integrator.interpFn
 
     # DEBUG: testing monotonicity
@@ -458,7 +457,7 @@ def gen_crit_sub_num_rad(rad_sampler,
         xs = rad_integrator.bins[:-1]
 
         # DEBUG: testing monotonicity
-        if local_verbose >= 3:
+        if local_verbose >= 4:
             print("crit sub integral 0:")
             print(is_monotone_arr(radiator, 'decreasing'))
 
@@ -468,7 +467,7 @@ def gen_crit_sub_num_rad(rad_sampler,
                                            acc=obs_accuracy))
 
         # DEBUG: testing monotonicity
-        if local_verbose >= 2:
+        if local_verbose >= 3:
             print("crit sub int:")
             print(is_monotone_arr(radiator, 'decreasing'))
 
@@ -483,8 +482,10 @@ def gen_crit_sub_num_rad(rad_sampler,
     thetas_all = np.array(thetas_all)
     rads_all = np.array(rads_all)
 
-    points = np.array([xs_all.flatten(), thetas_all.flatten()]).T
-    unbounded_interp_function = NearestNDInterpolator(points, rads_all.flatten())
+    # points = np.array([xs_all.flatten(), thetas_all.flatten()]).T
+    # unbounded_interp_function = NearestNDInterpolator(points, rads_all.flatten())
+    unbounded_interp_function = RegularGridInterpolator((xs_all, thetas_all), rads_all.flatten())
+
 
     # Bounding the interpolating function
     # bounded_interp_function = sp.Piecewise(
