@@ -109,8 +109,7 @@ def test_crit_rad_fc():
         rad = gen_numerical_radiator(crit_sampler, 'crit', JET_TYPE, ACC,
                                      beta=None,
                                      bin_space=BIN_SPACE, epsilon=EPSILON,
-                                     fixed_coupling=True,
-                                     save=False)
+                                     fixed_coupling=True)
         axes_rad[0].plot(pnts, rad(pnts),
                          **style_dashed,
                          color=compcolors[(icol,'dark')])
@@ -206,7 +205,6 @@ def test_sub_rad_fc():
                                      beta=beta,
                                      bin_space=BIN_SPACE, epsilon=EPSILON,
                                      fixed_coupling=True,
-                                     save=False,
                                      num_bins=NUM_BINS)
         axes_rad[0].plot(pnts, rad(pnts),
                          **style_dashed,
@@ -269,8 +267,7 @@ def test_crit_rad_rc():
         rad = gen_numerical_radiator(crit_sampler, 'crit', JET_TYPE, ACC,
                                      beta=None,
                                      bin_space=BIN_SPACE, epsilon=EPSILON,
-                                     fixed_coupling=False,
-                                     save=False)
+                                     fixed_coupling=False)
         axes_rad[0].plot(pnts, rad(pnts),
                          **style_dashed,
                          color=compcolors[(icol,'dark')])
@@ -329,7 +326,6 @@ def test_sub_rad_rc():
                                      beta=beta,
                                      bin_space=BIN_SPACE, epsilon=EPSILON,
                                      fixed_coupling=False,
-                                     save=False,
                                      num_bins=NUM_BINS)
         axes_rad[0].plot(pnts, rad(pnts),
                          **style_dashed,

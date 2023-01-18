@@ -85,13 +85,9 @@ class sampler(ABC):
     # ------------------
     def __init__(self, sampleMethod, epsilon=0.):
         """Prepares a MC sampler with
-        * An emission type ('crit'/'sub') for the sampled phase space,
         * The sample method ('lin'/'log') for the sample phase space, and
         * any additional valid keyword arguments:
-            zc -- the groomed energy fraction of critical emissions.
             epsilon -- the lower cutoff of the logarithmic sampling.
-            sample_zthetas -- determines whether to sample zs and thetas
-                for subsequent emissions.
         """
         # Setting up:
         self.sampleMethod = sampleMethod

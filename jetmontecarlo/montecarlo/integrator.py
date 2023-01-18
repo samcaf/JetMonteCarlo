@@ -5,6 +5,8 @@ import dill
 # Local utils
 from jetmontecarlo.utils.hist_utils import histDerivative
 from jetmontecarlo.montecarlo.sampler import simpleSampler
+from jetmontecarlo.utils.interpolation_function_utils import get_1d_interpolation
+from jetmontecarlo.utils.interpolation_function_utils import get_2d_interpolation
 
 MIN_LOG_BIN = 1e-15
 
@@ -37,6 +39,7 @@ class integrator():
             min_bin = np.log10(max(np.min(observables), min_log_bin))
             max_bin = np.log10(np.max(observables))
             self.bins = np.logspace(min_bin, max_bin, numbins)
+        self.binspacing = binspacing
         self.hasBins = True
 
     def setLastBinBndCondition(self, bndCond):
@@ -99,6 +102,13 @@ class integrator():
         self.densityErr = ((np.sqrt(square_weightHist)/binWidths)
                            * (area/len(observables)))
 
+        # Setting x values for the density as well
+        if self.binspacing == 'lin':
+            self.density_xs = (self.bins[1:] + self.bins[:-1])/2.
+        elif self.binspacing == 'log':
+            self.density_xs = np.exp((np.log(self.bins[1:])
+                         +np.log(self.bins[:-1]))/2.)
+
         # No points in a given bin -> no information about that bin:
         self.density = np.where(num_in_bin == 0, 0, self.density)
         self.densityErr = np.where(num_in_bin == 0, 0, self.densityErr)
@@ -144,8 +154,12 @@ class integrator():
             # Finding the value of the integral up to each bin
             self.integral = self.firstBinBndCond + cumInt
 
+            # Storing the x values of the integral
+            self.integral_xs = self.bins[1:]
+
             # Finding the error associated with this integration procedure
             self.integralErr = np.cumsum(self.densityErr*binWidths)
+
 
         elif self.useLastBinBndCond:
             # Finding the integral from a bin up to the boundary condition
@@ -158,6 +172,9 @@ class integrator():
                 self.integral = self.lastBinBndCond[0] + reverse_cumInt
             elif self.lastBinBndCond[1] == 'minus':
                 self.integral = self.lastBinBndCond[0] - reverse_cumInt
+
+            # Storing the x values of the integral
+            self.integral_xs = self.bins[:-1]
 
             # Finding the error associated with this integration procedure
             self.integralErr = np.cumsum(
@@ -174,41 +191,41 @@ class integrator():
             assert is_monotone, "User asked for a monotone integral,"\
                 " but the integral is not monotone!"
 
+    def montecarlo_data_dict(self, info=None):
+        return {'bins': self.bins,
+                'density': self.density,
+                'density xs': self.density_xs,
+                'density error': self.densityErr,
+                'integral': self.integral,
+                'integral xs:': self.integral_xs,
+                'integral error': self.integralErr,
+                'info': info}
+
+    def save_montecarlo_data(self, filename, info=None):
+        """Saves the data used to produce the integral to a file"""
+        assert self.hasMCDensity and self.hasMCIntegral, \
+            "Need density function and integral to save MC data"
+
+        # Saving the data to a file
+        np.savez(filename,
+                 **self.monte_carlo_data_dict(info=info))
+
     # ------------------
     # Integral Interpolation:
     # ------------------
-    def makeInterpolatingFn(self):
+    def makeInterpolatingFn(self, **kwargs):
         """Makes an interpolating function for the integral. Assumes linear
         binning."""
         assert self.hasMCIntegral, \
             "Need MC integral to produce interpolation"
 
-        bins = self.bins
-        if self.useFirstBinBndCond:
-            xs = bins[1:]
-        if self.useLastBinBndCond:
-            xs = bins[:-1]
+        self.interpFn = get_1d_interpolation(xs, self.integral,
+                                             monotone=self.monotone,
+                                             **kwargs)
 
-        if self.monotone:
-            # Need to use special methods if we want monotone
-            # interpolation
-            # self.interpFn = interpolate.PchipInterpolator(xs, self.integral,
-            #                                               extrapolate=True)
-            self.interpFn = lambda x: np.interp(x, xs, self.integral)
-
-            # Testing monotonicity:
-            interp_vals = self.interpFn(xs)
-            is_monotone = ((interp_vals[1:] <= interp_vals[:-1]).all() or
-                            (interp_vals[1:] >= interp_vals[:-1]).all())
-            assert is_monotone, "User asked for a monotone integral,"\
-                " but the integral's interpolating function is not monotone!"
-        else:
-            # If we do not need to enforce monotonicity
-            self.interpFn = interpolate.interp1d(x=xs, y=self.integral,
-                                                 fill_value="extrapolate")
         self.hasInterpIntegral = True
 
-    def saveInterpolatingFn(self, fileName):
+    def saveInterpolatingFn(self, fileName, save_integral=True):
         """Saves the interpolating function for the integral
         to the file fileName"""
         assert self.hasInterpIntegral, \
@@ -232,14 +249,10 @@ class integrator():
             "Need MC density to produce interpolation"
         bins = self.bins
 
-        if binspacing == 'lin':
-            xs = (bins[1:] + bins[:-1])/2.
-        elif binspacing == 'log':
-            xs = np.exp((np.log(bins[1:])
-                         +np.log(bins[:-1]))/2.)
-
-        self.interpDensity = interpolate.interp1d(x=xs, y=self.density,
-                                                  fill_value="extrapolate")
+        self.interpDensity = get_1d_interpolation(xs, self.density,
+                                             monotone=False,
+                                             bounds=(bins[0], bins[-1]),
+                                             bound_values=(0., 0.))
         self.hasInterpDensity = True
 
     def saveInterpolatingDensity(self, fileName):
@@ -280,12 +293,7 @@ class integrator():
         if not self.hasAnalyticIntegral:
             return
 
-        bins = self.bins
-        if binspacing == 'lin':
-            xs = (bins[1:] + bins[:-1])/2.
-        if binspacing == 'log':
-            xs = np.exp((np.log(bins[1:])
-                         +np.log(bins[:-1]))/2.)
+        xs = self.density_xs
 
         self.analyticDensity = histDerivative(self.analyticIntegral(xs),
                                               bins, giveHist=False,
@@ -428,10 +436,7 @@ def integrate_1d(function, bounds,
 
     integral = this_integrator.integral
     error = this_integrator.integralErr
-    if bnd_cond_bin == 'first':
-        xs = this_integrator.bins[1:]
-    else:
-        xs = this_integrator.bins[:-1]
+    xs = this_integrator.integral_xs
 
     if num_bins == 2:
         return integral[0], error[0], xs[0]
@@ -543,6 +548,9 @@ class integrator_2d():
         self.density = self.density.T
         self.densityErr = self.densityErr.T
 
+        # Getting the x and y values associated with the density
+        self.density_xs, self.density_ys = self.bins[0], self.bins[1]
+
         # Letting the integrator know that it has a weight density:
         self.hasMCDensity = True
 
@@ -608,17 +616,46 @@ class integrator_2d():
             cumError = np.flip(cumError)
             self.integralErr = cumError
 
+        # Getting the x and y values associated with the integral
+        self.integral_xs, self.integral_ys = self.bins[0], self.bins[1]
+
         # Telling the integrator that it has an integral evaulated with MC:
         self.hasMCIntegral = True
+
+
+    def montecarlo_data_dict(self, info=None):
+        return {'bins': self.bins,
+                'density': self.density,
+                'density xs': self.density_xs,
+                'density ys': self.density_ys,
+                'density error': self.densityErr,
+                'integral': self.integral,
+                'integral xs:': self.integral_xs,
+                'integral ys:': self.integral_ys,
+                'integral error': self.integralErr,
+                'info': info}
+
+
+    def save_montecarlo_data(self, filename, info=None):
+        """Saves the data used to produce the integral to a file"""
+        assert self.hasMCDensity and self.hasMCIntegral, \
+            "Need density function and integral to save MC data"
+
+        # Saving the data to a file
+        np.savez(filename,
+                 **self.montecarlo_data_dict(info=info))
+
 
     # ------------------
     # Integral Interpolation:
     # ------------------
-    def makeInterpolatingFn(self, interpolate_error=False):
+    def makeInterpolatingFn(self, interpolate_error=False,
+                            # Extra arguments for the interpolation:
+                            **kwargs):
         """Makes an interpolating function for the integral."""
         assert self.hasMCIntegral, \
             "Need MC integral to produce interpolation"
-        x, y = self.bins[0], self.bins[1]
+        x, y = self.integral_xs, self.integral_ys
 
         if self.useFirstBinBndCond:
             z = []
@@ -650,15 +687,11 @@ class integrator_2d():
                 zerr = np.array(zerr).T
 
         z = z.flatten()
-        self.interpFn = interpolate.RegularGridInterpolator((x, y), z,
-                                    method='linear', bounds_error=False,
-                                    fill_value=None)
+        self.interpFn = get_2d_interpolation(x, y, z, **kwargs)
 
         if interpolate_error:
             zerr = zerr.flatten()
-            self.interpFn = interpolate.RegularGridInterpolator((x, y), zerr,
-                                        method='linear', bounds_error=False,
-                                        fill_value=None)
+            self.interpErr = get_2d_interpolation(x, y, zerr, **kwargs)
         else:
             self.interpErr = None
 
@@ -675,7 +708,7 @@ class integrator_2d():
 
         assert False, "Unsupported function."
 
-        xs, ys = self.bins[0], self.bins[1]
+        xs, ys = self.denisty_xs, self.density_ys
 
         if binspacing == 'lin':
             xs = (xs[1:] + xs[:-1])/2

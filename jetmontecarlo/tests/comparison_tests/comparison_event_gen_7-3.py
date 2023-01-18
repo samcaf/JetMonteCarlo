@@ -210,7 +210,6 @@ else:
                                                 bin_space=BIN_SPACE,
                                                 epsilon=EPSILON,
                                                 fixed_coupling=FIXED_COUPLING,
-                                                save=False,
                                                 num_bins=NUM_RAD_BINS)
             CRIT_RADIATORS.append(crit_rad_i)
 
@@ -230,7 +229,6 @@ else:
                                          bin_space=BIN_SPACE,
                                          epsilon=EPSILON,
                                          fixed_coupling=FIXED_COUPLING,
-                                         save=False,
                                          num_bins=NUM_RAD_BINS)
         SUB_RADIATORS.append(sub_rad)
 
@@ -244,7 +242,6 @@ else:
                                              bin_space=BIN_SPACE,
                                              epsilon=EPSILON,
                                              fixed_coupling=FIXED_COUPLING,
-                                             save=False,
                                              num_bins=NUM_RAD_BINS)
             SUB_RADIATORS.append(sub_rad)
 

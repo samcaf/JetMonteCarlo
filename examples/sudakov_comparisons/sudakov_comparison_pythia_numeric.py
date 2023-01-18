@@ -3,7 +3,7 @@ import dill as pickle
 from pathlib import Path
 
 # Local utilities for comparison
-from jetmontecarlo.utils.montecarlo_utils import *
+from jetmontecarlo.utils.montecarlo_utils import getLinSample
 from jetmontecarlo.jets.observables import *
 from examples.comparison_plot_utils import *
 
@@ -15,7 +15,11 @@ from jetmontecarlo.montecarlo.partonshower import *
 
 # Parameters
 from examples.params import *
-from examples.sudakov_comparisons.sudakov_utils import pythia_data
+from examples.filenames import *
+
+from examples.sudakov_comparison.sudakov_utils import plot_label
+from examples.sudakov_comparison.sudakov_utils import split_fn_num
+from examples.sudakov_comparison.sudakov_utils import radiators
 
 ###########################################
 # Definitions and Parameters
@@ -26,141 +30,6 @@ from examples.sudakov_comparisons.sudakov_utils import pythia_data
 Z_CUT_PLOT = [.05, .1, .2]
 Z_CUT_PLOT = [F_SOFT * zc for zc in Z_CUT_PLOT]
 
-# ------------------------------------
-# Comparison parameters
-# ------------------------------------
-# Choosing which emissions to plot
-COMPARE_CRIT = True
-COMPARE_SUB = False
-COMPARE_CRIT_AND_SUB = True
-COMPARE_PRE_AND_CRIT = True
-COMPARE_ALL = True
-
-if FIXED_COUPLING:
-    extra_label = '_fc_num_'
-    plot_label = '_fc_num_'+str(OBS_ACC)
-else:
-    extra_label = '_rc_num_'
-    plot_label = '_rc_num_'+str(OBS_ACC)
-
-plot_label += '_showerbeta'+str(SHOWER_BETA)
-plot_label += '_f{}'.format(F_SOFT)
-
-# ==========================================
-# Loading Files
-# ==========================================
-# ------------------------------------
-# Parton shower files
-# ------------------------------------
-def ps_correlations(beta):
-    # Getting filenames using proxy shower:
-    #shower_beta = SHOWER_BETA if FIXED_COUPLING else beta
-    shower_beta = beta
-    shower = parton_shower(fixed_coupling=FIXED_COUPLING,
-                           shower_cutoff=SHOWER_CUTOFF,
-                           shower_beta=shower_beta,
-                           jet_type=JET_TYPE)
-    shower.num_events = NUM_SHOWER_EVENTS
-
-    # Correlation files
-    ps_file = shower.correlation_path(beta, OBS_ACC, few_pres=True,
-                                     f_soft=F_SOFT,
-                                     angular_ordered=ANGULAR_ORDERING)
-    ps_data = np.load(ps_file, allow_pickle=True)
-
-    return ps_data
-
-# ------------------------------------
-# MC integration files:
-# ------------------------------------
-# Splitting function file path:
-with open(splitfn_path, 'rb') as f:
-    splitting_fns = pickle.load(f)
-# Index of z_cut values in the splitting function file
-def split_fn_num(z, theta, z_cut):
-    return splitting_fns[INDEX_ZC[z_cut]](z, theta)
-
-# Sample file paths:
-sample_folder = Path("output/montecarlo_samples/sudakov_functions")
-
-def crit_sample_file_path(z_cut, beta):
-    beta=float(beta)
-    crit_sample_file = ("theta_crits"
-                        +"_obs"+str(OBS_ACC)
-                        +"_splitfn"+str(SPLITFN_ACC)
-                        +"_zc"+str(z_cut)
-                        +"_beta"+str(beta)
-                        +"_{:.0e}".format(NUM_MC_EVENTS)
-                        +extra_label
-                        +"samples.npy")
-    return sample_folder / crit_sample_file
-print("crit_sample_file_path(.1, 2): " + str(crit_sample_file_path(.1, 2)))
-
-"""
-def sub_sample_file_path(beta):
-    beta=float(beta)
-    sub_sample_file = ("c_subs"
-                        +"_obs"+str(OBS_ACC)
-                        +"_splitfn"+str(SPLITFN_ACC)
-                       +"_beta"+str(beta)
-                       +"_{:.0e}".format(NUM_MC_EVENTS)
-                       +extra_label
-                       +"samples.npy")
-    return sample_folder / sub_sample_file
-
-def crit_sub_sample_file_path(z_cut, beta):
-    beta=float(beta)
-    crit_sub_sample_file = ("c_subs_from_crits"
-                            +"_obs"+str(OBS_ACC)
-                            +"_splitfn"+str(SPLITFN_ACC)
-                            +"_zc"+str(z_cut)
-                            +"_beta"+str(beta)
-                            +"_{:.0e}".format(NUM_MC_EVENTS)
-                            +extra_label
-                            +"samples.npy")
-    return sample_folder / crit_sub_sample_file
-
-def pre_sample_file_path(z_cut):
-    pre_sample_file = ("z_pres_from_crits"
-                       +"_obs"+str(OBS_ACC)
-                       +"_splitfn"+str(SPLITFN_ACC)
-                       +"_zc"+str(z_cut)
-                       +"_{:.0e}".format(NUM_MC_EVENTS)
-                       +extra_label
-                       +"samples.npy")
-    return sample_folder / pre_sample_file
-"""
-
-# ------------------------------------
-# Loading Radiators:
-# ------------------------------------
-def load_radiators():
-    print("Loading pickled radiator functions:")
-    print("    Loading critical radiator...")
-    if True in [COMPARE_CRIT, COMPARE_PRE_AND_CRIT,
-                COMPARE_CRIT_AND_SUB, COMPARE_ALL]:
-        with open(critrad_path, 'rb') as file:
-            rad_crit_list = pickle.load(file)
-        global rad_crit
-        def rad_crit(theta, z_cut):
-            return rad_crit_list[INDEX_ZC[z_cut]](theta)
-
-if not(LOAD_MC_EVENTS):
-    load_radiators()
-
-"""
-# Pythia Data
-#pythiafile = open('pythiadata/groomed_pythia_obs.pkl', 'rb')
-
-raw_file = open('pythiadata/raw_Zq_pT3TeV_noUE_'+level+'.pkl', 'rb')
-raw_data = pickle.load(raw_file)
-
-rss_file = open('pythiadata/rss_Zq_pT3TeV_noUE_'+level+'.pkl', 'rb')
-rss_data = pickle.load(rss_file)
-
-
-pythiafile.close()
-"""
 
 ###########################################
 # Critical Emission Only
@@ -170,25 +39,9 @@ def plot_mc_crit(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
     sud_integrator = integrator()
     sud_integrator.setLastBinBndCondition([1., 'minus'])
 
-    if load:
-        if crit_sample_file_path(z_cut, beta).is_file():
-            print("    Loading critical samples with z_c="+str(z_cut)+"...")
-            theta_crits = np.load(crit_sample_file_path(z_cut, beta))
-        else:
-            load = False
-            if LOAD_MC_EVENTS:
-                load_radiators()
-
-    if not load:
-        print("    Making critical samples with z_c="+str(z_cut)+"...")
-
-        def cdf_crit(theta):
-            return np.exp(-1.*rad_crit(theta, z_cut))
-
-        theta_crits = samples_from_cdf(cdf_crit, NUM_MC_EVENTS, domain=[0,1])
-        theta_crits = np.where(np.isinf(theta_crits), 0, theta_crits)
-
-        np.save(crit_sample_file_path(z_cut, beta), theta_crits)
+    theta_crits, theta_crit_weights, load = get_theta_crits(
+                          z_cut, beta, load=load, save=True,
+                          rad_crit=radiators.get('critical', None))
 
     z_crits = np.array([getLinSample(z_cut, 1./2.)
                         for i in range(NUM_MC_EVENTS)])
@@ -274,7 +127,7 @@ def compare_crit(beta=BETA, plot_approx=False):
         this_plot_label += '_{:.0e}cutoff'.format(EPSILON)
     this_plot_label += '_{:.0e}shower'.format(SHOWER_CUTOFF)
 
-    fig_pdf.savefig(fig_folder / JET_TYPE+'_showeronly_RSS_crit_'
+    fig_pdf.savefig(str(fig_folder) + '/' + JET_TYPE+'_showeronly_RSS_crit_'
                     +BIN_SPACE+'_pdf_comp'
                     +'_beta'+str(beta)
                     +'_{:.0e}showers_{:.0e}mc'.format(
@@ -283,7 +136,7 @@ def compare_crit(beta=BETA, plot_approx=False):
                     +'.pdf',
                     format='pdf')
     """
-    fig_cdf.savefig(fig_folder / JET_TYPE+'_showeronly_RSS_crit_'
+    fig_cdf.savefig(str(fig_folder) + '/' + JET_TYPE+'_showeronly_RSS_crit_'
                     +BIN_SPACE+'_cdf_comp'
                     +'_beta'+str(beta)
                     +'_{:.0e}showers_{:.0e}mc'.format(

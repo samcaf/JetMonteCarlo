@@ -1,19 +1,21 @@
 from __future__ import absolute_import
+from pathlib import Path
 import dill as pickle
 
-# Local utilities for comparison
-from jetmontecarlo.utils.montecarlo_utils import *
+# Local utilities for jets
+from jetmontecarlo.utils.montecarlo_utils import getLinSample
 from jetmontecarlo.jets.observables import *
+from jetmontecarlo.analytics.soft_drop import *
+
+# Local utilities for comparison
 from examples.comparison_plot_utils import *
 
 # Parameters
-from examples.sudakov_comparisons.sudakov_utils import ps_correlations
 from examples.params import *
+from examples.filenames import *
+from examples.sudakov_comparisons.sudakov_utils import split_fn_num
+from examples.sudakov_comparisons.sudakov_utils import radiators
 
-# Local analytics
-from jetmontecarlo.analytics.soft_drop import *
-
-from pathlib import Path
 
 ###########################################
 # Definitions and Parameters
@@ -45,143 +47,12 @@ COMPARE_CRIT = True
 COMPARE_CRIT_AND_SUB = False
 COMPARE_PYTHIA = (SPLITFN_ACC == 'MLL')
 
-########### Turnign this on for tests with fcll
+########### Turning this on for tests with fcll
 COMPARE_PYTHIA = True
 
-if FIXED_COUPLING:
-    extra_label = '_fc_num_'
-    plot_label = '_fc_num_'+str(OBS_ACC)+'_'
-else:
-    extra_label = '_rc_num_'
-    plot_label = '_rc_num_'+str(OBS_ACC)+'_'
-
-
-# ------------------------------------
-# MC paths
-# ------------------------------------
-# File folders
-rad_folder = Path("output/serialized_functions/radiators/")
-
-# Radiator paths:
-rad_extension = ("_{:.0e}events".format(NUM_RAD_EVENTS)
-                 +"_{:.0e}bins".format(NUM_RAD_BINS)
-                 +".pkl")
-splitfn_extension = ("_{:.0e}events".format(NUM_SPLITFN_EVENTS)
-                     +"_{:.0e}bins".format(NUM_SPLITFN_BINS)
-                     +".pkl")
-if not FIXED_COUPLING:
-    rad_extension = '_rc' + rad_extension
-    splitfn_extension = '_'+SPLITFN_ACC+'_log_rc' + splitfn_extension
-
-crit_rad_file_path = rad_folder / ("crit_{}_rads".format(BIN_SPACE)
-                                   + rad_extension)
-sub_rad_file_path = rad_folder / ("sub_{}_rads".format(BIN_SPACE)
-                                  + rad_extension)
-crit_sub_rad_file_path = rad_folder / ("crit_sub_{}_rads".format(BIN_SPACE)
-                                       + rad_extension)
-pre_rad_file_path = rad_folder / ("pre_{}_rads".format(BIN_SPACE)
-                                  + rad_extension)
-
-# ------------------------------------
-# MC integration files:
-# ------------------------------------
-# Splitting function file path:
-print("splitfn_extension:", splitfn_extension)
-with open(splitfn_path, 'rb') as f:
-    splitting_fns = pickle.load(f)
-# Index of z_cut values in the splitting function file
-def split_fn_num(z, theta, z_cut):
-    return splitting_fns[INDEX_ZC[z_cut]](z, theta)
-
-
-# Sample file paths:
-sample_folder = Path("output/montecarlo_samples/sudakov_functions")
-
-def crit_sample_file_path(z_cut, beta):
-    beta=float(2)
-    crit_sample_file = ("theta_crits"
-                        +"_obs"+str(OBS_ACC)
-                        +"_splitfn"+str(SPLITFN_ACC)
-                        +"_zc"+str(z_cut)
-                        +"_beta"+str(beta)
-                        +"_{:.0e}".format(NUM_MC_EVENTS)
-                        +extra_label
-                        +"samples.npy")
-    return sample_folder / crit_sample_file
-
-def sub_sample_file_path(beta):
-    beta=float(beta)
-    sub_sample_file = ("c_subs"
-                        +"_obs"+str(OBS_ACC)
-                        +"_splitfn"+str(SPLITFN_ACC)
-                       +"_beta"+str(beta)
-                       +"_{:.0e}".format(NUM_MC_EVENTS)
-                       +extra_label
-                       +"samples.npy")
-    return sample_folder / sub_sample_file
-
-def crit_sub_sample_file_path(z_cut, beta):
-    beta=float(beta)
-    crit_sub_sample_file = ("c_subs_from_crits"
-                            +"_obs"+str(OBS_ACC)
-                            +"_splitfn"+str(SPLITFN_ACC)
-                            +"_zc"+str(z_cut)
-                            +"_beta"+str(beta)
-                            +"_{:.0e}".format(NUM_MC_EVENTS)
-                            +extra_label
-                            +"samples.npy")
-    return sample_folder / crit_sub_sample_file
-
-
-# ------------------------------------
-# Loading Radiators:
-# ------------------------------------
-def load_radiators():
-    print("Loading pickled radiator functions:")
-    print("    Loading critical radiator from "
-          +str(critrad_path)+"...", flush=True)
-    if True in [COMPARE_CRIT, COMPARE_PRE_AND_CRIT,
-                COMPARE_CRIT_AND_SUB, COMPARE_ALL]:
-        with open(critrad_path, 'rb') as file:
-            rad_crit_list = pickle.load(file)
-        global rad_crit
-        def rad_crit(theta, z_cut):
-            if VERBOSE > 5:
-                print("  zcut:", z_cut)
-                print("  INDEX_ZC[z_cut]:", INDEX_ZC[z_cut])
-            return rad_crit_list[INDEX_ZC[z_cut]](theta)
-
-    print("    Loading critical/subsequent radiator from "
-          +str(subrad_path)+"...", flush=True)
-    global rad_crit_sub
-    with open(subrad_path, 'rb') as file:
-        rad_crit_sub = pickle.load(file)[0]
-
-if not(LOAD_MC_EVENTS):
-    load_radiators()
-
-
-# Pythia Data
-softdrop_data = {'partons': {}, 'hadrons': {}, 'charged': {}}
-raw_data = {'partons': {}, 'hadrons': {}, 'charged': {}}
-
-for level in ['partons', 'hadrons', 'charged']:
-    # Raw
-    raw_file = open('pythiadata/raw_Zq_pT3TeV_noUE_'+level+'.pkl', 'rb')
-    this_raw = pickle.load(raw_file)
-    raw_data[level] = this_raw
-    raw_file.close()
-
-    # Softdrop
-    for i in range(6):
-        softdrop_file = open('pythiadata/softdrop_Zq_pT3TeV_noUE_param'+str(i)+'_'+level+'.pkl', 'rb')
-        this_softdrop = pickle.load(softdrop_file)
-        softdrop_data[level][this_softdrop['params']] = this_softdrop
-        softdrop_file.close()
-
-pythia_data = {'raw': raw_data, 'softdrop': softdrop_data}
-
-print("Params keys:", list(pythia_data['softdrop']['partons'].keys()), flush=True)
+pythia_data = get_pythia_data(include=['raw', 'softdrop'])
+# DEBUG
+# print("Params keys:", list(pythia_data['softdrop']['partons'].keys()), flush=True)
 
 
 ###########################################
@@ -192,27 +63,9 @@ def plot_mc_crit(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
     sud_integrator = integrator()
     sud_integrator.setLastBinBndCondition([1., 'minus'])
 
-    if load:
-        if crit_sample_file_path(z_cut, beta).is_file():
-            print("    Loading critical samples with z_c="+str(z_cut)+"...")
-            theta_crits = np.load(crit_sample_file_path(z_cut, beta))
-        else:
-            load = False
-            if LOAD_MC_EVENTS:
-                load_radiators()
-
-    if not load:
-        print("    Making critical samples with z_c="+str(z_cut)+"...")
-
-        index = {.05: 0, .1: 1, .2: 2}
-
-        def cdf_crit(theta):
-            return np.exp(-1.*rad_crit(theta, z_cut))
-
-        theta_crits = samples_from_cdf(cdf_crit, NUM_MC_EVENTS, domain=[0,1])
-        theta_crits = np.where(np.isinf(theta_crits), 0, theta_crits)
-
-        np.save(crit_sample_file_path(z_cut, beta), theta_crits)
+    theta_crits, theta_crit_weights, load = get_theta_crits(
+                          z_cut, beta, load=load, save=True,
+                          rad_crit=radiators.get('critical', None))
 
     z_crits = np.array([getLinSample(z_cut, 1./2.)
                         for i in range(NUM_MC_EVENTS)])
@@ -310,7 +163,7 @@ def compare_crit(pdfs=None, pdferrs=None,
         this_plot_label += '{:.0e}mccutoff_'.format(EPSILON)
     this_plot_label += '{:.0e}shower'.format(SHOWER_CUTOFF)
 
-    fig_pdf.savefig(fig_folder / JET_TYPE+'_softdrop_crit_'
+    fig_pdf.savefig(str(fig_folder) + '/' + JET_TYPE+'_softdrop_crit_'
                     +BIN_SPACE+'_pdf_comp'
                     +'_beta'+str(BETA)
                     +'_{:.0e}showers_{:.0e}mc'.format(
@@ -318,7 +171,7 @@ def compare_crit(pdfs=None, pdferrs=None,
                     +str(this_plot_label)
                     +'.pdf',
                     format='pdf')
-    # fig_cdf.savefig(fig_folder / JET_TYPE+'_softdrop_crit_'
+    # fig_cdf.savefig(str(fig_folder) + '/' + JET_TYPE+'_softdrop_crit_'
     #                 +BIN_SPACE+'_cdf_comp'
     #                 +'_beta'+str(BETA)
     #                 +'_{:.0e}showers_{:.0e}mc'.format(
@@ -340,52 +193,13 @@ def plot_mc_crit_and_sub(axes_pdf, axes_cdf, z_cut, beta = BETA, icol=0,
     sud_integrator = integrator()
     sud_integrator.setLastBinBndCondition([1., 'minus'])
 
-    if load:
-        if crit_sample_file_path(z_cut, beta).is_file():
-            print("    Loading critical samples with z_c="+str(z_cut)+"...")
-            theta_crits = np.load(crit_sample_file_path(z_cut, beta))
-        else:
-            load = False
-            if LOAD_MC_EVENTS:
-                load_radiators()
+    theta_crits, theta_crit_weights, load = get_theta_crits(
+                          z_cut, beta, load=load, save=True,
+                          rad_crit=radiators.get('critical', None))
 
-    if not load:
-        print("    Making critical samples with z_c="+str(z_cut)+"...")
-
-        def cdf_crit(theta):
-            return np.exp(-1.*rad_crit(theta, z_cut))
-
-        theta_crits = samples_from_cdf(cdf_crit, NUM_MC_EVENTS, domain=[0,1])
-        theta_crits = np.where(np.isinf(theta_crits), 0, theta_crits)
-
-        np.save(crit_sample_file_path(z_cut, beta), theta_crits)
-
-    if load:
-        if crit_sub_sample_file_path(z_cut, beta).is_file():
-            print("    Loading subsequent samples with beta="+str(beta)+
-                  " from crit samples with z_cut="+str(z_cut)+"...")
-            c_subs = np.load(crit_sub_sample_file_path(z_cut, beta))
-        else:
-            load = False
-            if LOAD_MC_EVENTS:
-                load_radiators()
-
-    if not load:
-        print("    Making subsequent samples with beta="+str(beta)+"...")
-        c_subs = []
-
-        for i, theta in enumerate(theta_crits):
-            def cdf_sub_conditional(c_sub):
-                return np.exp(-1.*rad_crit_sub(c_sub, theta))
-
-            c_sub = samples_from_cdf(cdf_sub_conditional, 1,
-                                     domain=[0,theta**beta/2.])[0]
-            c_subs.append(c_sub)
-            if (i+1)%(len(theta_crits)/10)==0:
-                print("        Generated "+str(i+1)+" events...")
-        c_subs = np.array(c_subs)
-        c_subs = np.where(np.isinf(c_subs), 0, c_subs)
-        np.save(crit_sub_sample_file_path(z_cut, beta), c_subs)
+    c_subs, c_sub_weights, load = get_c_subs(z_cut, beta,
+                         load=load, save=True, theta_crits=theta_crits,
+                         rad_crit_sub=radiators.get('subsequent', None))
 
     z_crits = np.array([getLinSample(z_cut, 1./2.)
                         for i in range(NUM_MC_EVENTS)])
@@ -485,7 +299,7 @@ def compare_crit_and_sub(pdfs=None, pdferrs=None,
         this_plot_label += '_{:.0e}cutoff'.format(EPSILON)
     this_plot_label += '_{:.0e}shower'.format(SHOWER_CUTOFF)
 
-    fig_pdf.savefig(fig_folder / JET_TYPE+'_softdrop_crit_and_sub_'
+    fig_pdf.savefig(str(fig_folder) + '/' + JET_TYPE+'_softdrop_crit_and_sub_'
                     +BIN_SPACE+'_pdf_comp'
                     +'_beta'+str(BETA)
                     +'_{:.0e}showers_{:.0e}mc'.format(
@@ -493,7 +307,7 @@ def compare_crit_and_sub(pdfs=None, pdferrs=None,
                     +str(this_plot_label)
                     +'.pdf',
                     format='pdf')
-    # fig_cdf.savefig(fig_folder / JET_TYPE+'_softdrop_crit_and_sub_'
+    # fig_cdf.savefig(str(fig_folder) + '/' + JET_TYPE+'_softdrop_crit_and_sub_'
     #                 +BIN_SPACE+'_cdf_comp'
     #                 +'_beta'+str(BETA)
     #                 +'_{:.0e}showers_{:.0e}mc'.format(

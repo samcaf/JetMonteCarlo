@@ -3,7 +3,7 @@ import dill as pickle
 from pathlib import Path
 
 # Local utilities for comparison
-from jetmontecarlo.utils.montecarlo_utils import *
+from jetmontecarlo.utils.montecarlo_utils import getLinSample
 from jetmontecarlo.jets.observables import *
 from examples.comparison_plot_utils import *
 
@@ -15,6 +15,13 @@ from jetmontecarlo.montecarlo.partonshower import *
 
 # Parameters
 from examples.params import *
+from examples.filenames import *
+
+from examples.sudakov_comparisons.sudakov_utils import Z_CUT_PLOT
+from examples.sudakov_comparisons.sudakov_utils import plot_label
+from examples.sudakov_comparisons.sudakov_utils import split_fn_num
+from examples.sudakov_comparisons.sudakov_utils import radiators
+from examples.sudakov_comparisons.sudakov_utils import save_cdf
 
 ###########################################
 # Notes:
@@ -40,168 +47,6 @@ from examples.params import *
 # Run with fixed coupling, LL, with 5e6 samples, 5e3 bins
     # * Critical emission distributions don't look right...
 
-###########################################
-# Definitions and Parameters
-###########################################
-# ------------------------------------
-# Parameters for plotting
-# ------------------------------------
-Z_CUT_PLOT = [.05, .1, .2]
-F_SOFT = 1
-Z_CUT_PLOT = [F_SOFT * zc for zc in Z_CUT_PLOT]
-
-save_cdf = False
-
-
-# ------------------------------------
-# Comparison parameters
-# ------------------------------------
-# Choosing which emissions to plot
-COMPARE_CRIT = True
-COMPARE_SUB = False
-COMPARE_CRIT_AND_SUB = True
-COMPARE_PRE_AND_CRIT = True
-COMPARE_ALL = True
-
-if FIXED_COUPLING:
-    extra_label = '_fc_num_'
-    plot_label = '_fc_num_'+str(OBS_ACC)
-else:
-    extra_label = '_rc_num_'
-    plot_label = '_rc_num_'+str(OBS_ACC)
-
-plot_label += '_showerbeta'+str(SHOWER_BETA)
-if F_SOFT:
-    plot_label += '_f{}'.format(F_SOFT)
-
-
-# ==========================================
-# Loading Files
-# ==========================================
-# ------------------------------------
-# Parton shower files
-# ------------------------------------
-
-# Correlation files
-def ps_correlations(beta):
-    # Getting filenames using proxy shower:
-    shower = parton_shower(fixed_coupling=FIXED_COUPLING,
-                           shower_cutoff=SHOWER_CUTOFF,
-                           shower_beta=SHOWER_BETA if FIXED_COUPLING else beta,
-                           jet_type=JET_TYPE)
-    shower.num_events = NUM_SHOWER_EVENTS
-    ps_file = shower.correlation_path(int(beta), OBS_ACC, few_pres=True,
-                                     f_soft=F_SOFT,
-                                     angular_ordered=ANGULAR_ORDERING)
-    ps_data = np.load(ps_file, allow_pickle=True)
-
-    return ps_data
-
-
-# ------------------------------------
-# MC integration files:
-# ------------------------------------
-# Splitting function file path:
-with open(splitfn_path, 'rb') as f:
-    splitting_fns = pickle.load(f)
-# Index of z_cut values in the splitting function file
-def split_fn_num(z, theta, z_cut):
-    return splitting_fns[INDEX_ZC[z_cut]](z, theta)
-
-
-# Sample file paths:
-sample_folder = Path("output/montecarlo_samples/sudakov_functions")
-
-def crit_sample_file_path(z_cut, beta):
-    beta=float(beta)
-    crit_sample_file = ("theta_crits"
-                        +"_obs"+str(OBS_ACC)
-                        +"_splitfn"+str(SPLITFN_ACC)
-                        +"_zc"+str(z_cut)
-                        +"_beta"+str(beta)
-                        +"_{:.0e}".format(NUM_MC_EVENTS)
-                        +extra_label
-                        +"samples.npy")
-    return sample_folder / crit_sample_file
-
-
-def sub_sample_file_path(beta):
-    beta=float(beta)
-    sub_sample_file = ("c_subs"
-                        +"_obs"+str(OBS_ACC)
-                        +"_splitfn"+str(SPLITFN_ACC)
-                       +"_beta"+str(beta)
-                       +"_{:.0e}".format(NUM_MC_EVENTS)
-                       +extra_label
-                       +"samples.npy")
-    return sample_folder / sub_sample_file
-
-
-def crit_sub_sample_file_path(z_cut, beta):
-    beta=float(beta)
-    crit_sub_sample_file = ("c_subs_from_crits"
-                            +"_obs"+str(OBS_ACC)
-                            +"_splitfn"+str(SPLITFN_ACC)
-                            +"_zc"+str(z_cut)
-                            +"_beta"+str(beta)
-                            +"_{:.0e}".format(NUM_MC_EVENTS)
-                            +extra_label
-                            +"samples.npy")
-    return sample_folder / crit_sub_sample_file
-
-
-def pre_sample_file_path(z_cut):
-    pre_sample_file = ("z_pres_from_crits"
-                       +"_obs"+str(OBS_ACC)
-                       +"_splitfn"+str(SPLITFN_ACC)
-                       +"_zc"+str(z_cut)
-                       +"_{:.0e}".format(NUM_MC_EVENTS)
-                       +extra_label
-                       +"samples.npy")
-    return sample_folder / pre_sample_file
-
-# ------------------------------------
-# Loading Radiators:
-# ------------------------------------
-def load_radiators():
-    print("Loading pickled radiator functions:")
-    print("    Loading critical radiator from "
-          +str(critrad_path)+"...", flush=True)
-    if True in [COMPARE_CRIT, COMPARE_PRE_AND_CRIT,
-                COMPARE_CRIT_AND_SUB, COMPARE_ALL]:
-        with open(critrad_path, 'rb') as file:
-            rad_crit_list = pickle.load(file)
-        global rad_crit
-        def rad_crit(theta, z_cut):
-            return rad_crit_list[INDEX_ZC[z_cut]](theta)
-
-    if COMPARE_SUB:
-        print("    Loading subsequent/ungroomed radiator from "
-              +str(subrad_path)+"...", flush=True)
-        with open(subrad_path_path, 'rb') as file:
-            rad_sub_list = pickle.load(file)
-        global rad_sub
-        def rad_sub(c_sub, beta):
-            return rad_sub_list[INDEX_BETA[beta]](c_sub)
-
-    if True in [COMPARE_CRIT_AND_SUB, COMPARE_ALL]:
-        print("    Loading critical/subsequent radiator from "
-              +str(subrad_path)+"...", flush=True)
-        global rad_crit_sub
-        with open(subrad_path, 'rb') as file:
-            rad_crit_sub = pickle.load(file)[0]
-
-    if True in [COMPARE_PRE_AND_CRIT, COMPARE_ALL]:
-        print("    Loading pre-critical radiator from "
-              +str(prerad_path)+"...", flush=True)
-        with open(prerad_path, 'rb') as file:
-            rad_pre_list = pickle.load(file)
-        global rad_pre
-        def rad_pre(z_pre, theta, z_cut):
-            return rad_pre_list[INDEX_ZC[z_cut]](z_pre, theta)
-
-if not(LOAD_MC_EVENTS):
-    load_radiators()
 
 ###########################################
 # Critical Emission Only
@@ -211,45 +56,9 @@ def plot_mc_crit(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
     sud_integrator = integrator()
     sud_integrator.setLastBinBndCondition([1., 'minus'])
 
-    if load:
-        if crit_sample_file_path(z_cut, beta).is_file():
-            print("    Loading critical samples with z_c="+str(z_cut)+"...",
-                  flush=True)
-            try:
-                # Loading files and samples:
-                sample_dict = np.load(crit_sample_file_path(z_cut, beta),
-                                      allow_pickle=True)
-                theta_crits = sample_dict['samples']
-                theta_crit_weights = sample_dict['weights']
-            except:
-                # Old syntax for loading files, for backwards compatibility
-                theta_crits = np.load(crit_sample_file_path(z_cut, beta))
-                theta_crit_weights = np.ones_like(theta_crits)
-        else:
-            load = False
-            if LOAD_MC_EVENTS:
-                load_radiators()
-
-    if not load:
-        print("    Making critical samples with z_c="+str(z_cut)+"...",
-              flush=True)
-
-        def cdf_crit(theta):
-            return np.exp(-1.*rad_crit(theta, z_cut))
-
-        theta_crits, theta_crit_weights = samples_from_cdf(cdf_crit, NUM_MC_EVENTS,
-                                                domain=[0.,1.],
-                                                # DEBUG
-                                                backup_cdf=None,
-                                                verbose=3)
-        theta_crit_weights = np.where(np.isinf(theta_crits), 0.,
-                                      theta_crit_weights)
-        theta_crits = np.where(np.isinf(theta_crits), 0, theta_crits)
-
-        # Save samples and weights
-        np.savez(crit_sample_file_path(z_cut, beta),
-                 samples=theta_crits,
-                 weights=theta_crit_weights)
+    theta_crits, theta_crit_weights, load = get_theta_crits(
+                          z_cut, beta, load=load, save=True,
+                          rad_crit=radiators.get('critical', None))
 
     z_crits = np.array([getLinSample(z_cut, 1./2.)
                         for i in range(NUM_MC_EVENTS)])
@@ -272,9 +81,11 @@ def plot_mc_crit(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
     # Weights, binned observables, and area
     if BIN_SPACE == 'lin':
         sud_integrator.bins = np.linspace(0, .5, NUM_BINS)
+        sud_integrator.binspacing = 'lin'
     if BIN_SPACE == 'log':
         sud_integrator.bins = np.logspace(np.log10(EPSILON)-1, np.log10(.5),
                                           NUM_BINS)
+        sud_integrator.binspacing = 'log'
     sud_integrator.hasBins = True
 
     sud_integrator.setDensity(obs, weights, 1./2.-z_cut)
@@ -339,7 +150,7 @@ def compare_crit(beta=BETA, plot_approx=False):
         this_plot_label += '_{:.0e}cutoff'.format(EPSILON)
     this_plot_label += '_{:.0e}shower'.format(SHOWER_CUTOFF)
 
-    fig_pdf.savefig(fig_folder / JET_TYPE+'_RSS_crit_'
+    fig_pdf.savefig(str(fig_folder) + '/' + JET_TYPE+'_RSS_crit_'
                     +BIN_SPACE+'_pdf_comp'
                     +'_beta'+str(beta)
                     +'_{:.0e}showers_{:.0e}mc'.format(
@@ -348,7 +159,7 @@ def compare_crit(beta=BETA, plot_approx=False):
                     +'.pdf',
                     format='pdf')
     if save_cdf:
-        fig_cdf.savefig(fig_folder / JET_TYPE+'_RSS_crit_'
+        fig_cdf.savefig(str(fig_folder) + '/' + JET_TYPE+'_RSS_crit_'
                         +BIN_SPACE+'_cdf_comp'
                         +'_beta'+str(beta)
                         +'_{:.0e}showers_{:.0e}mc'.format(
@@ -363,55 +174,18 @@ def compare_crit(beta=BETA, plot_approx=False):
     print("Plotting complete!", flush=True)
 
 ###########################################
-# Subsequent Emissions
+# Ungroomed Emissions
 ###########################################
-def plot_mc_sub(axes_pdf, axes_cdf, beta, icol=0,
+def plot_mc_ungroomed(axes_pdf, axes_cdf, beta, icol=0,
                 load=LOAD_MC_EVENTS):
     sud_integrator = integrator()
     sud_integrator.setLastBinBndCondition([1., 'minus'])
-    if load:
-        print(sub_sample_file_path(beta))
-        if sub_sample_file_path(beta).is_file():
-            print("    Loading subsequent samples with beta="+str(beta)+"...",
-                  flush=True)
-            try:
-                # Loading files and samples:
-                sample_dict = np.load(sub_sample_file_path(beta),
-                                      allow_pickle=True)
-                c_subs = sample_dict['samples']
-                c_sub_weights = sample_dict['weights']
-            except:
-                # Old syntax for loading files, for backwards compatibility
-                c_subs = np.load(sub_sample_file_path(beta))
-                c_sub_weights = np.ones_like(c_subs)
-        else:
-            load = False
-            if LOAD_MC_EVENTS:
-                load_radiators()
 
-    if not load:
-        print("    Making subsequent samples with beta="+str(beta)+"...",
-              flush=True)
-        def cdf_sub(c_sub):
-            return np.exp(-1.*rad_sub(c_sub, beta))
+    c_raws, c_raw_weights = get_c_raw(beta, load=True, save=True,
+                                      rad_raw=radiators.get('ungroomed'))
 
-        c_subs, c_sub_weights = samples_from_cdf(cdf_sub, NUM_MC_EVENTS,
-                                        domain=[0.,.5],
-                                        # DEBUG
-                                        backup_cdf=None,
-                                        verbose=3)
-        c_sub_weights = np.where(np.isinf(c_subs), 0,
-                                 c_sub_weights)
-        c_subs = np.where(np.isinf(c_subs), 0, c_subs)
-
-        # Save samples and weights
-        np.savez(sub_sample_file_path(beta),
-                 samples=c_subs,
-                 weights=c_sub_weights)
-
-    obs = c_subs
-
-    weights = c_sub_weights
+    obs = c_raws
+    weights = c_raw_weights
 
     # Weights, binned observables, and area
     sud_integrator.bins = np.logspace(np.log10(EPSILON)-1, np.log10(.5),
@@ -429,7 +203,7 @@ def plot_mc_sub(axes_pdf, axes_cdf, beta, icol=0,
     plot_mc_pdf(axes_pdf, pdf, pdferr, sud_integrator.bins, icol)
     plot_mc_cdf(axes_cdf, integral, integralerr, sud_integrator.bins, icol)
 
-def compare_sub():
+def compare_ungroomed():
     # Preparing figures
     fig_pdf, axes_pdf, fig_cdf, axes_cdf = \
             get_axes('ungroomed', ratio_plot=False, ylim=ylim_3)
@@ -449,9 +223,9 @@ def compare_sub():
     for icol, text in enumerate(leg1.get_texts()):
         text.set_color(compcolors[(icol, 'dark')])
 
-    print("Getting subsequent samples...", flush=True)
+    print("Getting ungroomed samples...", flush=True)
     for icol, beta in enumerate(BETAS):
-        plot_mc_sub(axes_pdf, axes_cdf, beta, icol=icol)
+        plot_mc_ungroomed(axes_pdf, axes_cdf, beta, icol=icol)
         plot_shower_pdf_cdf(ps_correlations(beta)['ungroomed_c1s'],
                             axes_pdf, axes_cdf,
                             label='Parton Shower', colnum=icol)
@@ -470,7 +244,7 @@ def compare_sub():
         this_plot_label += '_{:.0e}cutoff'.format(EPSILON)
     this_plot_label += '_{:.0e}shower'.format(SHOWER_CUTOFF)
 
-    fig_pdf.savefig(fig_folder / JET_TYPE+'_ungroomed_'
+    fig_pdf.savefig(str(fig_folder) + '/' + JET_TYPE+'_ungroomed_'
                     +BIN_SPACE+'_pdf_comp'
                     +'_{:.0e}showers_{:.0e}mc'.format(
                         NUM_SHOWER_EVENTS, NUM_MC_EVENTS)
@@ -478,7 +252,7 @@ def compare_sub():
                     +'.pdf',
                     format='pdf')
     if save_cdf:
-        fig_cdf.savefig(fig_folder / JET_TYPE+'_ungroomed_'
+        fig_cdf.savefig(str(fig_folder) + '/' + JET_TYPE+'_ungroomed_'
                         +BIN_SPACE+'_cdf_comp'
                         +'_{:.0e}showers_{:.0e}mc'.format(
                             NUM_SHOWER_EVENTS,  NUM_MC_EVENTS)
@@ -499,99 +273,13 @@ def plot_mc_crit_and_sub(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
     sud_integrator = integrator()
     sud_integrator.setLastBinBndCondition([1., 'minus'])
 
-    if load:
-        if crit_sample_file_path(z_cut, beta).is_file():
-            print("    Loading critical samples with z_c="+str(z_cut)+"...", flush=True)
-            try:
-                # Loading files and samples:
-                sample_dict = np.load(crit_sample_file_path(z_cut, beta),
-                                      allow_pickle=True)
-                theta_crits = sample_dict['samples']
-                theta_crit_weights = sample_dict['weights']
-            except:
-                # Old syntax for loading files, for backwards compatibility
-                theta_crits = np.load(crit_sample_file_path(z_cut, beta))
-                theta_crit_weights = np.ones_like(theta_crits)
-        else:
-            load = False
-            if LOAD_MC_EVENTS:
-                load_radiators()
+    theta_crits, theta_crit_weights, load = get_theta_crits(
+                          z_cut, beta, load=load, save=True,
+                          rad_crit=radiators.get('critical', None))
 
-    if not load:
-        print("    Making critical samples with z_c="+str(z_cut)+"...", flush=True)
-
-        def cdf_crit(theta):
-            return np.exp(-1.*rad_crit(theta, z_cut))
-
-        theta_crits, theta_crit_weights = samples_from_cdf(cdf_crit, NUM_MC_EVENTS,
-                                                domain=[0.,1.],
-                                                # DEBUG
-                                                backup_cdf=None,
-                                                verbose=3)
-        theta_crit_weights = np.where(np.isinf(theta_crits), 0.,
-                                      theta_crit_weights)
-        theta_crits = np.where(np.isinf(theta_crits), 0, theta_crits)
-
-        # Save samples and weights
-        np.savez(crit_sample_file_path(z_cut, beta),
-                 samples=theta_crits,
-                 weights=theta_crit_weights)
-
-    if load:
-        if crit_sub_sample_file_path(z_cut, beta).is_file():
-            print("    Loading subsequent samples with beta="+str(beta)+
-                  " from crit samples with z_cut="+str(z_cut)+"...",
-                  flush=True)
-            try:
-                # Loading files and samples:
-                sample_dict = np.load(crit_sub_sample_file_path(z_cut, beta),
-                                      allow_pickle=True)
-                c_subs = sample_dict['samples']
-                c_sub_weights = sample_dict['weights']
-            except:
-                # Old syntax for loading files, for backwards compatibility
-                c_subs = np.load(crit_sub_sample_file_path(z_cut, beta))
-                c_sub_weights = np.ones_like(c_subs)
-        else:
-            load = False
-            if LOAD_MC_EVENTS:
-                load_radiators()
-
-    if not load:
-        print("    Making subsequent samples with beta="+str(beta)+"...",
-              flush=True)
-        c_subs = []
-        c_sub_weights = []
-
-        for i, theta in enumerate(theta_crits):
-            def cdf_sub_conditional(c_sub):
-                return np.exp(-1.*rad_crit_sub(c_sub, theta))
-
-            if theta**beta/2. < 1e-10:
-                # Assigning to an underflow bin for small observable values
-                c_sub = 1e-100
-                c_sub_weight = 1
-            else:
-                c_sub, c_sub_weight = samples_from_cdf(cdf_sub_conditional, 1,
-                                                domain=[0.,theta**beta/2.],
-                                                # DEBUG
-                                                backup_cdf=None,
-                                                verbose=3)
-                c_sub, c_sub_weight = c_sub[0], c_sub_weight[0]
-            c_subs.append(c_sub)
-            c_sub_weights.append(c_sub_weight)
-            if (i+1)%(len(theta_crits)/10)==0:
-                print("        Generated "+str(i+1)+" events...", flush=True)
-
-        c_subs = np.array(c_subs)
-        c_sub_weights = np.array(c_sub_weights)
-        c_sub_weights = np.where(np.isinf(c_subs), 0, c_sub_weights)
-        c_subs = np.where(np.isinf(c_subs), 0, c_subs)
-
-        # Save samples and weights
-        np.savez(crit_sub_sample_file_path(z_cut, beta),
-                 samples=c_subs,
-                 weights=c_sub_weights)
+    c_subs, c_sub_weights, load = get_c_subs(z_cut, beta,
+                         load=load, save=True, theta_crits=theta_crits,
+                         rad_crit_sub=radiators.get('subsequent', None))
 
     z_crits = np.array([getLinSample(z_cut, 1./2.)
                         for i in range(NUM_MC_EVENTS)])
@@ -606,9 +294,11 @@ def plot_mc_crit_and_sub(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
     # Weights, binned observables, and area
     if BIN_SPACE == 'lin':
         sud_integrator.bins = np.linspace(0, .5, NUM_BINS)
+        sud_integrator.binspacing = 'lin'
     if BIN_SPACE == 'log':
         sud_integrator.bins = np.logspace(np.log10(EPSILON)-1, np.log10(.5),
                                           NUM_BINS)
+        sud_integrator.binspacing = 'log'
     sud_integrator.hasBins = True
 
     sud_integrator.setDensity(obs, weights, 1./2.-z_cut)
@@ -663,7 +353,7 @@ def compare_crit_and_sub(beta=BETA):
         this_plot_label += '_{:.0e}cutoff'.format(EPSILON)
     this_plot_label += '_{:.0e}shower'.format(SHOWER_CUTOFF)
 
-    fig_pdf.savefig(fig_folder / JET_TYPE+'_RSS_crit_and_sub_'
+    fig_pdf.savefig(str(fig_folder) + '/' + JET_TYPE+'_RSS_crit_and_sub_'
                     +BIN_SPACE+'_pdf_comp'
                     +'_beta'+str(beta)
                     +'_{:.0e}showers_{:.0e}mc'.format(
@@ -672,7 +362,7 @@ def compare_crit_and_sub(beta=BETA):
                     +'.pdf',
                     format='pdf')
     if save_cdf:
-        fig_cdf.savefig(fig_folder / JET_TYPE+'_RSS_crit_and_sub_'
+        fig_cdf.savefig(str(fig_folder) + '/' + JET_TYPE+'_RSS_crit_and_sub_'
                         +BIN_SPACE+'_cdf_comp'
                         +'_beta'+str(beta)
                         +'_{:.0e}showers_{:.0e}mc'.format(
@@ -694,101 +384,13 @@ def plot_mc_pre_and_crit(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
     sud_integrator = integrator()
     sud_integrator.setLastBinBndCondition([1., 'minus'])
 
-    if load:
-        if crit_sample_file_path(z_cut, beta).is_file():
-            print("    Loading critical samples with z_c="+str(z_cut)+"...",
-                  flush=True)
-            try:
-                # Loading files and samples:
-                sample_dict = np.load(crit_sample_file_path(z_cut, beta),
-                                      allow_pickle=True)
-                theta_crits = sample_dict['samples']
-                theta_crit_weights = sample_dict['weights']
-            except:
-                # Old syntax for loading files, for backwards compatibility
-                theta_crits = np.load(crit_sample_file_path(z_cut, beta))
-                theta_crit_weights = np.ones_like(theta_crits)
-        else:
-            load = False
-            if LOAD_MC_EVENTS:
-                load_radiators()
+    theta_crits, theta_crit_weights, load = get_theta_crits(
+                          z_cut, beta, load=load, save=True,
+                          rad_crit=radiators.get('critical', None))
 
-    if not load:
-        print("    Making critical samples with z_c="+str(z_cut)+"...",
-              flush=True)
-
-        def cdf_crit(theta):
-            return np.exp(-1.*rad_crit(theta, z_cut))
-
-        theta_crits, theta_crit_weights = samples_from_cdf(cdf_crit, NUM_MC_EVENTS,
-                                                domain=[0.,1.],
-                                                # DEBUG
-                                                backup_cdf=None,
-                                                verbose=3)
-        theta_crit_weights = np.where(np.isinf(theta_crits), 0.,
-                                      theta_crit_weights)
-        theta_crits = np.where(np.isinf(theta_crits), 0, theta_crits)
-
-        # Save samples and weights
-        np.savez(crit_sample_file_path(z_cut, beta),
-                 samples=theta_crits,
-                 weights=theta_crit_weights)
-
-    if load:
-        if pre_sample_file_path(z_cut).is_file():
-            print("    Loading pre-critical samples"
-                  +" from crit samples with z_cut="+str(z_cut)+"...",
-                  flush=True)
-            try:
-                # Loading files and samples:
-                sample_dict = np.load(pre_sample_file_path(z_cut),
-                                      allow_pickle=True)
-                z_pres = sample_dict['samples']
-                z_pre_weights = sample_dict['weights']
-            except:
-                # Old syntax for loading files, for backwards compatibility
-                z_pres = np.load(pre_sample_file_path(z_cut))
-                z_pre_weights = np.ones_like(z_pres)
-        else:
-            load = False
-            if LOAD_MC_EVENTS:
-                load_radiators()
-
-    if not load:
-        print("    Making pre-critical samples"
-              +" from crit samples with z_cut="+str(z_cut)+"...",
-              flush=True)
-
-        z_pres = []
-        z_pre_weights = []
-
-        for i, theta in enumerate(theta_crits):
-            def cdf_pre_conditional(z_pre):
-                return np.exp(-1.*rad_pre(z_pre, theta, z_cut))
-
-            z_pre, z_pre_weight = samples_from_cdf(cdf_pre_conditional, 1,
-                                                domain=[0.,z_cut],
-                                                # DEBUG
-                                                backup_cdf=None,
-                                                verbose=3)
-            try:
-                z_pre, z_pre_weight = z_pre[0], z_pre_weight[0]
-            except ValueError:
-                print(f"{z_pre=}, {z_pre_weight=}")
-            z_pres.append(z_pre)
-            z_pre_weights.append(z_pre_weight)
-            if (i+1)%(len(theta_crits)/10)==0:
-                print("        Generated "+str(i+1)+" events...", flush=True)
-
-        z_pres = np.array(z_pres)
-        z_pre_weights = np.array(z_pre_weights)
-        z_pre_weights = np.where(np.isinf(z_pres), 0., z_pre_weights)
-        z_pres = np.where(np.isinf(z_pres), 0, z_pres)
-
-        # Save samples and weights
-        np.savez(pre_sample_file_path(z_cut),
-                 samples=z_pres,
-                 weights=z_pre_weights)
+    z_pres, z_pre_weights, load = get_z_pres(z_cut, load=load, save=save,
+                        theta_crits=theta_crits,
+                        rad_pre=radiators.get('pre-critical', None))
 
     z_crits = np.array([getLinSample(z_cut, 1./2.)
                         for i in range(NUM_MC_EVENTS)])
@@ -803,9 +405,11 @@ def plot_mc_pre_and_crit(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
     # Weights, binned observables, and area
     if BIN_SPACE == 'lin':
         sud_integrator.bins = np.linspace(0, .5, NUM_BINS)
+        sud_integrator.binspacing = 'lin'
     if BIN_SPACE == 'log':
         sud_integrator.bins = np.logspace(np.log10(EPSILON)-1, np.log10(.5),
                                           NUM_BINS)
+        sud_integrator.binspacing = 'log'
     sud_integrator.hasBins = True
 
     sud_integrator.setDensity(obs, weights, 1./2.-z_cut)
@@ -860,7 +464,7 @@ def compare_pre_and_crit(beta=BETA):
         this_plot_label += '_{:.0e}cutoff'.format(EPSILON)
     this_plot_label += '_{:.0e}shower'.format(SHOWER_CUTOFF)
 
-    fig_pdf.savefig(fig_folder / JET_TYPE+'_RSS_pre_and_crit_'
+    fig_pdf.savefig(str(fig_folder) + '/' + JET_TYPE+'_RSS_pre_and_crit_'
                     +BIN_SPACE+'_pdf_comp'
                     +'_beta'+str(beta)
                     +'_{:.0e}showers_{:.0e}mc'.format(
@@ -869,7 +473,7 @@ def compare_pre_and_crit(beta=BETA):
                     +'.pdf',
                     format='pdf')
     if save_cdf:
-        fig_cdf.savefig(fig_folder / JET_TYPE+'_RSS_pre_and_crit_'
+        fig_cdf.savefig(str(fig_folder) + '/' + JET_TYPE+'_RSS_pre_and_crit_'
                         +BIN_SPACE+'_cdf_comp'
                         +'_beta'+str(beta)
                         +'_{:.0e}showers_{:.0e}mc'.format(
@@ -891,159 +495,17 @@ def plot_mc_all(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
     sud_integrator = integrator()
     sud_integrator.setLastBinBndCondition([1., 'minus'])
 
-    if load:
-        if crit_sample_file_path(z_cut, beta).is_file():
-            print("    Loading critical samples with z_c="+str(z_cut)+"...",
-                  flush=True)
-            try:
-                # Loading files and samples:
-                sample_dict = np.load(crit_sample_file_path(z_cut, beta),
-                                      allow_pickle=True)
-                theta_crits = sample_dict['samples']
-                theta_crit_weights = sample_dict['weights']
-            except:
-                # Old syntax for loading files, for backwards compatibility
-                theta_crits = np.load(crit_sample_file_path(z_cut, beta))
-                theta_crit_weights = np.ones_like(theta_crits)
-        else:
-            load = False
-            if LOAD_MC_EVENTS:
-                load_radiators()
+    theta_crits, theta_crit_weights, load = get_theta_crits(
+                          z_cut, beta, load=load, save=True,
+                          rad_crit=radiators.get('critical', None))
 
-    if not load:
-        print("    Making critical samples with z_c="+str(z_cut)+"...",
-              flush=True)
+    c_subs, c_sub_weights, load = get_c_subs(z_cut, beta,
+                         load=load, save=True, theta_crits=theta_crits,
+                         rad_crit_sub=radiators.get('subsequent', None))
 
-        with open(critrad_path, 'rb') as file:
-            rad_crit = pickle.load(file)[INDEX_ZC[z_cut]]
-
-        def cdf_crit(theta):
-            return np.exp(-1.*rad_crit(theta))
-
-        theta_crits, theta_crit_weights = samples_from_cdf(cdf_crit, NUM_MC_EVENTS,
-                                                domain=[0.,1.],
-                                                # DEBUG
-                                                backup_cdf=None,
-                                                verbose=3)
-        theta_crit_weights = np.where(np.isinf(theta_crits), 0,
-                                      theta_crit_weights)
-        theta_crits = np.where(np.isinf(theta_crits), 0, theta_crits)
-
-        # Save samples and weights
-        np.savez(crit_sample_file_path(z_cut, beta),
-                 samples=theta_crits,
-                 weights=theta_crit_weights)
-
-    if load:
-        if crit_sub_sample_file_path(z_cut, beta).is_file():
-            print("    Loading subsequent samples with beta="+str(beta)+
-                  " from crit samples with z_cut="+str(z_cut)+"...",
-                  flush=True)
-            try:
-                # Loading files and samples:
-                sample_dict = np.load(crit_sub_sample_file_path(z_cut, beta),
-                                      allow_pickle=True)
-                c_subs = sample_dict['samples']
-                c_sub_weights = sample_dict['weights']
-            except:
-                # Old syntax for loading files, for backwards compatibility
-                c_subs = np.load(crit_sub_sample_file_path(z_cut, beta))
-                c_sub_weights = np.ones_like(c_subs)
-        else:
-            load = False
-            if LOAD_MC_EVENTS:
-                load_radiators()
-
-    if not load:
-        print("    Making subsequent samples with beta="+str(beta)+"...",
-              flush=True)
-        c_subs = []
-        c_sub_weights = []
-
-        for i, theta in enumerate(theta_crits):
-            def cdf_sub_conditional(c_sub):
-                return np.exp(-1.*rad_crit_sub(c_sub, theta))
-
-            if theta**beta/2. < 1e-10:
-                # Assigning to an underflow bin for small observable values
-                c_sub = 1e-100
-                c_sub_weight = 1.
-            else:
-                c_sub, c_sub_weight = samples_from_cdf(cdf_sub_conditional, 1,
-                                                domain=[0.,theta**beta/2.],
-                                                # DEBUG
-                                                backup_cdf=None,
-                                                verbose=3)
-                c_sub, c_sub_weight = c_sub[0], c_sub_weight[0]
-            c_subs.append(c_sub)
-            c_sub_weights.append(c_sub_weight)
-            if (i+1)%(len(theta_crits)/10) == 0:
-                print("        Generated "+str(i+1)+" events...", flush=True)
-        c_subs = np.array(c_subs)
-        c_sub_weights = np.array(c_sub_weights)
-        c_sub_weights = np.where(np.isinf(c_subs), 0, c_sub_weights)
-        c_subs = np.where(np.isinf(c_subs), 0, c_subs)
-
-        # Save samples and weights
-        np.savez(crit_sub_sample_file_path(z_cut, beta),
-                 samples=c_subs,
-                 weights=c_sub_weights)
-
-    if load:
-        if pre_sample_file_path(z_cut).is_file():
-            print("    Loading pre-critical samples"
-                  +" from crit samples with z_cut="+str(z_cut)+"...",
-                  flush=True)
-            try:
-                # Loading files and samples:
-                sample_dict = np.load(pre_sample_file_path(z_cut),
-                                      allow_pickle=True)
-                z_pres = sample_dict['samples']
-                z_pre_weights = sample_dict['weights']
-            except:
-                # Old syntax for loading files, for backwards compatibility
-                z_pres = np.load(pre_sample_file_path(z_cut))
-                z_pre_weights = np.ones_like(z_pres)
-        else:
-            load = False
-            if LOAD_MC_EVENTS:
-                load_radiators()
-
-    if not load:
-        print("    Making pre-critical samples"
-              +" from crit samples with z_cut="+str(z_cut)+"...",
-              flush=True)
-
-        z_pres = []
-        z_pre_weights = []
-
-        for i, theta in enumerate(theta_crits):
-            def cdf_pre_conditional(z_pre):
-                return np.exp(-1.*rad_pre(z_pre, theta, z_cut))
-
-            z_pre, z_pre_weight = samples_from_cdf(cdf_pre_conditional, 1,
-                                                domain=[0,z_cut],
-                                                # DEBUG
-                                                backup_cdf=None,
-                                                verbose=10)
-            try:
-                z_pre, z_pre_weight = z_pre[0], z_pre_weight[0]
-            except ValueError:
-                print(f"{z_pre=}, {z_pre_weight=}")
-            z_pres.append(z_pre)
-            z_pre_weights.append(z_pre_weight)
-            if (i+1)%(len(theta_crits)/10) == 0:
-                print("        Generated "+str(i+1)+" events...",
-                      flush=True)
-        z_pres = np.array(z_pres)
-        z_pre_weights = np.array(z_pre_weights)
-        z_pre_weights = np.where(np.isinf(z_pres), 0, z_pre_weights)
-        z_pres = np.where(np.isinf(z_pres), 0, z_pres)
-
-        # Save samples and weights
-        np.savez(pre_sample_file_path(z_cut),
-                 samples=z_pres,
-                 weights=z_pre_weights)
+    z_pres, z_pre_weights, load = get_z_pres(z_cut, load=load, save=save,
+                        theta_crits=theta_crits,
+                        rad_pre=radiators.get('pre-critical', None))
 
     z_crits = np.array([getLinSample(z_cut, 1./2.)
                         for i in range(NUM_MC_EVENTS)])
@@ -1058,9 +520,11 @@ def plot_mc_all(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
     # Weights, binned observables, and area
     if BIN_SPACE == 'lin':
         sud_integrator.bins = np.linspace(0, .5, NUM_BINS)
+        sud_integrator.binspacing = 'lin'
     if BIN_SPACE == 'log':
         sud_integrator.bins = np.logspace(np.log10(EPSILON)-1, np.log10(.5),
                                           NUM_BINS)
+        sud_integrator.binspacing = 'log'
     sud_integrator.hasBins = True
 
     sud_integrator.setDensity(obs, weights, 1./2.-z_cut)
@@ -1125,7 +589,7 @@ def compare_all(beta=BETA, plot_approx=False):
         this_plot_label += '_{:.0e}cutoff'.format(EPSILON)
     this_plot_label += '_{:.0e}shower'.format(SHOWER_CUTOFF)
 
-    fig_pdf.savefig(fig_folder / JET_TYPE+'_RSS_all_em_'
+    fig_pdf.savefig(str(fig_folder) + '/' + JET_TYPE+'_RSS_all_em_'
                     +BIN_SPACE+'_pdf_comp'
                     +'_beta'+str(beta)
                     +'_{:.0e}showers_{:.0e}mc'.format(
@@ -1134,7 +598,7 @@ def compare_all(beta=BETA, plot_approx=False):
                     +'.pdf',
                     format='pdf')
     if save_cdf:
-        fig_cdf.savefig(fig_folder / JET_TYPE+'_RSS_all_em_'
+        fig_cdf.savefig(str(fig_folder) + '/' + JET_TYPE+'_RSS_all_em_'
                         +BIN_SPACE+'_cdf_comp'
                         +'_beta'+str(beta)
                         +'_{:.0e}showers_{:.0e}mc'.format(
@@ -1155,10 +619,10 @@ if __name__ == '__main__':
     # For each value of epsilon we want to use as an integration cutoff:
     if COMPARE_CRIT:
         compare_crit(plot_approx=False)
-    # if COMPARE_SUB:
-    #     compare_sub()
-    # if COMPARE_CRIT_AND_SUB:
-    #     compare_crit_and_sub()
+    if COMPARE_SUB:
+        compare_ungroomed()
+    if COMPARE_CRIT_AND_SUB:
+        compare_crit_and_sub()
     if COMPARE_PRE_AND_CRIT:
         compare_pre_and_crit()
     if COMPARE_ALL:

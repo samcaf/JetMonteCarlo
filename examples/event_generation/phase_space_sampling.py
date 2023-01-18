@@ -68,21 +68,21 @@ else:
             print("    Generating critical emissions with cutoff z_cut="
                   +str(z_cut)+"...", flush=True)
             # Critical samplers
-            crit_sampler_i = criticalSampler(BIN_SPACE, zc=z_cut,
+            crit_sampler = criticalSampler(BIN_SPACE, zc=z_cut,
                                              epsilon=EPSILON)
-            crit_sampler_i.generateSamples(NUM_MC_EVENTS)
-            CRIT_SAMPLERS.append(crit_sampler_i)
+            crit_sampler.generateSamples(NUM_MC_EVENTS)
+            CRIT_SAMPLERS.append(crit_sampler)
 
             # Pre-critical sampler
-            pre_sampler_i = precriticalSampler(BIN_SPACE, zc=z_cut,
+            pre_sampler = precriticalSampler(BIN_SPACE, zc=z_cut,
                                                epsilon=EPSILON)
 
             # If we should generate pre-critical samples:
             if use_precrit:
                 print("    Generating pre-critical emissions with cutoff z_cut="
                       +str(z_cut)+"...", flush=True)
-                pre_sampler_i.generateSamples(NUM_MC_EVENTS)
-            PRE_SAMPLERS.append(pre_sampler_i)
+                pre_sampler.generateSamples(NUM_MC_EVENTS)
+            PRE_SAMPLERS.append(pre_sampler)
 
     # Subsequent sampler:
     sub_sampler = ungroomedSampler(BIN_SPACE, epsilon=EPSILON)
@@ -134,6 +134,11 @@ CRIT_RADIATORS = []
 PRE_RADIATORS = []
 SUB_RADIATORS = []
 
+# Setting up radiator discrete integrals
+CRIT_INTEGRAL_DATA = {}
+PRE_INTEGRAL_DATA = {}
+SUB_INTEGRAL_DATA = {}
+
 # ----------------------------------
 # Loading Radiators
 # ----------------------------------
@@ -168,24 +173,24 @@ if not LOAD_MC_RADS and SAVE_MC_RADS:
                 print("    Generating critical radiator with cutoff z_cut="
                       +str(z_cut)+"...", flush=True)
                 # Critical radiators
-                crit_rad_i = gen_numerical_radiator(CRIT_SAMPLERS[i], 'crit',
+                crit_rad, crit_rad_data = gen_numerical_radiator(
+                                                    CRIT_SAMPLERS[i], 'crit',
                                                     JET_TYPE,
                                                     obs_accuracy=OBS_ACC,
                                                     splitfn_accuracy=SPLITFN_ACC,
                                                     beta=None,
                                                     bin_space=BIN_SPACE,
                                                     fixed_coupling=FIXED_COUPLING,
-                                                    save=False,
                                                     num_bins=NUM_RAD_BINS)
-                CRIT_RADIATORS.append(crit_rad_i)
+                CRIT_RADIATORS.append(crit_rad)
+                CRIT_INTEGRAL_DATA.append(crit_rad_data)
 
             # Pre-critical radiators
-            pre_rad_i = None
+            pre_rad = None
             if COMPARE_PRE_AND_CRIT or COMPARE_ALL:
                 print("    Generating pre-critical radiator with cutoff z_cut="
                       +str(z_cut)+"...", flush=True)
-                pre_rad_i = gen_pre_num_rad(PRE_SAMPLERS[i],
-                #pre_rad_i = tst_pre_num_rad(PRE_SAMPLERS[i],
+                pre_rad, pre_rad_data = gen_pre_num_rad(PRE_SAMPLERS[i],
                                             CRIT_SAMPLERS[i],
                                             JET_TYPE,
                                             obs_accuracy=OBS_ACC,
@@ -193,7 +198,8 @@ if not LOAD_MC_RADS and SAVE_MC_RADS:
                                             bin_space=BIN_SPACE,
                                             fixed_coupling=FIXED_COUPLING,
                                             num_bins=NUM_RAD_BINS)
-            PRE_RADIATORS.append(pre_rad_i)
+            PRE_RADIATORS.append(pre_rad)
+            PRE_INTEGRAL_DATA.append(pre_rad_data)
 
         sub_rad = None
 
@@ -202,7 +208,7 @@ if not LOAD_MC_RADS and SAVE_MC_RADS:
             for _, beta in enumerate(BETAS):
                 print("    Generating critical/subsequent radiator "
                       "with beta="+str(beta)+"...", flush=True)
-                sub_rad = gen_crit_sub_num_rad(SUB_SAMPLERS[0],
+                sub_rad, sub_rad_data = gen_crit_sub_num_rad(SUB_SAMPLERS[0],
                                                JET_TYPE,
                                                obs_accuracy=OBS_ACC,
                                                splitfn_accuracy=SPLITFN_ACC,
@@ -212,21 +218,22 @@ if not LOAD_MC_RADS and SAVE_MC_RADS:
                                                fixed_coupling=FIXED_COUPLING,
                                                num_bins=NUM_RAD_BINS)
                 SUB_RADIATORS.append(sub_rad)
+                SUB_INTEGRAL_DATA.append(sub_rad_data)
 
     elif COMPARE_UNGROOMED:
         for _, beta in enumerate(BETAS):
             print("    Generating subsequent radiator with beta="
                   +str(beta)+"...", flush=True)
-            sub_rad = gen_numerical_radiator(SUB_SAMPLERS[0], 'sub',
+            sub_rad, sub_rad_data = gen_numerical_radiator(SUB_SAMPLERS[0], 'sub',
                                              JET_TYPE,
                                              obs_accuracy=OBS_ACC,
                                              splitfn_accuracy=SPLITFN_ACC,
                                              beta=beta,
                                              bin_space=BIN_SPACE,
                                              fixed_coupling=FIXED_COUPLING,
-                                             save=False,
                                              num_bins=NUM_RAD_BINS)
             SUB_RADIATORS.append(sub_rad)
+            SUB_INTEGRAL_DATA.append(sub_rad_data)
 
     # ----------------------------------
     # Labeling
@@ -263,13 +270,21 @@ if not LOAD_MC_RADS and SAVE_MC_RADS:
         # Saving critical radiators:
         if use_crit and MAKE_CRIT_RAD:
             print("Saving critical radiator to "+str(critrad_path), flush=True)
+            # Saving interpolating functions
             with open(critrad_path, 'wb') as f:
+                pickle.dump(CRIT_RADIATORS, f)
+            # Saving discretely generated numerical data
+            with open(critrad_int_path, 'wb') as f:
                 pickle.dump(CRIT_RADIATORS, f)
             print("Saving complete!", flush=True)
         # Saving pre-critical radiators:
         if use_precrit:
             print("Saving pre-crit radiator to "+str(prerad_path), flush=True)
+            # Saving interpolating functions
             with open(prerad_path, 'wb') as f:
+                pickle.dump(PRE_RADIATORS, f)
+            # Saving discretely generated numerical data
+            with open(prerad_int_path, 'wb') as f:
                 pickle.dump(PRE_RADIATORS, f)
             print("Saving complete!", flush=True)
         # Saving subsequent radiators:
@@ -279,7 +294,11 @@ if not LOAD_MC_RADS and SAVE_MC_RADS:
             else:
                 desc = 'crit-sub'
             print("Saving "+desc+" radiator to "+str(subrad_path), flush=True)
+            # Saving interpolating functions
             with open(subrad_path, 'wb') as f:
+                pickle.dump(SUB_RADIATORS, f)
+            # Saving discretely generated numerical data
+            with open(subrad_int_path, 'wb') as f:
                 pickle.dump(SUB_RADIATORS, f)
             print("Saving complete!", flush=True)
 

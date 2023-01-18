@@ -5,7 +5,10 @@ from scipy.interpolate import griddata, interp2d, NearestNDInterpolator
 
 import matplotlib.pyplot as plt
 
+# DEBUG
 # Using sympy for smooth performance with monotonicity checks
+# Deprecated, but leaving in for now if I need to change back for
+# convenience
 import sympy as sp
 from sympy import sympify, lambdify
 
@@ -13,11 +16,11 @@ from sympy import sympify, lambdify
 from jetmontecarlo.montecarlo.integrator import *
 
 # Utils for monotonicity checks
-from jetmontecarlo.utils.interp_utils import lin_log_mixed_list
-from jetmontecarlo.utils.interp_utils import where_monotonic_arr
-from jetmontecarlo.utils.interp_utils import is_monotonic_arr
-from jetmontecarlo.utils.interp_utils import is_monotonic_func
-from jetmontecarlo.utils.interp_utils import monotonic_domain
+from jetmontecarlo.utils.interpolation_function_utils import lin_log_mixed_list
+from jetmontecarlo.utils.interpolation_function_utils import where_monotonic_arr
+from jetmontecarlo.utils.interpolation_function_utils import is_monotonic_arr
+from jetmontecarlo.utils.interpolation_function_utils import is_monotonic_func
+from jetmontecarlo.utils.interpolation_function_utils import monotonic_domain
 
 # Local jet tools
 from jetmontecarlo.jets.jetSamplers import *
@@ -53,14 +56,11 @@ def gen_numerical_radiator(rad_sampler, emission_type,
                            beta = None,
                            bin_space='lin',
                            fixed_coupling=True,
-                           save=True,
-                           num_bins=100):
+                           num_bins=100,
+                           save_discrete_file=None):
     """A function which takes in a sampler with generated data,
     and returns the associated numerically integrated radiator
     (dependent on a single parameter).
-
-    Optionally, saves the radiator and the associated interpolation
-    function.
 
     Parameters
     ----------
@@ -81,9 +81,6 @@ def gen_numerical_radiator(rad_sampler, emission_type,
     fixed_coupling : bool
         A boolean  which determines whether the radiator is calculated
         using fixed coupling (True) or running coupling (False).
-    save : bool
-        A boolean which determines whether the radiator information,
-        and the corresponding interpolation function, are saved.
 
     Returns
     -------
@@ -154,13 +151,16 @@ def gen_numerical_radiator(rad_sampler, emission_type,
     rad_integrator.bins = np.append(xs, bounds[1])
 
     # Generating an interpolating function
-    rad_integrator.makeInterpolatingFn()
+    rad_integrator.makeInterpolatingFn(verbose=local_verbose)
 
-    unbounded_interp_function = rad_integrator.interpFn
-    bounds = monotonic_domain(unbounded_interp_function, bounds)
+    interp_function = rad_integrator.interpFn
 
-    if local_verbose >= 2:
-        print(f"monotonic domain: {bounds}")
+    # DEBUG
+    # unbounded_interp_function = rad_integrator.interpFn
+    # bounds = monotonic_domain(unbounded_interp_function, bounds)
+
+    # if local_verbose >= 2:
+    #     print(f"monotonic domain: {bounds}")
 
     # Checking the interpolating function against our numerics
     # assert(unbounded_interp_function(xs) == radiator).all(),\
@@ -183,20 +183,23 @@ def gen_numerical_radiator(rad_sampler, emission_type,
     #     return vals
     # DEBUG
     # remove if stuff works
-    def bounded_interp_function(x):
-        return unbounded_interp_function(bounds[0]) * (x <= bounds[0]) \
-            + (bounds[0] <= x) * (x <= bounds[1]) * unbounded_interp_function(x)
-        # try:
-        #     return list(map(bounded_interp_function, x))
-        # except TypeError:
-        #     pass
-        # if x < bounds[0]:
-        #     return 0
-        # if x > bounds[1]:
-        #     return 0
-        # return unbounded_interp_function(x)
 
-    rad_integrator.interpFn = bounded_interp_function
+    # Now, bounded is taken care of by the interpolating function
+    # methods in utils/interpolating_function_utils.py
+    # def bounded_interp_function(x):
+    #     return unbounded_interp_function(bounds[0]) * (x <= bounds[0]) \
+    #         + (bounds[0] <= x) * (x <= bounds[1]) * unbounded_interp_function(x)
+    #     # try:
+    #     #     return list(map(bounded_interp_function, x))
+    #     # except TypeError:
+    #     #     pass
+    #     # if x < bounds[0]:
+    #     #     return 0
+    #     # if x > bounds[1]:
+    #     #     return 0
+    #     # return unbounded_interp_function(x)
+
+    # rad_integrator.interpFn = bounded_interp_function
 
     # DEBUG: testing monotonicity
     if local_verbose >= 2:
@@ -208,24 +211,10 @@ def gen_numerical_radiator(rad_sampler, emission_type,
                                None, 'decreasing'))
         print()
 
-    # Saving data and interpolating function
-    if save:
-        extra_info = ''
-        if fixed_coupling:
-            extra_info = 'fc_'
-        else:
-            extra_info = 'rc_'
-        if emission_type == 'crit':
-            extra_info += 'zc_' + str(rad_sampler.zc)
-        elif beta is not None:
-            extra_info += 'beta_' + str(beta) + '_'
-        filename = 'radiator_'+jet_type+'_'+emission_type\
-                   +'_obs'+obs_accuracy+'_splitfn'+splitfn_accuracy\
-                   +'_'+str(len(samples))+extra_info\
-                   +'_samples.py'
-        rad_integrator.saveInterpolatingFn(filename)
+    if save_discrete_file is not None:
+        rad_integrator.save_montecarlo_data(save_discrete_file)
 
-    return rad_integrator.interpFn
+    return rad_integrator.interpFn, rad_integrator.montecarlo_data_dict()
 
 def gen_pre_num_rad(rad_sampler, crit_rad_sampler,
                     jet_type='quark',
@@ -233,7 +222,7 @@ def gen_pre_num_rad(rad_sampler, crit_rad_sampler,
                     bin_space='lin',
                     fixed_coupling=True,
                     num_bins=100,
-                    force_monotone=False):
+                    save_discrete_file=None):
     """A function which takes in a sampler with generated data,
     and returns the associated numerically integrated pre-critical
     radiator (dependent on two parameters).
@@ -243,9 +232,6 @@ def gen_pre_num_rad(rad_sampler, crit_rad_sampler,
     of an emission which occurs before a `critical' emission at angle
     theta_crit:
     Sigma(z_pre | theta_crit) = exp[-R(z_pre, theta_crit)]
-
-    gen_pre_num_rad also saves the radiator and the associated interpolation
-    function.
 
     Parameters
     ----------
@@ -266,9 +252,6 @@ def gen_pre_num_rad(rad_sampler, crit_rad_sampler,
     fixed_coupling : bool
         A boolean  which determines whether the radiator is calculated
         using fixed coupling (True) or running coupling (False).
-    save : bool
-        A boolean which determines whether the radiator information,
-        and the corresponding interpolation function, are saved.
 
     Returns
     -------
@@ -364,7 +347,10 @@ def gen_pre_num_rad(rad_sampler, crit_rad_sampler,
 
     rad_integrator.interpFn = bounded_interp_function
 
-    return rad_integrator.interpFn
+    if save_discrete_file is not None:
+        rad_integrator.save_montecarlo_data(save_discrete_file)
+
+    return rad_integrator.interpFn, rad_integrator.montecarlo_data_dict()
 
 def gen_crit_sub_num_rad(rad_sampler,
                          jet_type='quark',
@@ -373,7 +359,7 @@ def gen_crit_sub_num_rad(rad_sampler,
                          bin_space='log',
                          fixed_coupling=True,
                          num_bins=1000,
-                         force_monotone=False):
+                         save_discrete_file=None):
     """A function which takes in a sampler with generated data,
     and returns the associated numerically integrated radiator
     dependent on the variables over a sampled phase space as
@@ -527,7 +513,11 @@ def gen_crit_sub_num_rad(rad_sampler,
                   monotonic_domain(rad1d_fn, [min_arg, max_arg],
                                    1.05e-8, 'decreasing'))
             print()
-    return bounded_interp_function
+
+    if save_discrete_file is not None:
+        rad_integrator.save_montecarlo_data(save_discrete_file)
+
+    return bounded_interp_function, rad_integrator.montecarlo_data_dict()
 
 ###########################################
 # Splitting Functions:
@@ -536,7 +526,8 @@ def gen_crit_sub_num_rad(rad_sampler,
 def gen_normalized_splitting(num_samples, z_cut,
                              jet_type='quark', accuracy='LL',
                              fixed_coupling=True,
-                             bin_space='lin', epsilon=1e-15, num_bins=100):
+                             bin_space='lin', epsilon=1e-15,
+                             num_bins=100):
     # Preparing a list of thetas, and normalizations which will depend on theta
     theta_calc_list, norms = lin_log_mixed_list(epsilon, 1., num_bins), []
 

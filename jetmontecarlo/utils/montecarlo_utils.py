@@ -5,7 +5,7 @@ from scipy import interpolate
 from scipy.misc import derivative
 from pynverse import inversefunc
 
-from jetmontecarlo.utils.interp_utils import lin_log_mixed_list
+from jetmontecarlo.utils.interpolation_function_utils import lin_log_mixed_list
 
 def getLinSample(sample_min, sample_max):
     """

@@ -24,16 +24,11 @@ from examples.params import *
 # ------------------------------------
 Z_CUT_PLOT = [.05, .1, .2]
 
-if FIXED_COUPLING:
-    extra_label = '_fc_num'
-else:
-    extra_label = '_rc_num'
-
 ylims = {'quark': [5.5,3.5,2.5,1.25],
          'gluon': [10,7.5,5,3]}
 
-def file_name(rad_type):
-    return rad_type+"rads_"+JET_TYPE\
+def fig_file_name(rad_type):
+    return str(fig_folder) + "/" + rad_type+"rads_"+JET_TYPE\
            + ('_fc_num' if FIXED_COUPLING else '_rc_num')\
            + "_{:.0e}samples".format(NUM_MC_EVENTS)\
            + "_{:.0e}bins.pdf".format(NUM_RAD_BINS)
@@ -93,7 +88,7 @@ def compare_crit_rad():
                     label=r'Analytic, $z_{{\rm cut}}$={}'.format(zcut))
 
     axes[0].legend()
-    plt.savefig(fig_folder / file_name('crit'), format='pdf')
+    plt.savefig(fig_file_name('crit'), format='pdf')
 
     print("Plotting complete!")
 
@@ -101,7 +96,7 @@ def compare_crit_rad():
 # Pre-Critical Radiator:
 # ==========================================
 def compare_pre_rad(fill_between=False):
-    pdffile = matplotlib.backends.backend_pdf.PdfPages(file_name('precrit'))
+    pdffile = matplotlib.backends.backend_pdf.PdfPages(fig_file_name('precrit'))
 
     with open(prerad_path, 'rb') as file:
         rad_pre_list = pickle.load(file)
@@ -205,7 +200,7 @@ def compare_pre_rad(fill_between=False):
 
         # Legend, saving
         axes[0].legend()
-        plt.savefig(fig_folder / pdffile, format='pdf')
+        plt.savefig(pdffile, format='pdf')
 
     pdffile.close()
 
@@ -215,7 +210,7 @@ def compare_pre_rad(fill_between=False):
 # Subsequent Radiator:
 # ==========================================
 def compare_sub_rad(fill_between=False):
-    pdffile = matplotlib.backends.backend_pdf.PdfPages(file_name('sub'))
+    pdffile = matplotlib.backends.backend_pdf.PdfPages(fig_file_name('sub'))
 
     # Getting numerical radiator, choosing angles to plot
     with open(subrad_path, 'rb') as file:
@@ -279,7 +274,7 @@ def compare_sub_rad(fill_between=False):
 
         # Legend, saving
         axes[0].legend()
-        plt.savefig(fig_folder / pdffile, format='pdf')
+        plt.savefig(pdffile, format='pdf')
 
     pdffile.close()
 

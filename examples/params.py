@@ -1,7 +1,3 @@
-from __future__ import absolute_import
-from pathlib import Path
-import dill as pickle
-
 # Local imports
 from jetmontecarlo.analytics.QCD_utils import MU_NP, LAMBDA_QCD
 
@@ -10,18 +6,13 @@ VERBOSE = 3
 ###########################################
 # Notes:
 ###########################################
-# Done:
 
-# Run with running coupling, LL, with 5e6
-# Run with running coupling, MLL, with 5e6
-# Run with fixed coupling, LL, with 5e6
-    # Something funky with crit results
-# Run with running coupling, LL, with 1e6
-    # crit and pre-crit rads suspiciously fast, probably true of fc too
 
 ###########################################
 # Definitions and Parameters
 ###########################################
+tab = '    '
+
 # =====================================
 # Physics Inputs
 # =====================================
@@ -130,142 +121,58 @@ MAKE_CRIT_RAD = True
 COMPARE_CRIT_AND_SUB = True
 COMPARE_PRE_AND_CRIT = True
 COMPARE_ALL = True
-COMPARE_UNGROOMED = True not in [COMPARE_CRIT, COMPARE_CRIT_AND_SUB,
+COMPARE_RAW = True not in [COMPARE_CRIT, COMPARE_CRIT_AND_SUB,
                              COMPARE_PRE_AND_CRIT, COMPARE_ALL]
 
+
 ###########################################
-# Setting Up Event Generation:
-###########################################
-# =====================================
-# MC Filenames
-# =====================================
-# Sampler files
-critfile = 'crit_samplers_{}_{:.0e}.pkl'.format(BIN_SPACE, NUM_MC_EVENTS)
-prefile = 'pre_samplers_{}_{:.0e}.pkl'.format(BIN_SPACE, NUM_MC_EVENTS)
-subfile = 'sub_samplers_{}_{:.0e}.pkl'.format(BIN_SPACE, NUM_MC_EVENTS)
-
-# Radiator files
-critradfile = 'crit_obs{}_split{}_{}_rads_{:.0e}events_{:.0e}bins.pkl'.format(
-                                                 OBS_ACC, SPLITFN_ACC,
-                                                 BIN_SPACE,
-                                                 NUM_MC_EVENTS, NUM_RAD_BINS)
-preradfile = 'pre_obs{}_split{}_{}_rads_{:.0e}events_{:.0e}bins.pkl'.format(
-                                                 OBS_ACC, SPLITFN_ACC,
-                                                 BIN_SPACE,
-                                                 NUM_MC_EVENTS, NUM_RAD_BINS)
-subradfile = 'sub_obs{}_split{}_{}_rads_{:.0e}events_{:.0e}bins.pkl'.format(
-                                                 OBS_ACC, SPLITFN_ACC,
-                                                 BIN_SPACE,
-                                                 NUM_MC_EVENTS, NUM_RAD_BINS)
-
-splitfn_file = 'split_fns_{}_{}_{:.0e}events_{:.0e}bins.pkl'.format(
-                                                 SPLITFN_ACC, BIN_SPACE,
-                                                 NUM_MC_EVENTS, NUM_RAD_BINS)
-
-if not FIXED_COUPLING:
-    # Radiator files
-    critradfile = 'crit_obs{}_split{}_{}_rads_rc_{:.0e}events_{:.0e}bins.pkl'.format(
-                                                 OBS_ACC, SPLITFN_ACC,
-                                                 BIN_SPACE,
-                                                 NUM_MC_EVENTS, NUM_RAD_BINS)
-    preradfile = 'pre_obs{}_split{}_{}_rads_rc_{:.0e}events_{:.0e}bins.pkl'.format(
-                                                 OBS_ACC, SPLITFN_ACC,
-                                                 BIN_SPACE,
-                                                 NUM_MC_EVENTS, NUM_RAD_BINS)
-    subradfile = 'sub_obs{}_split{}_{}_rads_rc_{:.0e}events_{:.0e}bins.pkl'.format(
-                                                 OBS_ACC, SPLITFN_ACC,
-                                                 BIN_SPACE,
-                                                 NUM_MC_EVENTS, NUM_RAD_BINS)
-
-    splitfn_file = 'split_fns_{}_{}_rc_{:.0e}events_{:.0e}bins.pkl'.format(
-                                                     SPLITFN_ACC, BIN_SPACE,
-                                                     NUM_MC_EVENTS, NUM_RAD_BINS)
-
-if not COMPARE_UNGROOMED:
-    # If we are not comparing ungroomed emissions, we remember that
-    # the subsequent emissions are actually linked to the critical
-    # emissions by angular ordering
-    subfile = 'crit_' + subfile
-    subradfile = 'crit_' + subradfile
-
-# =====================================
-# Relative paths
-# =====================================
-# Folders
-sample_folder = Path("output/montecarlo_samples/")
-function_folder = Path("output/serialized_functions/")
-
-partonshower_folder = sample_folder / "parton_showers"
-phasespace_sampler_folder = sample_folder / "phase_space"
-
-radiator_function_folder = function_folder / "radiators"
-splitting_function_folder = function_folder / "splitting_functions"
-
-# Samplers
-critfile_path = phasespace_sampler_folder / critfile
-prefile_path = phasespace_sampler_folder / prefile
-subfile_path = phasespace_sampler_folder / subfile
-
-# Radiators
-critrad_path = radiator_function_folder / critradfile
-prerad_path = radiator_function_folder / preradfile
-subrad_path = radiator_function_folder / subradfile
-
-# Splitting functions
-splitfn_path = splitting_function_folder / splitfn_file
-
-# Figures
-fig_folder = Path("output/figures/current/")
-
-
-# ====================================
 # Printing Information
-# ====================================
+###########################################
 if __name__ == '__main__':
     if VERBOSE > 0:
         print("\n# =====================================\n"+
               "# Parameters:\n# =====================================")
 
-        print("    # -----------------------------\n"+
-              "# Physics:\n    # -----------------------------")
-        print("    # Jet type: "+str(JET_TYPE))
-        print("    # Fixed coupling: "+str(FIXED_COUPLING))
-        print("    # Multiple Emissions:", MULTIPLE_EMISSIONS)
-        print("    # Observable accuracy: "+str(OBS_ACC))
-        print("    # Splitting function accuracy: "+str(OBS_ACC))
+        print(tab+"# -----------------------------\n"+
+              tab+"# Physics:\n"+tab+"# -----------------------------")
+        print(tab+tab+"# Jet type: "+str(JET_TYPE))
+        print(tab+tab+"# Fixed coupling: "+str(FIXED_COUPLING))
+        print(tab+tab+"# Multiple Emissions:", MULTIPLE_EMISSIONS)
+        print(tab+tab+"# Observable accuracy: "+str(OBS_ACC))
+        print(tab+tab+"# Splitting function accuracy: "+str(OBS_ACC))
 
-        print("\n    # -----------------------------\n"+
-              "# Grooming:\n    # -----------------------------")
-        print("    # f * z_cut values: " + str(Z_CUTS))
+        print("\n"+tab+"# -----------------------------"+
+              "\n"+tab+"# Grooming:\n"+tab+"# -----------------------------")
+        print(tab+tab+"# f * z_cut values: " + str(Z_CUTS))
         if VERBOSE > 2:
-            print("        # z_cut dictionary: " + str(INDEX_ZC))
+            print(tab+tab+"# z_cut dictionary: " + str(INDEX_ZC))
 
 
-        print("\n    # -----------------------------"
-              +"\n    # Monte Carlo:\n    # -----------------------------")
-        print("    # Number of events for MC integration: {:.1e}".format(NUM_MC_EVENTS))
+        print("\n"+tab+"# -----------------------------"
+              +"\n"+tab+"# Monte Carlo:\n"+tab+"# -----------------------------")
+        print(tab+tab+"# Number of events for MC integration: {:.1e}".format(NUM_MC_EVENTS))
         if VERBOSE > 1:
-            # Basic MC Integraion Information:
-            print("        # Integration space: " + str(BIN_SPACE) +
+            print("\n"+tab+tab+"# Basic MC Integraion Information:")
+            print(tab+tab+tab+"# Integration space: " + str(BIN_SPACE) +
                   " (if log, integration cutoff of " + str(EPSILON) + ")")
             if VERBOSE > 2:
-                print("            # Load MC events: " + str(LOAD_MC_EVENTS))
-                print("            # Save MC events: " + str(SAVE_MC_EVENTS))
-            # Radiator Information:
-            print("        # Number of radiator bins: {:.1e}".format(NUM_RAD_BINS))
+                print(tab+tab+tab+"# Load MC events: " + str(LOAD_MC_EVENTS))
+                print(tab+tab+tab+"# Save MC events: " + str(SAVE_MC_EVENTS))
+            print("\n"+tab+tab+"# Radiator Information:")
+            print(tab+tab+tab+"# Number of radiator bins: {:.1e}".format(NUM_RAD_BINS))
             if VERBOSE > 2:
-                print("            # Load MC radiators: " + str(LOAD_MC_RADS))
-                print("            # Save MC radiators: " + str(SAVE_MC_RADS))
-            # Spliting Function Information:
-            print("        # Number of splitting function bins:  {:.1e}".format(NUM_RAD_BINS))
+                print(tab+tab+tab+"# Load MC radiators: " + str(LOAD_MC_RADS))
+                print(tab+tab+tab+"# Save MC radiators: " + str(SAVE_MC_RADS))
+            print("\n"+tab+tab+"# Spliting Function Information:")
+            print(tab+tab+tab+"# Number of splitting function bins:  {:.1e}".format(NUM_RAD_BINS))
             if VERBOSE > 2:
-                print("            # Load MC splitting functions: " + str(LOAD_MC_EVENTS))
-                print("            # Save MC splitting functions: " + str(SAVE_MC_EVENTS))
+                print(tab+tab+tab+"# Load MC splitting functions: " + str(LOAD_MC_EVENTS))
+                print(tab+tab+tab+"# Save MC splitting functions: " + str(SAVE_MC_EVENTS))
 
-        # Parton Shower Information:
-        print("    # Number of parton shower events: {:.1e}".format(NUM_SHOWER_EVENTS))
+        print("\n"+tab+tab+"# Parton Shower Information:")
+        print(tab+tab+tab+"# Number of parton shower events: {:.1e}".format(NUM_SHOWER_EVENTS))
         if VERBOSE > 1:
-            print("        # Shower cutoff:  {:.1e}".format(SHOWER_CUTOFF))
-            print("        # Angularity beta for shower ordering: " + str(SHOWER_BETA))
-            print("        # Shower information:", SHOWER_INFO)
+            print(tab+tab+tab+"# Shower cutoff:  {:.1e}".format(SHOWER_CUTOFF))
+            print(tab+tab+tab+"# Angularity beta for shower ordering: " + str(SHOWER_BETA))
+            print(tab+tab+tab+"# Shower information:", SHOWER_INFO)
         print("\n")

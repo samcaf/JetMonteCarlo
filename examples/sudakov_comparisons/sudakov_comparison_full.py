@@ -3,7 +3,6 @@ import itertools
 
 # Parameters
 from examples.params import *
-from examples.sudakov_comparisons.sudakov_utils import pythia_data
 from examples.sudakov_comparisons.sudakov_utils import *
 
 save_cdf = False
@@ -171,7 +170,7 @@ def compare_ecf_pdf(z_cut, beta, emission='crit', plot_ivs=True):
         this_plot_label += '_{:.0e}cutoff'.format(EPSILON)
     this_plot_label += '_{:.0e}shower'.format(SHOWER_CUTOFF)
 
-    fig_pdf.savefig(fig_folder / JET_TYPE+'_RSS_'+emission+'_full_pdf_comp'
+    fig_pdf.savefig(str(fig_folder) + '/' + JET_TYPE+'_RSS_'+emission+'_full_pdf_comp'
                     +'_beta'+str(beta)+'_zc'+str(z_cut)
                     +'_{:.0e}showers_{:.0e}mc'.format(
                         NUM_SHOWER_EVENTS, NUM_MC_EVENTS)
@@ -179,7 +178,7 @@ def compare_ecf_pdf(z_cut, beta, emission='crit', plot_ivs=True):
                     +'.pdf',
                     format='pdf')
     if save_cdf:
-        fig_cdf.savefig(fig_folder / JET_TYPE+'_RSS_'+emission+'_full_pdf_comp'
+        fig_cdf.savefig(str(fig_folder) + '/' + JET_TYPE+'_RSS_'+emission+'_full_pdf_comp'
                         +'_beta'+str(beta)+'_zc'+str(z_cut)
                         +'_{:.0e}showers_{:.0e}mc'.format(
                             NUM_SHOWER_EVENTS,  NUM_MC_EVENTS)

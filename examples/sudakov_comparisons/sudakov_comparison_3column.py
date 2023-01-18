@@ -3,7 +3,6 @@ import itertools
 
 # Parameters
 from examples.params import *
-from examples.sudakov_comparisons.sudakov_utils import pythia_data
 from examples.sudakov_comparisons.sudakov_utils import *
 
 index_zc = {.05: 0, .1: 1, .2: 2}
@@ -114,7 +113,7 @@ def plot_rss_pythia(z_cut, beta,
                      + '\n' + r'$p_T$ = 3 TeV, AKT1',
                      ha='center')
 
-    fig_pdf.savefig(fig_folder / 'pythia_rss'+'_beta'+str(beta)+'_zc'+str(z_cut)
+    fig_pdf.savefig(str(fig_folder) + '/' + 'pythia_rss'+'_beta'+str(beta)+'_zc'+str(z_cut)
                     +'.pdf',
                     format='pdf')
 
