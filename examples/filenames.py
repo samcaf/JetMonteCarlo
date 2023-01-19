@@ -483,7 +483,7 @@ def get_z_pres(z_cut, load=True, save=True,
                                                 verbose=10)
             try:
                 z_pre, z_pre_weight = z_pre[0], z_pre_weight[0]
-            except ValueError:
+            except IndexError:
                 print(f"{z_pre=}, {z_pre_weight=}")
             z_pres.append(z_pre)
             z_pre_weights.append(z_pre_weight)
