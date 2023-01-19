@@ -46,13 +46,26 @@ Options for $0:
   [<--help|-h> ] :                                      Get this help message!\n\n"
   1>&2; exit 1; }
 
-# Extra parameters
-logfile='phasespace_logfile'
+
+# ============================
+# Path preparation:
+# ============================
+
+# -------------------------
+# PYTHONPATH:
+# -------------------------
+# Adding the JetMonteCarlo directory to the PYTHONPATH
+# Must be used in the directory /path/to/JetMonteCarlo/
+chmod +x setup/prepare_path.sh
+source setup/prepare_path.sh
 
 
 # ============================
 # Setting Parameters:
 # ============================
+# Extra parameters
+logfile='phasespace_logfile'
+
 # Transform long options to short ones
 args="$@"
 for arg in "$@"; do
@@ -86,18 +99,6 @@ while getopts "t:l:vkd" OPTION; do
 done
 
 
-# ============================
-# Path preparation:
-# ============================
-
-# -------------------------
-# PYTHONPATH:
-# -------------------------
-# Adding the JetMonteCarlo directory to the PYTHONPATH
-# Must be used in the directory /path/to/JetMonteCarlo/
-chmod +x setup/prepare_path.sh
-source setup/prepare_path.sh
-
 # -------------------------
 # Log File Preparation:
 # -------------------------
@@ -114,6 +115,7 @@ else
   exec 1>logs/$logfile.out
   exec 2>logs/$logfile.err
 fi
+
 
 ###################################
 # Beginning to log workflow

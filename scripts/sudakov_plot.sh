@@ -10,7 +10,7 @@
 ###################################
 # Preparation
 ###################################
-verbose=true
+verbose=''
 
 # -------------------------
 # Help message:
@@ -50,7 +50,23 @@ Options for $0:
   [<--help|-h> ] :                                      Get this help message!\n\n"
   1>&2; exit 1; }
 
-# Extra parameters
+
+# ============================
+# Path preparation:
+# ============================
+
+# -------------------------
+# PYTHONPATH:
+# -------------------------
+# Adding the JetMonteCarlo directory to the PYTHONPATH
+# Must be used in the directory /path/to/JetMonteCarlo/
+chmod +x setup/prepare_path.sh
+source setup/prepare_path.sh
+
+# ============================
+# Setting Parameters:
+# ============================
+# Default Parameters
 make_rad_plot=false
 make_sudakov=true
 
@@ -59,9 +75,7 @@ rss=true
 
 logfile='sudakov_logfile'
 
-# ============================
-# Setting Parameters:
-# ============================
+
 # Transform long options to short ones
 args="$@"
 for arg in "$@"; do
@@ -115,18 +129,11 @@ while getopts "t:l:vkd" OPTION; do
     esac
 done
 
+if [[ -z $verbose ]]
+then
+    verbose=true
+fi
 
-# ============================
-# Path preparation:
-# ============================
-
-# -------------------------
-# PYTHONPATH:
-# -------------------------
-# Adding the JetMonteCarlo directory to the PYTHONPATH
-# Must be used in the directory /path/to/JetMonteCarlo/
-chmod +x setup/prepare_path.sh
-source setup/prepare_path.sh
 
 # -------------------------
 # Log File Preparation:
@@ -144,6 +151,7 @@ else
   exec 1>logs/$logfile.out
   exec 2>logs/$logfile.err
 fi
+
 
 ###################################
 # Beginning to log workflow

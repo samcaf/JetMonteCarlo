@@ -45,13 +45,26 @@ Options for $0:
   [<--help|-h> ] :                                      Get this help message!\n\n"
   1>&2; exit 1; }
 
-# Extra parameters
-logfile='shower_logfile'
+
+# ============================
+# Path preparation:
+# ============================
+
+# -------------------------
+# PYTHONPATH:
+# -------------------------
+# Adding the JetMonteCarlo directory to the PYTHONPATH
+# Must be used in the directory /path/to/JetMonteCarlo/
+chmod +x setup/prepare_path.sh
+source setup/prepare_path.sh
 
 
 # ============================
 # Setting Parameters:
 # ============================
+# Extra parameters
+logfile='shower_logfile'
+
 # Transform long options to short ones
 args="$@"
 for arg in "$@"; do
@@ -82,18 +95,6 @@ while getopts "t:l:v" OPTION; do
     esac
 done
 
-
-# ============================
-# Path preparation:
-# ============================
-
-# -------------------------
-# PYTHONPATH:
-# -------------------------
-# Adding the JetMonteCarlo directory to the PYTHONPATH
-# Must be used in the directory /path/to/JetMonteCarlo/
-chmod +x setup/prepare_path.sh
-source setup/prepare_path.sh
 
 # -------------------------
 # Log File Preparation:
