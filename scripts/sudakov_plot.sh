@@ -93,35 +93,35 @@ for arg in "$@"; do
 done
 
 while getopts "t:l:vkd" OPTION; do
+    # echo "option | optarg : ${OPTION} | ${OPTARG}"
     case $OPTION in
     t)
         chmod +x setup/set_params.sh
         source setup/params_list.sh
         case $OPTARG in
             0)
-                source setup/set_params.sh "$@" ;;
+                ./setup/set_params.sh "$@" ;;
             TEST)
-                source setup/set_params.sh "${_test_params[@]}" --load_events False ;;
+                ./setup/set_params.sh "${_test_params[@]}" --load_events False ;;
             TESTMUNP)
-                source setup/set_params.sh "${_test_params_munp[@]}" --load_events False ;;
+                ./setup/set_params.sh "${_test_params_munp[@]}" --load_events False ;;
             FCLL)
-                source setup/set_params.sh "${_fc_ll_params[@]}" --load_events True ;;
+                ./setup/set_params.sh "${_fc_ll_params[@]}" --load_events True ;;
             FCLLprime)
-                source setup/set_params.sh "${_fcprime_ll_params[@]}" --load_events True ;;
+                ./setup/set_params.sh "${_fcprime_ll_params[@]}" --load_events True ;;
             RCLL)
-                source setup/set_params.sh "${_rc_ll_params[@]}" --load_events True ;;
+                ./setup/set_params.sh "${_rc_ll_params[@]}" --load_events True ;;
             MU_NP)
-                source setup/set_params.sh "${_munp_params[@]}" --load_events True ;;
+                ./setup/set_params.sh "${_munp_params[@]}" --load_events True ;;
             LAMBDA)
-                source setup/set_params.sh "${_lambda_params[@]}" --load_events True ;;
+                ./setup/set_params.sh "${_lambda_params[@]}" --load_events True ;;
             ME1)
-                source setup/set_params.sh "${_me_munp_params[@]}" --load_events True ;;
+                ./setup/set_params.sh "${_me_munp_params[@]}" --load_events True ;;
             ME2)
-                source setup/set_params.sh "${_me_lambda_params[@]}" --load_events True ;;
+                ./setup/set_params.sh "${_me_lambda_params[@]}" --load_events True ;;
             *)
-                echo Unrecognized parameter type $OPTARG.
-            esac
-        ;;
+                echo "Unrecognized parameter type "$OPTARG"."; exit 1 ;;
+        esac;;
     l) logfile=${OPTARG};;
     v) verbose=false ;;
     k) make_rad_plot=true;;
@@ -163,11 +163,9 @@ printf "\n\n"
 
 if [ "$verbose" = true ] ;
 then
-    printf "
-```python3 examples/params.py```
-\n"
     python3 examples/params.py
 fi
+
 
 if $make_rad_plot
 then

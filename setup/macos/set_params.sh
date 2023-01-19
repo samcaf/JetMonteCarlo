@@ -128,8 +128,7 @@ Options for $0:
 # Reading options
 # ============================
 while getopts "f:j:o:p:m:n:b:c:s:r:v:t:e:a:vh" OPTION; do
-    #echo "option : ${OPTION}"
-    #echo "optarg : ${OPTARG}"
+    # echo "option | optarg : ${OPTION} | ${OPTARG}"
     case $OPTION in
     # --------------------
     # Physics Flags:

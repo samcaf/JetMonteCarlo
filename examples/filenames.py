@@ -100,7 +100,6 @@ radiator_discrete_folder = numerical_int_folder / "radiators"
 radiator_function_folder = function_folder / "radiators"
 
 # Splitting Functions
-splitting_discrete_folder = numerical_int_folder / "splitting_functions"
 splitting_function_folder = function_folder / "splitting_functions"
 
 # Sudakov Factors
@@ -138,11 +137,6 @@ subrad_path = radiator_function_folder / subradfile
 # =====================================
 # Splitting Function Files
 # =====================================
-# ---------------------------------
-# Numerical Integrals (discrete)
-# ---------------------------------
-splitfn_path = splitting_discrete_folder / splitfn_file
-
 # ---------------------------------
 # Serialized Functions (continuous)
 # ---------------------------------
