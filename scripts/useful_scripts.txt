@@ -17,15 +17,14 @@ sbatch scripts/sudakov_plot.sh --set_params FCLL --logfile sudakov_FCLL
 # Compare sudakov exponents at LL but with running coupling effects
 sbatch scripts/sudakov_plot.sh --set_params RCLL --logfile sudakov_RCLL
 
-# Compare sudakov exponents for a shower with cutoff 1 GeV 
+# Compare sudakov exponents for a shower with cutoff 1 GeV
 sbatch scripts/sudakov_plot.sh --set_params LAMBDA --logfile sudakov_LAMBDA
 
-# Compare sudakov exponents for a shower with cutoff $\Lambda_{\rm QCD}$ 
+# Compare sudakov exponents for a shower with cutoff $\Lambda_{\rm QCD}$
 sbatch scripts/sudakov_plot.sh --set_params MU_NP --logfile sudakov_MUNP
 
-# Compare multiple emission sudakov exponents for a shower with cutoff 1 GeV 
+# Compare multiple emission sudakov exponents for a shower with cutoff 1 GeV
 sbatch scripts/sudakov_plot.sh --set_params ME1 --logfile sudakov_ME_MUNP
 
 # Compare multiple emission sudakov exponents for a shower with cutoff $\Lambda_{\rm QCD}$
 sbatch scripts/sudakov_plot.sh --set_params ME2 --logfile sudakov_ME_LAMBDA
-

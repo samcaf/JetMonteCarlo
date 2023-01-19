@@ -29,7 +29,6 @@ path_append PYTHONPATH $PWD
 # ============================
 # Folders:
 # ============================
-
 # -------------------------
 # Monte Carlo Samples/Output:
 # -------------------------
@@ -64,3 +63,50 @@ done
 # -------------------------
 # Creating a folder for log files
 mkdir -p logs
+
+
+# ============================
+# Script Syntax
+# ============================
+# -------------------------
+# Supercloud Syntax
+# -------------------------
+if [[ -z $supercloud_syntax ]]
+then
+    while true; do
+        read -p "Are you using the MIT supercloud computing environment? " yn
+        case $yn in
+            [Yy]* )
+                supercloud_syntax=true; break;;
+            [Nn]* )
+                supercloud_syntax=false; break;;
+            * ) echo "Please answer y (yes) or n (no).";;
+        esac
+    done
+fi
+
+export supercloud_syntax
+
+# -------------------------
+# Bash Syntax
+# -------------------------
+# sed in particular behaves differently between linux and macOS
+if [[ -z $linux_or_mac ]]
+then
+    while true; do
+        read -p "Are you using Linux (1) or MacOS (2)? " yn
+        case $yn in
+            1)
+                linux_or_mac="linux";
+                cp scripts/linux/set_params.sh scripts/set_params.sh;
+                break;;
+            2)
+                linux_or_mac="mac";
+                cp setup/macos/set_params.sh scripts/set_params.sh;
+                break;;
+            * ) echo "Please answer 1 (Linux) or 2 (MacOS).";;
+        esac
+    done
+fi
+
+export linux_or_mac

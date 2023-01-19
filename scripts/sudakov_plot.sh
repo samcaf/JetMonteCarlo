@@ -10,8 +10,6 @@
 ###################################
 # Preparation
 ###################################
-# Determining whether we use the syntax required for sbatch on the MIT supercloud
-supercloud_syntax=true
 verbose=true
 
 # -------------------------
@@ -89,7 +87,9 @@ while getopts "t:l:vkd" OPTION; do
             0)
                 ./setup/set_params.sh "$@" ;;
             TEST)
-                ./setup/set_params.sh "${_test_params[@]}" --load_events True ;;
+                ./setup/set_params.sh "${_test_params[@]}" --load_events False ;;
+            TESTMUNP)
+                ./setup/set_params.sh "${_test_params_munp[@]}" --load_events False ;;
             FCLL)
                 ./setup/set_params.sh "${_fc_ll_params[@]}" --load_events True ;;
             FCLLprime)
@@ -218,7 +218,7 @@ printf "
 # Complete!
 "
 else
-    printf"
+    printf "
 ```python3 examples/sudakov_comparisons/sudakov_comparison_numeric.py```
     "
 	python3 examples/sudakov_comparisons/sudakov_comparison_numeric.py

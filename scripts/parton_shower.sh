@@ -10,8 +10,6 @@
 ###################################
 # Preparation
 ###################################
-# Determining whether we use the syntax required for sbatch on the MIT supercloud
-supercloud_syntax=true
 verbose=true
 
 # -------------------------

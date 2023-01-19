@@ -152,5 +152,8 @@ output/**/*
 *.out
 *.err
 
+# Setup which is dependent on OS
+setup/set_params.sh
+
 # Figures
 samplepgfplot.pdf
