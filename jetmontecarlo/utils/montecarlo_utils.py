@@ -171,7 +171,7 @@ def samples_from_cdf(cdf, num_samples, domain=None,
             # * if the CDF is miniscule up to some point in the domain, but
             #   monotone increasing afterwards, I remove the "bad" part
             #   from the domain and try again
-            for i, cdf_val, point in enumerate(zip(cdf_vals, pnts)):
+            for i, (cdf_val, point) in enumerate(zip(cdf_vals, pnts)):
                 # If we find a point where the CDF is no longer
                 # miniscule
                 if cdf_val > cdf_threshold:
