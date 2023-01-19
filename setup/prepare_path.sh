@@ -98,11 +98,11 @@ then
         case $yn in
             1)
                 linux_or_mac="linux";
-                cp scripts/linux/set_params.sh scripts/set_params.sh;
+                cp setup/linux/set_params.sh setup/set_params.sh;
                 break;;
             2)
                 linux_or_mac="mac";
-                cp setup/macos/set_params.sh scripts/set_params.sh;
+                cp setup/macos/set_params.sh setup/set_params.sh;
                 break;;
             * ) echo "Please answer 1 (Linux) or 2 (MacOS).";;
         esac
