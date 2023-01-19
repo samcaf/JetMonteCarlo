@@ -84,13 +84,13 @@ while getopts "t:l:vkd" OPTION; do
     chmod +x setup/set_params.sh
     source setup/params_list.sh
     case $OPTARG in
-      0) ./setup/set_params.sh "$@" ;;
-      TEST) ./setup/set_params.sh "${_test_params[@]}" --load_events False ;;
-      TESTMUNP) ./setup/set_params.sh "${_test_params_munp[@]}" --load_events False ;;
-      FCLL) ./setup/set_params.sh "${_fc_ll_params[@]}" --load_events True ;;
-      RCLL) ./setup/set_params.sh "${_rc_ll_params[@]}" --load_events True ;;
-      MU_NP) ./setup/set_params.sh "${_munp_params[@]}" --load_events True ;;
-      LAMBDA) ./setup/set_params.sh "${_lambda_params[@]}" --load_events True ;;
+      0) source setup/set_params.sh "$@" ;;
+      TEST) source setup/set_params.sh "${_test_params[@]}" --load_events False ;;
+      TESTMUNP) source setup/set_params.sh "${_test_params_munp[@]}" --load_events False ;;
+      FCLL) source setup/set_params.sh "${_fc_ll_params[@]}" --load_events True ;;
+      RCLL) source setup/set_params.sh "${_rc_ll_params[@]}" --load_events True ;;
+      MU_NP) source setup/set_params.sh "${_munp_params[@]}" --load_events True ;;
+      LAMBDA) source setup/set_params.sh "${_lambda_params[@]}" --load_events True ;;
     esac
     ;;
     l) logfile=${OPTARG};;
@@ -104,9 +104,6 @@ done
 # -------------------------
 if [ "$supercloud_syntax" = true ] ;
 then
-  # Preparation for running in supercloud cluster:
-  module load anaconda/2021b
-
   # Linking slurm log files to more precisely named logs
   ln -f logs/zlog-${SLURM_JOB_ID}.out logs/$logfile.out.${SLURM_JOB_ID}
   ln -f logs/zlog-${SLURM_JOB_ID}.err logs/$logfile.err.${SLURM_JOB_ID}

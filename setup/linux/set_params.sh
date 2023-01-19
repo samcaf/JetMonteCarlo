@@ -1,7 +1,8 @@
 #!/bin/bash
 
-# Determining whether we use the syntax required for sbatch on the MIT supercloud
-supercloud_syntax=true
+# Preparing path variables, and determining whether we use
+# the syntax required for sbatch on the MIT supercloud
+source setup/prepare_path.sh
 
 if [ supercloud_syntax = true ] ;
 then

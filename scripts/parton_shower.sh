@@ -83,11 +83,11 @@ while getopts "t:l:v" OPTION; do
     chmod +x setup/set_params.sh
     source setup/params_list.sh
     case $OPTARG in
-      0) ./setup/set_params.sh "$@" ;;
-      FCLL) ./setup/set_params.sh "${_fc_ll_params[@]}" --load_events False ;;
-      RCLL) ./setup/set_params.sh "${_rc_ll_params[@]}" --load_events False ;;
-      MU_NP) ./setup/set_params.sh "${_munp_params[@]}" --load_events False ;;
-      LAMBDA) ./setup/set_params.sh "${_lambda_params[@]}" --load_events False ;;
+      0) source setup/set_params.sh "$@" ;;
+      FCLL) source setup/set_params.sh "${_fc_ll_params[@]}" --load_events False ;;
+      RCLL) source setup/set_params.sh "${_rc_ll_params[@]}" --load_events False ;;
+      MU_NP) source setup/set_params.sh "${_munp_params[@]}" --load_events False ;;
+      LAMBDA) source setup/set_params.sh "${_lambda_params[@]}" --load_events False ;;
     esac
     ;;
     l) logfile=${OPTARG};;
@@ -101,9 +101,6 @@ done
 # -------------------------
 if [ "$supercloud_syntax" = true ] ;
 then
-  # Preparation for running in supercloud cluster:
-  module load anaconda/2021b
-
   # Linking slurm log files to more precisely named logs
   ln -f logs/zlog-${SLURM_JOB_ID}.out logs/$logfile.out.${SLURM_JOB_ID}
   ln -f logs/zlog-${SLURM_JOB_ID}.err logs/$logfile.err.${SLURM_JOB_ID}
