@@ -192,7 +192,7 @@ def plot_mc_all(axes_pdf, axes_cdf, z_cut, beta, f_soft, col,
                          load=load, save=True, theta_crits=theta_crits,
                          rad_crit_sub=radiators.get('subsequent', None))
 
-    z_pres, z_pre_weights, load = get_z_pres(z_cut, load=load, save=save,
+    z_pres, z_pre_weights, load = get_z_pres(z_cut, load=load, save=True,
                         theta_crits=theta_crits,
                         rad_pre=radiators.get('pre-critical', None))
 
@@ -262,7 +262,7 @@ def plot_mc_ivs(axes_pdf, axes_cdf, z_cut, beta, f_soft, col,
                              rad_crit_sub=radiators.get('subsequent', None))
 
     if 'pre' in emissions:
-        z_pres, z_pre_weights, load = get_z_pres(z_cut, load=load, save=save,
+        z_pres, z_pre_weights, load = get_z_pres(z_cut, load=load, save=True,
                             theta_crits=theta_crits,
                             rad_pre=radiators.get('pre-critical', None))
 
@@ -463,7 +463,7 @@ def plot_mc_pre_and_crit(axes_pdf, axes_cdf, z_cut, beta):
                           z_cut, beta, load=load, save=True,
                           rad_crit=radiators.get('critical', None))
 
-    z_pres, z_pre_weights, load = get_z_pres(z_cut, load=load, save=save,
+    z_pres, z_pre_weights, load = get_z_pres(z_cut, load=load, save=True,
                         theta_crits=theta_crits,
                         rad_pre=radiators.get('pre-critical', None))
 

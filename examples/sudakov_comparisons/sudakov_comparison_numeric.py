@@ -388,7 +388,7 @@ def plot_mc_pre_and_crit(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
                           z_cut, beta, load=load, save=True,
                           rad_crit=radiators.get('critical', None))
 
-    z_pres, z_pre_weights, load = get_z_pres(z_cut, load=load, save=save,
+    z_pres, z_pre_weights, load = get_z_pres(z_cut, load=load, save=True,
                         theta_crits=theta_crits,
                         rad_pre=radiators.get('pre-critical', None))
 
@@ -503,7 +503,7 @@ def plot_mc_all(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
                          load=load, save=True, theta_crits=theta_crits,
                          rad_crit_sub=radiators.get('subsequent', None))
 
-    z_pres, z_pre_weights, load = get_z_pres(z_cut, load=load, save=save,
+    z_pres, z_pre_weights, load = get_z_pres(z_cut, load=load, save=True,
                         theta_crits=theta_crits,
                         rad_pre=radiators.get('pre-critical', None))
 
@@ -619,7 +619,7 @@ if __name__ == '__main__':
     # For each value of epsilon we want to use as an integration cutoff:
     if COMPARE_CRIT:
         compare_crit(plot_approx=False)
-    if COMPARE_SUB:
+    if COMPARE_RAW:
         compare_ungroomed()
     if COMPARE_CRIT_AND_SUB:
         compare_crit_and_sub()
