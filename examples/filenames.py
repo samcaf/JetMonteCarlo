@@ -262,7 +262,7 @@ def get_c_raw(beta, load=True, save=True, rad_raw=None):
 
         c_raws, c_raw_weights = samples_from_cdf(cdf_raw, NUM_MC_EVENTS,
                                         domain=[0.,.5],
-                                        # DEBUG
+                                        # DEBUG: No backup CDF
                                         backup_cdf=None,
                                         verbose=3)
         c_raw_weights = np.where(np.isinf(c_raws), 0,
@@ -323,7 +323,6 @@ def get_theta_crits(z_cut, beta, load=True, save=True,
 
         theta_crits, theta_crit_weights = samples_from_cdf(cdf_crit, NUM_MC_EVENTS,
                                                 domain=[0.,1.],
-                                                # DEBUG
                                                 backup_cdf=None,
                                                 verbose=3)
         theta_crit_weights = np.where(np.isinf(theta_crits), 0,
@@ -396,7 +395,7 @@ def get_c_subs(z_cut, beta, load=True, save=True,
             else:
                 c_sub, c_sub_weight = samples_from_cdf(cdf_sub_conditional, 1,
                                                 domain=[0.,theta**beta/2.],
-                                                # DEBUG
+                                                # DEBUG: No backup CDF
                                                 backup_cdf=None,
                                                 verbose=3)
                 c_sub, c_sub_weight = c_sub[0], c_sub_weight[0]
@@ -472,13 +471,17 @@ def get_z_pres(z_cut, load=True, save=True,
 
             z_pre, z_pre_weight = samples_from_cdf(cdf_pre_conditional, 1,
                                                 domain=[0,z_cut],
-                                                # DEBUG
+                                                # DEBUG: No backup CDF
                                                 backup_cdf=None,
                                                 verbose=10)
             try:
-                z_pre, z_pre_weight = z_pre[0], z_pre_weight[0]
-            except IndexError:
-                print(f"{z_pre=}, {z_pre_weight=}")
+                z_pre = z_pre[0]
+                z_pre_weight = z_pre_weight[0]
+            # DEBUG: I think I have fixed this bug, but if it reappears,
+            #        I want an extra message
+            except IndexError as e:
+                print(f"IndexError using: {z_pre=}, {z_pre_weight=}")
+                raise e
             z_pres.append(z_pre)
             z_pre_weights.append(z_pre_weight)
             if (i+1)%(len(theta_crits)/10) == 0:

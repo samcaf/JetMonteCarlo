@@ -51,8 +51,10 @@ COMPARE_PYTHIA = (SPLITFN_ACC == 'MLL')
 COMPARE_PYTHIA = True
 
 pythia_data = get_pythia_data(include=['raw', 'softdrop'])
-# DEBUG
-# print("Params keys:", list(pythia_data['softdrop']['partons'].keys()), flush=True)
+
+# Verbose output
+if VERBOSE > 2:
+    print("Params keys:", list(pythia_data['softdrop']['partons'].keys()), flush=True)
 
 
 ###########################################

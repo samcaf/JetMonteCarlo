@@ -63,7 +63,7 @@ def compare_crit_rad():
         # Plotting numerical result
         num_result = rad_crit(pnts, zcut)
 
-        # DEBUG: monotonicity
+        # DEBUG: monotonicity tests
         where_monotonic = num_result[1:] <= num_result[:-1]
         print(f"is_monotonic : {where_monotonic.all()}")
         if not where_monotonic.all():
@@ -150,7 +150,7 @@ def compare_pre_rad(fill_between=False):
             #num_error =rad_pre_err(pnts, theta, zcut)
             err_low, err_high = num_result-num_error, num_result+num_error
 
-            # DEBUG: monotonicity
+            # DEBUG: monotonicity tests
             where_monotonic = num_result[1:] <= num_result[:-1]
             print(f"is_monotonic : {where_monotonic.all()}")
             if not where_monotonic.all():
@@ -243,7 +243,7 @@ def compare_sub_rad(fill_between=False):
             num_result = rad_sub(pnts, theta, beta)
 
 
-            # DEBUG: monotonicity
+            # DEBUG: monotonicity tests
             where_monotonic = num_result[1:] <= num_result[:-1]
             print(f"is_monotonic : {where_monotonic.all()}")
             if not where_monotonic.all():
