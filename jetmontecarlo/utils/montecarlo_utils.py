@@ -89,6 +89,7 @@ def getLogSample_zerobin(sample_min, sample_max, cum_dist,
 def samples_from_cdf(cdf, num_samples, domain=None,
                      catch_turnpoint=False,
                      backup_cdf=None,
+                     force_monotone=False,
                      verbose=5):
     """A function which takes in a functional form for a cdf,
     inverts it, and generates samples using the inverse transform
@@ -104,6 +105,20 @@ def samples_from_cdf(cdf, num_samples, domain=None,
         Number of samples to be generated.
     domain : array (optional)
         An array containing the domain of the cdf
+    catch_turnpoint: bool (optional)
+        If True, will catch a turning point of the cdf, where
+        it stops being monotonic decreasing (i.e. it hits 1
+        and then starts going back down)
+    backup_cdf : function (optional)
+        A CDF to sample from if the given cdf is not monotonic.
+    force_monotone : bool (optional)
+        If True, will force the cdf to be monotonic by removing
+        all points in the domain and of the cdf where the cdf
+        is not monotonic increasing, using linear interpolation
+        on the resulting cdf values, and then using the resulting
+        cdf to generate samples.
+    verbose : int (optional)
+        Verbosity level.
 
     Returns
     -------
@@ -190,6 +205,7 @@ def samples_from_cdf(cdf, num_samples, domain=None,
                                             domain=[point, domain[1]],
                                             catch_turnpoint=catch_turnpoint,
                                             backup_cdf=backup_cdf,
+                                            force_monotone=force_monotone,
                                             verbose=verbose)
 
             #----------------------------------------------------
@@ -239,9 +255,29 @@ def samples_from_cdf(cdf, num_samples, domain=None,
                 return samples_from_cdf(cdf=cdf, num_samples=num_samples,
                                         domain=[domain[0],bad_xvals_low[0]],
                                         catch_turnpoint=catch_turnpoint,
+                                        backup_cdf=backup_cdf,
+                                        force_monotone=force_monotone,
                                         verbose=verbose)
+            elif force_monotone:
+                # If we _really_ want to force the CDF to be monotone,
+                # we can do so by removing the points in the domain where
+                # the CDF is not monotone, using monotone interpolation
+                # on the resulting values, and then drawing from the
+                # resulting new/monotonic CDF.
+                if verbose>1:
+                    print("Found non-monotone cdf behavior. Forcing "+
+                          "monotonic behavior.")
+                # Getting new CDF values and x values which force
+                # monotonicity
+                new_cdf_vals = cdf_vals[:-1][monotone]
+                new_x_vals = pnts[:-1][monotone]
 
-            # After trying to catch the above cases, try to invert the
+                # Sampling from the new forced CDF
+                samples = inverse_transform_samples(new_cdf_vals, new_x_vals,
+                                                    num_samples)
+                return samples, np.ones_like(samples)
+
+            # After trying to catch the above cases, we can try to invert the
             # CDF again
             try:
                 inv_cdf = inversefunc(cdf, domain=domain, image=[0,1])
