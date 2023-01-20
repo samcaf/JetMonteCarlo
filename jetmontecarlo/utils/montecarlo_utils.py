@@ -141,7 +141,7 @@ def samples_from_cdf(cdf, num_samples, domain=None,
             if all(cdf_vals == 1.):
                 if verbose > 4:
                     print("CDF always 1. Returning zero bin.")
-                return np.zeros(num_samples), np.ones_like(num_samples)
+                return np.zeros(num_samples), np.ones(num_samples)
 
             # Otherwise, find where it is not monotone
             monotone = cdf_vals[:-1] <= cdf_vals[1:]
@@ -166,7 +166,9 @@ def samples_from_cdf(cdf, num_samples, domain=None,
             if all(cdf_vals < cdf_threshold):
                 if verbose > 4:
                     print("CDF always negligible. Returning highest point in domain.")
-                return np.full(num_samples, domain[1]), np.ones_like(num_samples)
+                samples = np.full(num_samples, domain[1])
+                weights = np.ones_like(samples)
+                return samples, weights
 
             # * if the CDF is miniscule up to some point in the domain, but
             #   monotone increasing afterwards, I remove the "bad" part
@@ -226,7 +228,7 @@ def samples_from_cdf(cdf, num_samples, domain=None,
                 if verbose>1:
                     print("Found non-monotone cdf behavior at minimum "
                           +"value of domain. Drawing from zero bin.")
-                return np.zeros(num_samples), np.ones_like(num_samples)
+                return np.zeros(num_samples), np.ones(num_samples)
 
             elif bad_cdf_low[0] == 1 and catch_turnpoint:
                 # Otherwise, if the CDF reaches 1 at a particular location,
@@ -252,7 +254,7 @@ def samples_from_cdf(cdf, num_samples, domain=None,
                 inv_cdf = inversefunc(backup_cdf, domain=domain, image=[0,1])
 
         rands = np.random.rand(num_samples)
-        samples = inv_cdf(rands)
+        samples = np.array(inv_cdf(rands))
 
         if used_backup:
             dxs = [1e-6*min(domain[1]-sample, sample-domain[0])
