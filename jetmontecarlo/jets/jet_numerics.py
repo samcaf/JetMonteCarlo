@@ -5,10 +5,6 @@ from scipy.interpolate import griddata, interp2d, NearestNDInterpolator
 
 import matplotlib.pyplot as plt
 
-# DEBUG
-# Using sympy for smooth performance with monotonicity checks
-# Deprecated, but leaving in for now if I need to change back for
-# convenience
 import sympy as sp
 from sympy import sympify, lambdify
 
@@ -38,9 +34,6 @@ from jetmontecarlo.analytics.radiators_fixedcoupling import *
 # Verbosity of local functions
 local_verbose = 3
 # Defining variables for later sympy use
-# DEBUG
-x = sp.Symbol('x')
-th = sp.Symbol('theta')
 
 
 ###########################################
@@ -155,52 +148,6 @@ def gen_numerical_radiator(rad_sampler, emission_type,
 
     interp_function = rad_integrator.interpFn
 
-    # DEBUG
-    # unbounded_interp_function = rad_integrator.interpFn
-    # bounds = monotonic_domain(unbounded_interp_function, bounds)
-
-    # if local_verbose >= 2:
-    #     print(f"monotonic domain: {bounds}")
-
-    # Checking the interpolating function against our numerics
-    # assert(unbounded_interp_function(xs) == radiator).all(),\
-    #     "The interpolating radiator is not the same as the radiator "\
-    #     +"obtained with numerical integration."
-
-    # Bounding the interpolating function
-    # bounded_interp_function = sp.Piecewise(
-    #     (0, x < bounds[0]),
-    #     (0, x > bounds[1]),
-    #     (unbounded_interp_function(x), True))
-    # bounded_interp_function = lambdify(x, bounded_interp_function)
-
-    # def bounded_interp_function(x):
-    #     vals = np.piecewise(np.array(x),
-    #             [x < bounds[0], bounds[0] <= x <= bounds[1] , x > bounds[1]],
-    #             [0, unbounded_interp_function(x), 0])
-    #     if len(vals) == 1:
-    #         return vals[0]
-    #     return vals
-    # DEBUG
-    # remove if stuff works
-
-    # Now, bounded is taken care of by the interpolating function
-    # methods in utils/interpolating_function_utils.py
-    # def bounded_interp_function(x):
-    #     return unbounded_interp_function(bounds[0]) * (x <= bounds[0]) \
-    #         + (bounds[0] <= x) * (x <= bounds[1]) * unbounded_interp_function(x)
-    #     # try:
-    #     #     return list(map(bounded_interp_function, x))
-    #     # except TypeError:
-    #     #     pass
-    #     # if x < bounds[0]:
-    #     #     return 0
-    #     # if x > bounds[1]:
-    #     #     return 0
-    #     # return unbounded_interp_function(x)
-
-    # rad_integrator.interpFn = bounded_interp_function
-
     # DEBUG: testing monotonicity
     if local_verbose >= 2:
         print("crit interps:")
@@ -215,6 +162,7 @@ def gen_numerical_radiator(rad_sampler, emission_type,
         rad_integrator.save_montecarlo_data(save_discrete_file)
 
     return rad_integrator.interpFn, rad_integrator.montecarlo_data_dict()
+
 
 def gen_pre_num_rad(rad_sampler, crit_rad_sampler,
                     jet_type='quark',
@@ -318,32 +266,9 @@ def gen_pre_num_rad(rad_sampler, crit_rad_sampler,
                                    'decreasing'))
             print()
 
-
-    # Bounding the interpolating function
-    # bounded_interp_function = sp.Piecewise(
-    #     (0, x < 0),
-    #     (0, th < 0),
-    #     (0, x > rad_sampler.zc),
-    #     (unbounded_interp_function(x, th), True))
-    # bounded_interp_function = lambdify((x, th), bounded_interp_function)
-
-    # DEBUG
-    # remove if stuff works
     def bounded_interp_function(x, theta):
         return unbounded_interp_function(x, theta) * (x >= 0) *\
             (x <= rad_sampler.zc) * (theta >= 0)
-        # Applying to each given argument
-        # DEBUG
-        # try:
-        #     return map(bounded_interp_function, x, theta)
-        # Pre-critical emission boundaries
-        # if x < 0:
-        #     return 0
-        # if x > rad_sampler.zc:
-        #     return 0
-        # if theta < 0:
-        #     return 0
-        # return unbounded_interp_function(x, theta)
 
     rad_integrator.interpFn = bounded_interp_function
 
@@ -351,6 +276,7 @@ def gen_pre_num_rad(rad_sampler, crit_rad_sampler,
         rad_integrator.save_montecarlo_data(save_discrete_file)
 
     return rad_integrator.interpFn, rad_integrator.montecarlo_data_dict()
+
 
 def gen_crit_sub_num_rad(rad_sampler,
                          jet_type='quark',
@@ -472,30 +398,9 @@ def gen_crit_sub_num_rad(rad_sampler,
     # unbounded_interp_function = NearestNDInterpolator(points, rads_all.flatten())
     unbounded_interp_function = RegularGridInterpolator((xs_all, thetas_all), rads_all.flatten())
 
-
-    # Bounding the interpolating function
-    # bounded_interp_function = sp.Piecewise(
-    #     (0, x < 0),
-    #     (0, th < 0),
-    #     (0, x > C_ungroomed_max(beta, radius=th, acc=obs_accuracy)),
-    #     (unbounded_interp_function(x, th), True))
-    # bounded_interp_function = lambdify((x, th), bounded_interp_function)
-
-    # DEBUG
-    # remove if stuff works
     def bounded_interp_function(x, theta):
-        # Subsequent emission boundaries
-        # try:
-        #     return map(bounded_interp_function, x, theta)
         return unbounded_interp_function(x, theta) * (x >= 0) * (theta >= 0) *\
             (x <= C_ungroomed_max(beta, radius=theta, acc=obs_accuracy))
-        # if x < 0:
-        #     return 0
-        # if x > C_ungroomed_max(beta, radius=theta, acc=obs_accuracy):
-        #     return 0
-        # if theta < 0:
-        #     return 0
-        # return unbounded_interp_function(x, theta)
 
     # DEBUG: testing monotonicity
     if local_verbose >= 2:

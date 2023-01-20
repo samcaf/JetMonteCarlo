@@ -3,10 +3,6 @@ import numpy as np
 from scipy.misc import derivative
 from scipy.optimize import fsolve
 
-# DEBUG
-# from sympy.solvers import solve
-# from sympy import Symbol
-# from sympy import diff, lambdify
 import matplotlib.pyplot as plt
 
 
@@ -147,9 +143,6 @@ def monotonic_domain(func, domain, include_point=None, check_only=None):
     for i in range(len(derivatives)-1):
         if derivatives[i] * derivatives[i+1] < 0:
             sign_change_inds.append(i)
-    # DEBUG
-    # print("xs: ", [(xs[i], xs[i+1]) for i in sign_change_inds])
-    # print([(derivatives[i], derivatives[i+1]) for i in sign_change_inds])
 
     # If the derivative never changes sign, the function is monotonic
     # (modulo the possibility that our sampling of the domain is not fine enough)
@@ -282,6 +275,7 @@ def get_1d_interpolation(xs, fs, monotonic=True,
         bounds = monotonic_domain(interpolating_function, bounds)
         if verbose >= 2:
             print(f"monotonic domain: {bounds}")
+
     # Setting the interpolating function outside the bounds, if given
     if bounds is not None:
         # Setting up the values of the interpolating function on the
@@ -290,8 +284,7 @@ def get_1d_interpolation(xs, fs, monotonic=True,
             bound_values = (None, None)
         assert len(bound_values) == 2, "bound_values must be a tuple of length 2"
 
-        # DEBUG
-        # Enforcing continuity by hand -- may not always be  desirable
+        # DEBUG: Enforcing continuity by hand -- may not always be  desirable
         if bound_values[0] is None:
             bound_values[0] = interpolating_function(xs[0])
         if bound_values[1] is None:
