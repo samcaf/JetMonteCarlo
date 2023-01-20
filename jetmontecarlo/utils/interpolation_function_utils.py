@@ -99,17 +99,8 @@ def monotonic_domain(func, domain, include_point=None, check_only=None):
 
     Returns
     -------
-    domain :    domain in which the function is monotonic
-
-    Raises
-    ------
-        AssertionError :    if the derivative of the function is in the
-                            direction specified by `check_only` at the
-                            point specified by `include_point`, but we
-                            are not able to find a monotonic domain
-                            including the point `include_point` (this
-                            should never happen).
-
+    domain :    domain (including `include_point`) in which the function
+                is monotonic
     """
     if include_point is None:
         include_point = (domain[0]+domain[1])/2
@@ -172,72 +163,6 @@ def monotonic_domain(func, domain, include_point=None, check_only=None):
                 upper_bound = recursed_upper
                 return (lower_bound, upper_bound)
     return (lower_bound, upper_bound)
-
-
-    # DEBUG
-    # UNREACHABLE CODE:
-
-    roots = fsolve(dfunc_dx, include_point)
-    roots = roots[dfunc_dx(roots) <= 1e-3]
-    # DEBUG
-    # print(f"{roots = }")
-    # print(f"{deriv(roots) = }")
-
-    if len(roots) != 0:
-        # Checking monotonicity around each flat point
-        mid_derivs = [dfunc_dx(midpoint) for midpoint in
-                      np.array(roots[1:]+roots[:-1])/2]
-        # DEBUG
-        # print(f"{mid_derivs = }")
-        mid_derivs = [dfunc_dx(roots[0]-.25), *mid_derivs,
-                      dfunc_dx(roots[-1]+.25)]
-        mid_derivs = np.array(mid_derivs)
-
-        assert len(mid_derivs) == len(roots)+1
-        # DEBUG
-        # print(f"{mid_derivs = }")
-
-        # Removing roots where the derivative on either side
-        # has the same sign (i.e. the function is still monotonic)
-        good_roots = []
-        for i in range(len(roots)):
-            if mid_derivs[i]*mid_derivs[i+1] <= 0:
-                good_roots.append(True)
-            else:
-                good_roots.append(False)
-        roots = roots[good_roots]
-
-    print(roots, flush=True)
-
-    plt.plot(np.linspace(0, 1, 100), func(np.linspace(0, 1, 100)),
-             label="function")
-    plt.plot(np.linspace(0, 1, 100), deriv(np.linspace(0, 1, 100)),
-             label="derivative")
-    plt.ylim(-.01, 1)
-    plt.legend()
-    plt.show()
-
-    if len(roots) == 0:
-        # If there are no flat points, the function is monotonic
-        return [-np.inf, np.inf]
-
-    # Checking edges of the function
-    if include_point < roots[0]:
-        return [-np.inf, roots[0]]
-    if include_point > roots[-1]:
-        return [roots[-1], np.inf]
-
-    assert len(roots) > 1
-    # Should never be activated, after checking edges
-
-    # Checking in the middle of the function
-    for i in range(len(roots) - 1):
-        if include_point < roots[i+1]:
-            return [roots[i], roots[i+1]]
-
-    # We should have a monotonic domain if df/dx(include_point)
-    # has the right sign
-    raise AssertionError("Unexpectedly, no monotonic domain found")
 
 
 # =====================================
