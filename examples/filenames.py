@@ -2,6 +2,9 @@ import numpy as np
 from pathlib import Path
 import dill as pickle
 
+# Timing
+from jetmontecarlo.utils.time_utils import timing
+
 # Help with MC sampling
 from jetmontecarlo.utils.montecarlo_utils import samples_from_cdf
 from jetmontecarlo.montecarlo.partonshower import parton_shower
