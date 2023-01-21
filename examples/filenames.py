@@ -155,6 +155,7 @@ if MULTIPLE_EMISSIONS:
     extra_label += 'ME_'
 
 # Samples generated via inverse transform from Sudakov Functions
+@timing
 def sudakov_crit_sample_file(z_cut, beta):
     beta = float(beta)
     crit_sample_file = ("theta_crits"
@@ -169,6 +170,7 @@ def sudakov_crit_sample_file(z_cut, beta):
         print("  crit sample file path:", sudakov_sample_folder / crit_sample_file)
     return sudakov_sample_folder / crit_sample_file
 
+@timing
 def sudakov_raw_sample_file(beta):
     beta=float(beta)
     sub_sample_file = ("c_subs"
@@ -182,6 +184,7 @@ def sudakov_raw_sample_file(beta):
         print("  sub sample file path:", sudakov_sample_folder / sub_sample_file)
     return sudakov_sample_folder / sub_sample_file
 
+@timing
 def sudakov_crit_sub_sample_file(z_cut, beta):
     beta=float(beta)
     crit_sub_sample_file = ("c_subs_from_crits"
@@ -196,6 +199,7 @@ def sudakov_crit_sub_sample_file(z_cut, beta):
         print("  crit sub sample file path:", sudakov_sample_folder / crit_sub_sample_file)
     return sudakov_sample_folder / crit_sub_sample_file
 
+@timing
 def sudakov_pre_sample_file(z_cut):
     pre_sample_file = ("z_pres_from_crits"
                        +"_obs"+str(OBS_ACC)
@@ -221,6 +225,7 @@ def sudakov_pre_sample_file(z_cut):
 # ---------------------------------
 # Ungroomed
 # ---------------------------------
+@timing
 def get_c_raw(beta, load=True, save=True, rad_raw=None):
     if load:
         if sudakov_raw_sample_file(beta).is_file():
@@ -229,12 +234,13 @@ def get_c_raw(beta, load=True, save=True, rad_raw=None):
             try:
                 # Loading files and samples:
                 sample_dict = np.load(sudakov_raw_sample_file(beta),
-                                      allow_pickle=True)
+                                      allow_pickle=True, mmap_mode='c')
                 c_raws = sample_dict['samples']
                 c_raw_weights = sample_dict['weights']
             except:
                 # Old syntax for loading files, for backwards compatibility
-                c_raws = np.load(sudakov_raw_sample_file(beta))
+                c_raws = np.load(sudakov_raw_sample_file(beta),
+                                 allow_pickle=True, mmap_mode='c')
                 c_raw_weights = np.ones_like(c_raws)
         else:
             load = False
@@ -280,6 +286,7 @@ def get_c_raw(beta, load=True, save=True, rad_raw=None):
 # ---------------------------------
 # Critical
 # ---------------------------------
+@timing
 def get_theta_crits(z_cut, beta, load=True, save=True,
                     rad_crit=None):
     if load:
@@ -289,12 +296,13 @@ def get_theta_crits(z_cut, beta, load=True, save=True,
             try:
                 # Loading files and samples:
                 sample_dict = np.load(sudakov_crit_sample_file(z_cut, beta),
-                                      allow_pickle=True)
+                                      allow_pickle=True, mmap_mode='c')
                 theta_crits = sample_dict['samples']
                 theta_crit_weights = sample_dict['weights']
             except:
                 # Old syntax for loading files, for backwards compatibility
-                theta_crits = np.load(sudakov_crit_sample_file(z_cut, beta))
+                theta_crits = np.load(sudakov_crit_sample_file(z_cut, beta),
+                                      allow_pickle=True, mmap_mode='c')
                 theta_crit_weights = np.ones_like(theta_crits)
         else:
             load = False
@@ -340,6 +348,7 @@ def get_theta_crits(z_cut, beta, load=True, save=True,
 # ---------------------------------
 # Subsequent
 # ---------------------------------
+@timing
 def get_c_subs(z_cut, beta, load=True, save=True,
                theta_crits=None, rad_crit_sub=None):
     if load:
@@ -350,12 +359,13 @@ def get_c_subs(z_cut, beta, load=True, save=True,
             try:
                 # Loading files and samples:
                 sample_dict = np.load(sudakov_crit_sub_sample_file(z_cut, beta),
-                                      allow_pickle=True)
+                                      allow_pickle=True, mmap_mode='c')
                 c_subs = sample_dict['samples']
                 c_sub_weights = sample_dict['weights']
             except:
                 # Old syntax for loading files, for backwards compatibility
-                c_subs = np.load(sudakov_crit_sub_sample_file(z_cut, beta))
+                c_subs = np.load(sudakov_crit_sub_sample_file(z_cut, beta),
+                                 allow_pickle=True, mmap_mode='c')
                 c_sub_weights = np.ones_like(c_subs)
         else:
             load = False
@@ -420,6 +430,7 @@ def get_c_subs(z_cut, beta, load=True, save=True,
 # ---------------------------------
 # Pre-Critical
 # ---------------------------------
+@timing
 def get_z_pres(z_cut, load=True, save=True,
                theta_crits=None, rad_pre=None):
     if load:
@@ -430,12 +441,13 @@ def get_z_pres(z_cut, load=True, save=True,
             try:
                 # Loading files and samples:
                 sample_dict = np.load(sudakov_pre_sample_file(z_cut),
-                                      allow_pickle=True)
+                                      allow_pickle=True, mmap_mode='c')
                 z_pres = sample_dict['samples']
                 z_pre_weights = sample_dict['weights']
             except:
                 # Old syntax for loading files, for backwards compatibility
-                z_pres = np.load(sudakov_pre_sample_file(z_cut))
+                z_pres = np.load(sudakov_pre_sample_file(z_cut),
+                                 allow_pickle=True, mmap_mode='c')
                 z_pre_weights = np.ones_like(z_pres)
         else:
             load = False
@@ -468,8 +480,6 @@ def get_z_pres(z_cut, load=True, save=True,
         for i, theta in enumerate(theta_crits):
             def cdf_pre_conditional(z_pre):
                 return np.exp(-1.*rad_pre(z_pre, theta, z_cut))
-            # DEBUG
-            print(cdf_pre_conditional(.0001))
 
             z_pre, z_pre_weight = samples_from_cdf(cdf_pre_conditional, 1,
                                                 domain=[0,z_cut],
@@ -508,6 +518,7 @@ def get_z_pres(z_cut, load=True, save=True,
 # Parton shower files
 # =====================================
 # Correlation files
+@timing
 def ps_correlations(beta, f_soft=1):
     # Getting filenames using proxy shower:
     shower = parton_shower(fixed_coupling=FIXED_COUPLING,
@@ -523,7 +534,8 @@ def ps_correlations(beta, f_soft=1):
     if VERBOSE > 0:
         print("    Loading parton shower data from:", ps_file)
     try:
-        ps_data = np.load(ps_file, allow_pickle=True)
+        ps_data = np.load(ps_file, allow_pickle=True,
+                          mmap_mode='c')
     except FileNotFoundError:
         print("    Trying to load data from file:", ps_file)
         print("    File not found.\n\n")
@@ -544,6 +556,7 @@ def ps_correlations(beta, f_soft=1):
 # =====================================
 # Function Files
 # =====================================
+@timing
 def get_splitting_function():
     """Load the splitting function for the given params"""
     with open (splitfn_path, 'rb') as file:
@@ -555,6 +568,7 @@ def get_splitting_function():
     return split_fn_num
 
 
+@timing
 def get_radiator_functions():
     # Setup
     radiators = {'info': {}}
@@ -621,6 +635,7 @@ def get_radiator_functions():
 
     return radiators
 
+@timing
 def get_pythia_data(include=['raw', 'softdrop', 'rss']):
     # Dictionary of Pythia data
     if 'raw' in include:

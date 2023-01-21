@@ -174,7 +174,7 @@ then
 # ============================
 # Plotting Radiators:
 # ============================
-```python3 examples/radiator_comparisons/radiator_comparison.py```
+# examples/radiator_comparisons/radiator_comparison.py
 \n"
 	python3 examples/radiator_comparisons/radiator_comparison.py
 printf "
@@ -198,7 +198,7 @@ then
 # ----------------------------
 # Soft Drop:
 # ----------------------------
-```python3 examples/sudakov_comparisons/sudakov_comparison_softdrop_numeric.py```
+# python3 examples/sudakov_comparisons/sudakov_comparison_softdrop_numeric.py
 \n"
 	python3 examples/sudakov_comparisons/sudakov_comparison_softdrop_numeric.py
 	fi
@@ -211,7 +211,7 @@ then
 # ----------------------------
 # Recursive Safe Subtraction:
 # ----------------------------
-```python3 examples/sudakov_comparisons/sudakov_comparison_3column.py```
+# python3 examples/sudakov_comparisons/sudakov_comparison_3column.py
 \n"
 	python3 examples/sudakov_comparisons/sudakov_comparison_full.py
 	# Doing a 3 column approach for the paper plots
@@ -223,7 +223,7 @@ printf "
 "
 else
     printf "
-```python3 examples/sudakov_comparisons/sudakov_comparison_numeric.py```
+# python3 examples/sudakov_comparisons/sudakov_comparison_numeric.py
     "
 	python3 examples/sudakov_comparisons/sudakov_comparison_numeric.py
 fi

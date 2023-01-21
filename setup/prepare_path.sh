@@ -50,6 +50,7 @@ path_append() {
 }
 
 path_append PYTHONPATH $PWD
+export PYTHONPATH=$PYTHONPATH
 
 
 # ============================

@@ -5,7 +5,9 @@ from scipy import interpolate
 from scipy.misc import derivative
 from pynverse import inversefunc
 
+# Local utils for function interpolation
 from jetmontecarlo.utils.interpolation_function_utils import lin_log_mixed_list
+
 
 def getLinSample(sample_min, sample_max):
     """
@@ -24,6 +26,7 @@ def getLinSample(sample_min, sample_max):
         sample_min and sample_max.
     """
     return sample_min + random.random()*(sample_max-sample_min)
+
 
 def getLogSample(sample_min, sample_max, epsilon=1e-8):
     """
@@ -85,6 +88,7 @@ def getLogSample_zerobin(sample_min, sample_max, cum_dist,
     logsample = (np.log(epsilon)*random.random()
                  + np.log(sample_max-sample_min))
     return sample_min + np.exp(logsample)
+
 
 def samples_from_cdf(cdf, num_samples, domain=None,
                      catch_turnpoint=False,
@@ -149,35 +153,94 @@ def samples_from_cdf(cdf, num_samples, domain=None,
                 else:
                     pnts = lin_log_mixed_list(domain[0], domain[1], 1000)
 
-            #----------------------------------------------------
-            # If it is always 1, simply return zeros (the zero bin)!
-            #----------------------------------------------------
+            # Finding where the cdf is not monotone
             cdf_vals = np.nan_to_num(cdf(pnts))
-            if all(cdf_vals == 1.):
-                if verbose > 4:
-                    print("CDF always 1. Returning zero bin.")
-                return np.zeros(num_samples), np.ones(num_samples)
-
-            # Otherwise, find where it is not monotone
             monotone = cdf_vals[:-1] <= cdf_vals[1:]
+
+            # - - - - - - - - - - - - - -
+            # Addressing num. instability
+            # - - - - - - - - - - - - - -
+            if monotone.all():
+                # If it is monotone everywhere in the probed domain,
+                # there's probably some small numerical instability
+                # in the interpolation that's unimportant but
+                # manifesting as non-monotonicity -- we can force
+                # monotonicity here in the same way that we would
+                # using `force_monotone` later
+                samples = inverse_transform_samples(cdf_vals, pnts,
+                                                    num_samples) 
+                weights = np.ones_like(samples)
+                return samples, weights
 
             bad_xvals_low = np.array([pnts[i] for i in range(len(monotone))
                                       if not monotone[i]])
             bad_xvals_high = np.array([pnts[i+1] for i in range(len(monotone))
                                        if not monotone[i]])
+            # try:
             bad_cdf_low = cdf(np.unique(bad_xvals_low))
             bad_cdf_high = cdf(np.unique(bad_xvals_high))
+            # except ValueError as e:
+            #     # Common error from scipy's `bisplev` function
+            #     # I haven't figured out how to fix it, and I think
+            #     # it is safe to proceed if this gets thrown
+            #     if str(e) == "Invalid input data":
+            #         if verbose > 2:
+            #             warnings.warn("Received ValueError: Invalid input "
+            #                           "data, in part A of samples_from_cdf:\n"
+            #                           +"# - - - - - - - - - - - - - - - - "
+            #                           +"\n    "+str(e)+"\n"
+            #                           +"# - - - - - - - - - - - - - - - - "
+            #                           +"\n")
+            #         if verbose > 6:
+            #             print("Received 'Invalid input data' error, "
+            #                   +"presumably from scipy's bisplev. "
+            #                   +"Proceeding regardless.")
+            #         pass
+            #     else:
+            #         raise e
 
+            #==============================
+            # Zero-Bin use cases
+            #==============================
+            # - - - - - - - - - - - - - -
+            # If CDF is always 1
+            # - - - - - - - - - - - - - -
+            # If the cdf is always 1, then the corresponding pdf
+            # is a "delta function" (or histogram equivalent)
+            # at the zero bin
+            if all(cdf_vals == 1.):
+                if verbose > 4:
+                    print("CDF always 1. Returning zero bin.")
+                return np.zeros(num_samples), np.ones(num_samples)
 
+            # - - - - - - - - - - - - - -
+            # If the CDF starts at 1 
+            # - - - - - - - - - - - - - -
+            # If the lowest fluctation is at the lower bound of the domain,
+            # and the cdf appears to be 1 near there
+            if bad_xvals_low[0] == pnts[0] and bad_cdf_low[0] == 1:
+                # If the CDF starts out as 1 from the lowest point already,
+                # inverse transform should yield all zeros
+                if verbose>1:
+                    print("Found non-monotone cdf behavior at minimum "
+                          +"value of domain. Drawing from zero bin.")
+                return np.zeros(num_samples), np.ones(num_samples)
+
+            #==============================
+            # Overflow Bin use cases
+            #==============================
             # Another situation I've run into is that the CDF is monotone,
             # but close to zero everywhere in the domain, or a part of
             # the domain.
-            # We can solve this type of issue by removing the "bad" part
-            # of the domain:
+            # Setting the threshold for a "negligible" CDF
             cdf_threshold = 1e-20
 
-            # * if the CDF is _always_ miniscule, I return the highest
-            #   value in the domain:
+            # - - - - - - - - - - - - - -
+            # If CDF is always negligible
+            # - - - - - - - - - - - - - -
+            # If the CDF is _always_ miniscule,
+            # I return the highest value in the
+            # domain (an 'overflow bin')
             if all(cdf_vals < cdf_threshold):
                 if verbose > 4:
                     print("CDF always negligible. Returning highest point in domain.")
@@ -185,9 +248,12 @@ def samples_from_cdf(cdf, num_samples, domain=None,
                 weights = np.ones_like(samples)
                 return samples, weights
 
-            # * if the CDF is miniscule up to some point in the domain, but
-            #   monotone increasing afterwards, I remove the "bad" part
-            #   from the domain and try again
+            # - - - - - - - - - - - - - -
+            # If the CDF is negligible up to some point
+            # - - - - - - - - - - - - - -
+            # If the CDF is miniscule up to some point in the domain, but
+            # monotone increasing afterwards, I remove the "bad" part
+            # from the domain and try again
             for i, (cdf_val, point) in enumerate(zip(cdf_vals, pnts)):
                 # If we find a point where the CDF is no longer
                 # miniscule
@@ -208,8 +274,55 @@ def samples_from_cdf(cdf, num_samples, domain=None,
                                             force_monotone=force_monotone,
                                             verbose=verbose)
 
-            #----------------------------------------------------
-            # Verbose comments pointing out features of cdf
+            #==============================
+            # "Brute Force" use cases
+            #==============================
+            # We may also brute force monotonicity if either
+            # catch_turnpoint or force_monotone are true:
+            # - - - - - - - - - - - - - -
+            # Catching turning points
+            # - - - - - - - - - - - - - -
+            if bad_cdf_low[0] == 1 and catch_turnpoint:
+                # If the CDF reaches 1 at a particular location,
+                # and we expect the CDF to be valid only up to that point
+                # (where the CDF may `turn around' and start decreasing):
+                if verbose>1:
+                    print("Found turning point of CDF. Adjusting sampling.")
+                return samples_from_cdf(cdf=cdf, num_samples=num_samples,
+                                        domain=[domain[0],bad_xvals_low[0]],
+                                        catch_turnpoint=catch_turnpoint,
+                                        backup_cdf=backup_cdf,
+                                        force_monotone=force_monotone,
+                                        verbose=verbose)
+
+            # - - - - - - - - - - - - - -
+            # Forcing monotone behavior
+            # - - - - - - - - - - - - - -
+            if force_monotone:
+                # If we _really_ want to force the CDF to be monotone,
+                # we can do so by removing the points in the domain where
+                # the CDF is not monotone, using monotone interpolation
+                # on the resulting values, and then drawing from the
+                # resulting new/monotonic CDF.
+                if verbose>1:
+                    print("Found non-monotone cdf behavior. Forcing "+
+                          "monotonic behavior.")
+                # Getting new CDF values and x values which force
+                # monotonicity
+                new_cdf_vals = cdf_vals[:-1][monotone]
+                new_x_vals = pnts[:-1][monotone]
+
+                # Sampling from the new forced CDF
+                samples = inverse_transform_samples(new_cdf_vals, new_x_vals,
+                                                    num_samples)
+                return samples, np.ones_like(samples)
+
+            #==============================
+            # Verbose Output
+            #==============================
+            # If none of the above approaches work, we'll
+            # output some more information about the
+            # features of the cdf:
             if verbose > 2:
                 print("Points from "+str(domain[0])+" to "+str(domain[1])
                       +": " + str(pnts))
@@ -231,52 +344,9 @@ def samples_from_cdf(cdf, num_samples, domain=None,
             if verbose > 0:
                 print('[lower, higher] cdf_val where monotonicity is broken: '
                         + str([bad_cdf_low, bad_cdf_high]))
-            #----------------------------------------------------
 
-            #----------------------------------------------------
-            # Other common use cases:
-            #----------------------------------------------------
-            # If the lowest fluctation is at the lower bound of the domain,
-            # and the cdf appears to be 1 near there
-            if bad_xvals_low[0] == pnts[0] and bad_cdf_low[0] == 1:
-                # If the CDF starts out as 1 from the lowest point already,
-                # inverse transform should yield all zeros
-                if verbose>1:
-                    print("Found non-monotone cdf behavior at minimum "
-                          +"value of domain. Drawing from zero bin.")
-                return np.zeros(num_samples), np.ones(num_samples)
 
-            elif bad_cdf_low[0] == 1 and catch_turnpoint:
-                # Otherwise, if the CDF reaches 1 at a particular location,
-                # and we expect the CDF to be valid only up to that point
-                # (where the CDF may `turn around' and start decreasing):
-                if verbose>1:
-                    print("Found turning point of CDF. Adjusting sampling.")
-                return samples_from_cdf(cdf=cdf, num_samples=num_samples,
-                                        domain=[domain[0],bad_xvals_low[0]],
-                                        catch_turnpoint=catch_turnpoint,
-                                        backup_cdf=backup_cdf,
-                                        force_monotone=force_monotone,
-                                        verbose=verbose)
-            elif force_monotone:
-                # If we _really_ want to force the CDF to be monotone,
-                # we can do so by removing the points in the domain where
-                # the CDF is not monotone, using monotone interpolation
-                # on the resulting values, and then drawing from the
-                # resulting new/monotonic CDF.
-                if verbose>1:
-                    print("Found non-monotone cdf behavior. Forcing "+
-                          "monotonic behavior.")
-                # Getting new CDF values and x values which force
-                # monotonicity
-                new_cdf_vals = cdf_vals[:-1][monotone]
-                new_x_vals = pnts[:-1][monotone]
-
-                # Sampling from the new forced CDF
-                samples = inverse_transform_samples(new_cdf_vals, new_x_vals,
-                                                    num_samples)
-                return samples, np.ones_like(samples)
-
+            #==============================
             # After trying to catch the above cases, we can try to invert the
             # CDF again
             try:
