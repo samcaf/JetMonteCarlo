@@ -54,7 +54,8 @@ class sampler(ABC):
 
     def loadSamples(self, filename):
         """Loads samples and area from filename.npz"""
-        npzfile = np.load(filename)
+        npzfile = np.load(filename, allow_pickle=True,
+                          mmap_mode='c')
         self.samples = npzfile['samples']
         self.area = npzfile['area']
 
