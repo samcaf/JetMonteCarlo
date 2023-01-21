@@ -165,8 +165,28 @@ def samples_from_cdf(cdf, num_samples, domain=None,
                                       if not monotone[i]])
             bad_xvals_high = np.array([pnts[i+1] for i in range(len(monotone))
                                        if not monotone[i]])
-            bad_cdf_low = cdf(np.unique(bad_xvals_low))
-            bad_cdf_high = cdf(np.unique(bad_xvals_high))
+            try:
+                bad_cdf_low = cdf(np.unique(bad_xvals_low))
+                bad_cdf_high = cdf(np.unique(bad_xvals_high))
+            except ValueError as e:
+                # Common error from scipy's `bisplev` function
+                # I haven't figured out how to fix it, and I think
+                # it is safe to proceed if this gets thrown
+                if str(e) == "Invalid input data":
+                    if verbose > 2:
+                        warnings.warn("Received ValueError: Invalid input "
+                                      "data, in part A of samples_from_cdf:\n"
+                                      +"# - - - - - - - - - - - - - - - - "
+                                      +"\n    "+str(e)+"\n"
+                                      +"# - - - - - - - - - - - - - - - - "
+                                      +"\n")
+                    if verbose > 6:
+                        print("Received 'Invalid input data' error, "
+                              +"presumably from scipy's bisplev. "
+                              +"Proceeding regardless.")
+                    pass
+                else:
+                    raise e
 
 
             # Another situation I've run into is that the CDF is monotone,
