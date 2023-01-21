@@ -155,6 +155,7 @@ if MULTIPLE_EMISSIONS:
     extra_label += 'ME_'
 
 # Samples generated via inverse transform from Sudakov Functions
+@timing
 def sudakov_crit_sample_file(z_cut, beta):
     beta = float(beta)
     crit_sample_file = ("theta_crits"
@@ -169,6 +170,7 @@ def sudakov_crit_sample_file(z_cut, beta):
         print("  crit sample file path:", sudakov_sample_folder / crit_sample_file)
     return sudakov_sample_folder / crit_sample_file
 
+@timing
 def sudakov_raw_sample_file(beta):
     beta=float(beta)
     sub_sample_file = ("c_subs"
@@ -182,6 +184,7 @@ def sudakov_raw_sample_file(beta):
         print("  sub sample file path:", sudakov_sample_folder / sub_sample_file)
     return sudakov_sample_folder / sub_sample_file
 
+@timing
 def sudakov_crit_sub_sample_file(z_cut, beta):
     beta=float(beta)
     crit_sub_sample_file = ("c_subs_from_crits"
@@ -196,6 +199,7 @@ def sudakov_crit_sub_sample_file(z_cut, beta):
         print("  crit sub sample file path:", sudakov_sample_folder / crit_sub_sample_file)
     return sudakov_sample_folder / crit_sub_sample_file
 
+@timing
 def sudakov_pre_sample_file(z_cut):
     pre_sample_file = ("z_pres_from_crits"
                        +"_obs"+str(OBS_ACC)
@@ -221,6 +225,7 @@ def sudakov_pre_sample_file(z_cut):
 # ---------------------------------
 # Ungroomed
 # ---------------------------------
+@timing
 def get_c_raw(beta, load=True, save=True, rad_raw=None):
     if load:
         if sudakov_raw_sample_file(beta).is_file():
@@ -280,6 +285,7 @@ def get_c_raw(beta, load=True, save=True, rad_raw=None):
 # ---------------------------------
 # Critical
 # ---------------------------------
+@timing
 def get_theta_crits(z_cut, beta, load=True, save=True,
                     rad_crit=None):
     if load:
@@ -340,6 +346,7 @@ def get_theta_crits(z_cut, beta, load=True, save=True,
 # ---------------------------------
 # Subsequent
 # ---------------------------------
+@timing
 def get_c_subs(z_cut, beta, load=True, save=True,
                theta_crits=None, rad_crit_sub=None):
     if load:
@@ -420,6 +427,7 @@ def get_c_subs(z_cut, beta, load=True, save=True,
 # ---------------------------------
 # Pre-Critical
 # ---------------------------------
+@timing
 def get_z_pres(z_cut, load=True, save=True,
                theta_crits=None, rad_pre=None):
     if load:
@@ -506,6 +514,7 @@ def get_z_pres(z_cut, load=True, save=True,
 # Parton shower files
 # =====================================
 # Correlation files
+@timing
 def ps_correlations(beta, f_soft=1):
     # Getting filenames using proxy shower:
     shower = parton_shower(fixed_coupling=FIXED_COUPLING,
@@ -542,6 +551,7 @@ def ps_correlations(beta, f_soft=1):
 # =====================================
 # Function Files
 # =====================================
+@timing
 def get_splitting_function():
     """Load the splitting function for the given params"""
     with open (splitfn_path, 'rb') as file:
@@ -553,6 +563,7 @@ def get_splitting_function():
     return split_fn_num
 
 
+@timing
 def get_radiator_functions():
     # Setup
     radiators = {'info': {}}
@@ -619,6 +630,7 @@ def get_radiator_functions():
 
     return radiators
 
+@timing
 def get_pythia_data(include=['raw', 'softdrop', 'rss']):
     # Dictionary of Pythia data
     if 'raw' in include:
