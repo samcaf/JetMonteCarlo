@@ -468,8 +468,6 @@ def get_z_pres(z_cut, load=True, save=True,
         for i, theta in enumerate(theta_crits):
             def cdf_pre_conditional(z_pre):
                 return np.exp(-1.*rad_pre(z_pre, theta, z_cut))
-            # DEBUG
-            print(cdf_pre_conditional(.0001))
 
             z_pre, z_pre_weight = samples_from_cdf(cdf_pre_conditional, 1,
                                                 domain=[0,z_cut],
