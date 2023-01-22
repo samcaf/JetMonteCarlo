@@ -66,17 +66,17 @@ NUM_MC_EVENTS = int(1e4)
 NUM_SHOWER_EVENTS = int(5e5)
 
 # MC Sampling Switches:
-LOAD_MC_EVENTS = False
+LOAD_MC_EVENTS = True
 # Default True: phase space doesn't change, only weights do
 SAVE_MC_EVENTS = True
 
 # MC Radiator Switches:
-LOAD_MC_RADS = False
+LOAD_MC_RADS = True
 # Default False, to generate radiators with the correct parameters
 SAVE_MC_RADS = True
 
 # MC Splitting Function Switches:
-LOAD_SPLITTING_FNS = False
+LOAD_SPLITTING_FNS = True
 # Default False, to generate splitting functions with the correct parameters
 SAVE_SPLITTING_FNS = True
 

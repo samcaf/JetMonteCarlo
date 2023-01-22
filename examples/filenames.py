@@ -157,7 +157,39 @@ else:
 if MULTIPLE_EMISSIONS:
     extra_label += 'ME_'
 
+
 # Samples generated via inverse transform from Sudakov Functions
+@timing
+def sudakov_raw_sample_file(beta):
+    beta=float(beta)
+    raw_sample_file = ("c_raws"
+                        +"_obs"+str(OBS_ACC)
+                        +"_splitfn"+str(SPLITFN_ACC)
+                       +"_beta"+str(beta)
+                       +"_{:.0e}".format(NUM_MC_EVENTS)
+                       +extra_label
+                       +"samples.npy")
+    if VERBOSE > 2:
+        print("  raw sample file path:",
+              sudakov_sample_folder / raw_sample_file)
+    return sudakov_sample_folder / raw_sample_file
+
+@timing
+def sudakov_raw_weight_file(beta):
+    beta=float(beta)
+    raw_weight_file = ("c_raw_weights"
+                        +"_obs"+str(OBS_ACC)
+                        +"_splitfn"+str(SPLITFN_ACC)
+                       +"_beta"+str(beta)
+                       +"_{:.0e}".format(NUM_MC_EVENTS)
+                       +extra_label
+                       +"samples.npy")
+    if VERBOSE > 2:
+        print("  raw sample file path:",
+              sudakov_sample_folder / raw_weight_file)
+    return sudakov_sample_folder / raw_weight_file
+
+
 @timing
 def sudakov_crit_sample_file(z_cut, beta):
     beta = float(beta)
@@ -174,18 +206,21 @@ def sudakov_crit_sample_file(z_cut, beta):
     return sudakov_sample_folder / crit_sample_file
 
 @timing
-def sudakov_raw_sample_file(beta):
-    beta=float(beta)
-    sub_sample_file = ("c_subs"
+def sudakov_crit_weight_file(z_cut, beta):
+    beta = float(beta)
+    crit_weight_file = ("theta_crit_weights"
                         +"_obs"+str(OBS_ACC)
                         +"_splitfn"+str(SPLITFN_ACC)
-                       +"_beta"+str(beta)
-                       +"_{:.0e}".format(NUM_MC_EVENTS)
-                       +extra_label
-                       +"samples.npy")
+                        +"_zc"+str(z_cut)
+                        +"_beta"+str(beta)
+                        +"_{:.0e}".format(NUM_MC_EVENTS)
+                        +extra_label
+                        +"samples.npy")
     if VERBOSE > 2:
-        print("  sub sample file path:", sudakov_sample_folder / sub_sample_file)
-    return sudakov_sample_folder / sub_sample_file
+        print("  crit weight file path:",
+              sudakov_sample_folder / crit_weight_file)
+    return sudakov_sample_folder / crit_weight_file
+
 
 @timing
 def sudakov_crit_sub_sample_file(z_cut, beta):
@@ -203,6 +238,23 @@ def sudakov_crit_sub_sample_file(z_cut, beta):
     return sudakov_sample_folder / crit_sub_sample_file
 
 @timing
+def sudakov_crit_sub_weight_file(z_cut, beta):
+    beta=float(beta)
+    crit_sub_weight_file = ("c_sub_weights_from_crits"
+                            +"_obs"+str(OBS_ACC)
+                            +"_splitfn"+str(SPLITFN_ACC)
+                            +"_zc"+str(z_cut)
+                            +"_beta"+str(beta)
+                            +"_{:.0e}".format(NUM_MC_EVENTS)
+                            +extra_label
+                            +"samples.npy")
+    if VERBOSE > 2:
+        print("  crit sub weiight file path:",
+              sudakov_sample_folder / crit_sub_weight_file)
+    return sudakov_sample_folder / crit_sub_weight_file
+
+
+@timing
 def sudakov_pre_sample_file(z_cut):
     pre_sample_file = ("z_pres_from_crits"
                        +"_obs"+str(OBS_ACC)
@@ -214,6 +266,20 @@ def sudakov_pre_sample_file(z_cut):
     if VERBOSE > 2:
         print("  pre sample file path:", sudakov_sample_folder / pre_sample_file)
     return sudakov_sample_folder / pre_sample_file
+
+@timing
+def sudakov_pre_weight_file(z_cut):
+    pre_weight_file = ("z_pre_weights_from_crits"
+                       +"_obs"+str(OBS_ACC)
+                       +"_splitfn"+str(SPLITFN_ACC)
+                       +"_zc"+str(z_cut)
+                       +"_{:.0e}".format(NUM_MC_EVENTS)
+                       +extra_label
+                       +"samples.npy")
+    if VERBOSE > 2:
+        print("  pre sample weight path:",
+              sudakov_sample_folder / pre_weight_file)
+    return sudakov_sample_folder / pre_weight_file
 
 
 # ####################################
@@ -236,10 +302,10 @@ def get_c_raw(beta, load=True, save=True, rad_raw=None):
                   flush=True)
             try:
                 # Loading files and samples:
-                sample_dict = np.load(sudakov_raw_sample_file(beta),
-                                      allow_pickle=True, mmap_mode='c')
-                c_raws = sample_dict['samples']
-                c_raw_weights = sample_dict['weights']
+                c_raws = np.load(sudakov_raw_sample_file(beta),
+                                 allow_pickle=True, mmap_mode='c')
+                c_raw_weights = np.load(sudakov_raw_sample_file(beta),
+                                    allow_pickle=True, mmap_mode='c')
             except:
                 # Old syntax for loading files, for backwards compatibility
                 c_raws = np.load(sudakov_raw_sample_file(beta),
@@ -280,9 +346,8 @@ def get_c_raw(beta, load=True, save=True, rad_raw=None):
 
         # Save samples and weights
         if save:
-            np.savez(sudakov_raw_sample_file(beta),
-                     samples=c_raws,
-                     weights=c_raw_weights)
+            np.save(sudakov_raw_sample_file(beta), c_raws)
+            np.save(sudakov_raw_weight_file(beta), c_raw_weights)
 
     return c_raws, c_raw_weights
 
@@ -298,10 +363,10 @@ def get_theta_crits(z_cut, beta, load=True, save=True,
                   flush=True)
             try:
                 # Loading files and samples:
-                sample_dict = np.load(sudakov_crit_sample_file(z_cut, beta),
+                theta_crits = np.load(sudakov_crit_sample_file(z_cut, beta),
                                       allow_pickle=True, mmap_mode='c')
-                theta_crits = sample_dict['samples']
-                theta_crit_weights = sample_dict['weights']
+                theta_crit_weights = np.load(sudakov_crit_weight_file(z_cut, beta),
+                                      allow_pickle=True, mmap_mode='c')
             except:
                 # Old syntax for loading files, for backwards compatibility
                 theta_crits = np.load(sudakov_crit_sample_file(z_cut, beta),
@@ -342,9 +407,10 @@ def get_theta_crits(z_cut, beta, load=True, save=True,
 
         # Save samples and weights
         if save:
-            np.savez(sudakov_crit_sample_file(z_cut, beta),
-                     samples=theta_crits,
-                     weights=theta_crit_weights)
+            np.save(sudakov_crit_sample_file(z_cut, beta),
+                    theta_crits)
+            np.save(sudakov_crit_weight_file(z_cut, beta),
+                    theta_crit_weights)
     return theta_crits, theta_crit_weights, load
 
 
@@ -361,10 +427,10 @@ def get_c_subs(z_cut, beta, load=True, save=True,
                   flush=True)
             try:
                 # Loading files and samples:
-                sample_dict = np.load(sudakov_crit_sub_sample_file(z_cut, beta),
-                                      allow_pickle=True, mmap_mode='c')
-                c_subs = sample_dict['samples']
-                c_sub_weights = sample_dict['weights']
+                c_subs = np.load(sudakov_crit_sub_sample_file(z_cut, beta),
+                              allow_pickle=True, mmap_mode='c')
+                c_sub_weights = np.load(sudakov_crit_sub_weight_file(z_cut, beta),
+                                allow_pickle=True, mmap_mode='c')
             except:
                 # Old syntax for loading files, for backwards compatibility
                 c_subs = np.load(sudakov_crit_sub_sample_file(z_cut, beta),
@@ -423,9 +489,10 @@ def get_c_subs(z_cut, beta, load=True, save=True,
 
         # Save samples and weights
         if save:
-            np.savez(sudakov_crit_sub_sample_file(z_cut, beta),
-                     samples=c_subs,
-                     weights=c_sub_weights)
+            np.save(sudakov_crit_sub_sample_file(z_cut, beta),
+                    c_subs)
+            np.save(sudakov_crit_sub_sample_file(z_cut, beta),
+                    c_sub_weights)
 
     return c_subs, c_sub_weights, load
 
@@ -443,10 +510,10 @@ def get_z_pres(z_cut, load=True, save=True,
                   flush=True)
             try:
                 # Loading files and samples:
-                sample_dict = np.load(sudakov_pre_sample_file(z_cut),
-                                      allow_pickle=True, mmap_mode='c')
-                z_pres = sample_dict['samples']
-                z_pre_weights = sample_dict['weights']
+                z_pres = np.load(sudakov_pre_sample_file(z_cut),
+                              allow_pickle=True, mmap_mode='c')
+                z_pre_weights = np.load(sudakov_pre_weight_file(z_cut),
+                                allow_pickle=True, mmap_mode='c')
             except:
                 # Old syntax for loading files, for backwards compatibility
                 z_pres = np.load(sudakov_pre_sample_file(z_cut),
@@ -510,9 +577,10 @@ def get_z_pres(z_cut, load=True, save=True,
 
         # Save samples and weights
         if save:
-            np.savez(sudakov_pre_sample_file(z_cut),
-                     samples=z_pres,
-                     weights=z_pre_weights)
+            np.save(sudakov_pre_weight_file(z_cut),
+                    z_pres)
+            np.save(sudakov_pre_weight_file(z_cut),
+                    z_pre_weights)
 
     return z_pres, z_pre_weights, load
 
