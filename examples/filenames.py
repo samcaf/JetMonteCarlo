@@ -300,17 +300,11 @@ def get_c_raw(beta, load=True, save=True, rad_raw=None):
         if sudakov_raw_sample_file(beta).is_file():
             print("    Loading ungroomed samples with beta="+str(beta)+"...",
                   flush=True)
-            try:
-                # Loading files and samples:
-                c_raws = np.load(sudakov_raw_sample_file(beta),
-                                 allow_pickle=True, mmap_mode='c')
-                c_raw_weights = np.load(sudakov_raw_sample_file(beta),
-                                    allow_pickle=True, mmap_mode='c')
-            except:
-                # Old syntax for loading files, for backwards compatibility
-                c_raws = np.load(sudakov_raw_sample_file(beta),
-                                 allow_pickle=True, mmap_mode='c')
-                c_raw_weights = np.ones_like(c_raws)
+            # Loading files and samples:
+            c_raws = np.load(sudakov_raw_sample_file(beta),
+                                allow_pickle=True, mmap_mode='c')
+            c_raw_weights = np.load(sudakov_raw_sample_file(beta),
+                                allow_pickle=True, mmap_mode='c')
         else:
             load = False
             if LOAD_MC_EVENTS:
@@ -361,17 +355,11 @@ def get_theta_crits(z_cut, beta, load=True, save=True,
         if sudakov_crit_sample_file(z_cut, beta).is_file():
             print("    Loading critical samples with z_c="+str(z_cut)+"...",
                   flush=True)
-            try:
-                # Loading files and samples:
-                theta_crits = np.load(sudakov_crit_sample_file(z_cut, beta),
-                                      allow_pickle=True, mmap_mode='c')
-                theta_crit_weights = np.load(sudakov_crit_weight_file(z_cut, beta),
-                                      allow_pickle=True, mmap_mode='c')
-            except:
-                # Old syntax for loading files, for backwards compatibility
-                theta_crits = np.load(sudakov_crit_sample_file(z_cut, beta),
-                                      allow_pickle=True, mmap_mode='c')
-                theta_crit_weights = np.ones_like(theta_crits)
+            # Loading files and samples:
+            theta_crits = np.load(sudakov_crit_sample_file(z_cut, beta),
+                                    allow_pickle=True, mmap_mode='c')
+            theta_crit_weights = np.load(sudakov_crit_weight_file(z_cut, beta),
+                                    allow_pickle=True, mmap_mode='c')
         else:
             load = False
             if rad_crit is None:
@@ -425,17 +413,11 @@ def get_c_subs(z_cut, beta, load=True, save=True,
             print("    Loading subsequent samples with beta="+str(beta)+
                   " from crit samples with z_cut="+str(z_cut)+"...",
                   flush=True)
-            try:
-                # Loading files and samples:
-                c_subs = np.load(sudakov_crit_sub_sample_file(z_cut, beta),
-                              allow_pickle=True, mmap_mode='c')
-                c_sub_weights = np.load(sudakov_crit_sub_weight_file(z_cut, beta),
-                                allow_pickle=True, mmap_mode='c')
-            except:
-                # Old syntax for loading files, for backwards compatibility
-                c_subs = np.load(sudakov_crit_sub_sample_file(z_cut, beta),
-                                 allow_pickle=True, mmap_mode='c')
-                c_sub_weights = np.ones_like(c_subs)
+            # Loading files and samples:
+            c_subs = np.load(sudakov_crit_sub_sample_file(z_cut, beta),
+                            allow_pickle=True, mmap_mode='c')
+            c_sub_weights = np.load(sudakov_crit_sub_weight_file(z_cut, beta),
+                            allow_pickle=True, mmap_mode='c')
         else:
             load = False
             if rad_crit_sub is None:
@@ -508,17 +490,11 @@ def get_z_pres(z_cut, load=True, save=True,
             print("    Loading pre-critical samples"
                   +" from crit samples with z_cut="+str(z_cut)+"...",
                   flush=True)
-            try:
-                # Loading files and samples:
-                z_pres = np.load(sudakov_pre_sample_file(z_cut),
-                              allow_pickle=True, mmap_mode='c')
-                z_pre_weights = np.load(sudakov_pre_weight_file(z_cut),
-                                allow_pickle=True, mmap_mode='c')
-            except:
-                # Old syntax for loading files, for backwards compatibility
-                z_pres = np.load(sudakov_pre_sample_file(z_cut),
-                                 allow_pickle=True, mmap_mode='c')
-                z_pre_weights = np.ones_like(z_pres)
+            # Loading files and samples:
+            z_pres = np.load(sudakov_pre_sample_file(z_cut),
+                            allow_pickle=True, mmap_mode='c')
+            z_pre_weights = np.load(sudakov_pre_weight_file(z_cut),
+                            allow_pickle=True, mmap_mode='c')
         else:
             load = False
             if rad_pre is None:
@@ -607,7 +583,7 @@ def ps_correlations(beta, f_soft=1):
     try:
         ps_data = np.load(ps_file, allow_pickle=True,
                           mmap_mode='c')
-    except FileNotFoundError:
+    except FileNotFoundError as error:
         print("    Trying to load data from file:", ps_file)
         print("    File not found.\n\n")
         print("    Params given to parton shower:")
@@ -620,6 +596,7 @@ def ps_correlations(beta, f_soft=1):
         print("        F_RSS:", f_soft)
         print("        JET_TYPE:", JET_TYPE)
         print("    (Few pre-critical emissions)")
+        raise error
 
     return ps_data
 
