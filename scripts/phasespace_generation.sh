@@ -79,8 +79,6 @@ for arg in "$@"; do
 done
 
 while getopts "t:l:v" OPTION; do
-    echo "option : ${OPTION}"
-    echo "optarg : ${OPTARG}"
     case $OPTION in
     t)
         chmod +x setup/set_params.sh
