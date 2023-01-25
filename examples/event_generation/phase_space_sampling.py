@@ -4,7 +4,7 @@ import dill as pickle
 # Local utilities for numerics
 from jetmontecarlo.jets.jet_numerics import *
 from examples.params import *
-from filenames import *
+from examples.filenames import *
 
 ###########################################
 # MC Integration
