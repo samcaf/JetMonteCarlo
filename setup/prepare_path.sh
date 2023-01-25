@@ -8,17 +8,16 @@
 # computing cluster.
 # They should also be changed depending on whether one is
 # using MacOS or Linux.
-supercloud_syntax=false
-linux_or_macos="macos"
+supercloud_syntax=true
+linux_or_macos="linux"
 
-# Changing syntax based on operating system
+# Changing syntax based on operating system.
+# In particular, the syntax of `sed` changes between linux and macos
 case $linux_or_macos in
     "linux")
         cp setup/linux/set_params.sh setup/set_params.sh;;
-        # sed -e 's/supercloud_syntax=.*/supercloud_syntax='$supercloud_syntax'/g' setup/set_params.sh;;
     "macos")
         cp setup/macos/set_params.sh setup/set_params.sh;;
-        # sed -i '' -e 's/supercloud_syntax=.*/supercloud_syntax='$supercloud_syntax'/g' setup/set_params.sh;;
     *)
         echo "Error: linux_or_macos must be set to either 'linux' or 'macos'";
         exit 1;;

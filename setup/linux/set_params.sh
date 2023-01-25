@@ -128,8 +128,7 @@ Options for $0:
 # Reading options
 # ============================
 while getopts "f:j:o:p:m:n:b:c:s:r:v:t:e:a:vh" OPTION; do
-    #echo "option : ${OPTION}"
-    #echo "optarg : ${OPTARG}"
+    # echo "option | optarg : ${OPTION} | ${OPTARG}"
     case $OPTION in
     # --------------------
     # Physics Flags:
@@ -172,17 +171,17 @@ done
 # Setting desired accuracy:
 # ============================
 # Fixed coupling:
-sed -e "s/FIXED_COUPLING = .*/FIXED_COUPLING = "$fixedcoup"/" examples/params.py
+sed -n -e "s/FIXED_COUPLING = .*/FIXED_COUPLING = "$fixedcoup"/" examples/params.py
 # Multiple emissions:
-sed -e "s/MULTIPLE_EMISSIONS = .*/MULTIPLE_EMISSIONS = "$multiple_emissions"/" examples/params.py
+sed -n -e "s/MULTIPLE_EMISSIONS = .*/MULTIPLE_EMISSIONS = "$multiple_emissions"/" examples/params.py
 # Accuracy for f.c. observables and splitting functions is LL by default
-sed -e "s/OBS_ACC = .*/OBS_ACC = '"$obsacc"'/" examples/params.py
-sed -e "s/SPLITFN_ACC = .*/SPLITFN_ACC = '"$splitacc"'/" examples/params.py
+sed -n -e "s/OBS_ACC = .*/OBS_ACC = '"$obsacc"'/" examples/params.py
+sed -n -e "s/SPLITFN_ACC = .*/SPLITFN_ACC = '"$splitacc"'/" examples/params.py
 
 # ============================
 # Setting jet type:
 # ============================
-sed -e "s/JET_TYPE = .*/JET_TYPE = '"$jet_type"'/" examples/params.py
+sed -n -e "s/JET_TYPE = .*/JET_TYPE = '"$jet_type"'/" examples/params.py
 
 # ============================
 # Setting MC parameters:
@@ -190,29 +189,29 @@ sed -e "s/JET_TYPE = .*/JET_TYPE = '"$jet_type"'/" examples/params.py
 # -----------------
 # MC Integration:
 # -----------------
-sed -e "s/NUM_MC_EVENTS = .*/NUM_MC_EVENTS = int("$nmcsamples")/" examples/params.py
-sed -e "s/NUM_RAD_BINS = .*/NUM_RAD_BINS = int("$nbins")/" examples/params.py
-sed -e "s/NUM_SPLITFN_BINS = .*/NUM_SPLITFN_BINS = int("$nbins")/" examples/params.py
+sed -n -e "s/NUM_MC_EVENTS = .*/NUM_MC_EVENTS = int("$nmcsamples")/" examples/params.py
+sed -n -e "s/NUM_RAD_BINS = .*/NUM_RAD_BINS = int("$nbins")/" examples/params.py
+sed -n -e "s/NUM_SPLITFN_BINS = .*/NUM_SPLITFN_BINS = int("$nbins")/" examples/params.py
 
-sed -e "s/LOAD_MC_EVENTS = .*/LOAD_MC_EVENTS = "$load_events"/" examples/params.py
-sed -e "s/SAVE_MC_EVENTS = .*/SAVE_MC_EVENTS = "$save_mc"/" examples/params.py
+sed -n -e "s/LOAD_MC_EVENTS = .*/LOAD_MC_EVENTS = "$load_events"/" examples/params.py
+sed -n -e "s/SAVE_MC_EVENTS = .*/SAVE_MC_EVENTS = "$save_mc"/" examples/params.py
 
-sed -e "s/LOAD_MC_RADS = .*/LOAD_MC_RADS = "$load_fns"/" examples/params.py
-sed -e "s/SAVE_MC_RADS = .*/SAVE_MC_RADS = "$save_rads"/" examples/params.py
+sed -n -e "s/LOAD_MC_RADS = .*/LOAD_MC_RADS = "$load_fns"/" examples/params.py
+sed -n -e "s/SAVE_MC_RADS = .*/SAVE_MC_RADS = "$save_rads"/" examples/params.py
 
-sed -e "s/LOAD_SPLITTING_FNS = .*/LOAD_SPLITTING_FNS = "$load_fns"/" examples/params.py
-sed -e "s/SAVE_SPLITTING_FNS = .*/SAVE_SPLITTING_FNS = "$save_splitfns"/" examples/params.py
+sed -n -e "s/LOAD_SPLITTING_FNS = .*/LOAD_SPLITTING_FNS = "$load_fns"/" examples/params.py
+sed -n -e "s/SAVE_SPLITTING_FNS = .*/SAVE_SPLITTING_FNS = "$save_splitfns"/" examples/params.py
 
 
 # -----------------
 # Parton Showers:
 # -----------------
-sed -e "s/NUM_SHOWER_EVENTS = .*/NUM_SHOWER_EVENTS = int("$nshowers")/" examples/params.py
-sed -e "s/SHOWER_CUTOFF = .*/SHOWER_CUTOFF = "$shower_cutoff"/" examples/params.py
+sed -n -e "s/NUM_SHOWER_EVENTS = .*/NUM_SHOWER_EVENTS = int("$nshowers")/" examples/params.py
+sed -n -e "s/SHOWER_CUTOFF = .*/SHOWER_CUTOFF = "$shower_cutoff"/" examples/params.py
 
-sed -e "s/LOAD_SHOWER_EVENTS = .*/LOAD_SHOWER_EVENTS = "$load_events"/" examples/event_generation/parton_shower_gen.py
-sed -e "s/SAVE_SHOWER_EVENTS = .*/SAVE_SHOWER_EVENTS = "$save_showers"/" examples/event_generation/parton_shower_gen.py
-sed -e "s/SAVE_SHOWER_CORRELATIONS = .*/SAVE_SHOWER_CORRELATIONS = "$save_correlations"/" examples/event_generation/parton_shower_gen.py
+sed -n -e "s/LOAD_SHOWER_EVENTS = .*/LOAD_SHOWER_EVENTS = "$load_events"/" examples/event_generation/parton_shower_gen.py
+sed -n -e "s/SAVE_SHOWER_EVENTS = .*/SAVE_SHOWER_EVENTS = "$save_showers"/" examples/event_generation/parton_shower_gen.py
+sed -n -e "s/SAVE_SHOWER_CORRELATIONS = .*/SAVE_SHOWER_CORRELATIONS = "$save_correlations"/" examples/event_generation/parton_shower_gen.py
 
 # ============================
 # Printing out useful output information
