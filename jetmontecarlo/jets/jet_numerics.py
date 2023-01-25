@@ -32,8 +32,7 @@ from jetmontecarlo.analytics.radiators_fixedcoupling import *
 # Local variables
 # ------------------------------------
 # Verbosity of local functions
-local_verbose = 3
-# Defining variables for later sympy use
+local_verbose = 0
 
 
 ###########################################
@@ -123,25 +122,18 @@ def gen_numerical_radiator(rad_sampler, emission_type,
 
     radiator = rad_integrator.integral
     radiator_error = rad_integrator.integralErr
-    xs = rad_integrator.bins[:-1]
+    xs = rad_integrator.bins
 
     # DEBUG: testing monotonicity
     if local_verbose >= 3:
-        print("crit ints:")
-        print(is_monotonic_arr(radiator, 'decreasing'))
+        print("critical integrals are monotonic:",
+              is_monotonic_arr(radiator, 'decreasing'))
 
     # Reminding the radiator where it needs to stop
     if emission_type == 'crit':
         bounds = [1e-15, 1]
     if emission_type == 'sub':
         bounds = [1e-15, .5]
-    radiator = np.append(radiator, 0)
-    radiator_error = np.append(radiator_error, 0)
-    xs = np.append(xs, bounds[1])
-
-    rad_integrator.integral = radiator
-    rad_integrator.integralErr = radiator_error
-    rad_integrator.bins = np.append(xs, bounds[1])
 
     # Generating an interpolating function
     rad_integrator.makeInterpolatingFn(verbose=local_verbose)
@@ -150,8 +142,8 @@ def gen_numerical_radiator(rad_sampler, emission_type,
 
     # DEBUG: testing monotonicity
     if local_verbose >= 2:
-        print("crit interps:")
-        print(is_monotonic_func(bounded_interp_function, bounds,
+        print("critical interpolating functions are monotonic:",
+              is_monotonic_func(bounded_interp_function, bounds,
                                 'decreasing'))
         print("    Monotonic domain: ",
               monotonic_domain(bounded_interp_function, [0, 1],
@@ -243,7 +235,7 @@ def gen_pre_num_rad(rad_sampler, crit_rad_sampler,
 
     # DEBUG: testing monotonicity
     if local_verbose >= 3:
-        print("pre ints:")
+        print("pre-critical integrals are monotonic:")
         for rad1d in radiator:
             test_monotonicity(rad1d)
 
@@ -253,7 +245,7 @@ def gen_pre_num_rad(rad_sampler, crit_rad_sampler,
 
     # DEBUG: testing monotonicity
     if local_verbose >= 2:
-        print("pre interps:")
+        print("pre-critical interpolating functions are monotonic:")
         for theta in lin_log_mixed_list(np.min(theta_crit), np.max(theta_crit), 250):
             print(f"pre, zc = {rad_sampler.zc}, {theta = }")
             rad1d_fn = lambda x: unbounded_interp_function(x, theta)
@@ -366,26 +358,26 @@ def gen_crit_sub_num_rad(rad_sampler,
         # Radiator, given a maximum angle of theta
         radiator = rad_integrator.integral
         # radiator_error = rad_integrator.integralErr
-        xs = rad_integrator.bins[:-1]
+        xs = rad_integrator.bins
 
         # DEBUG: testing monotonicity
         if local_verbose >= 4:
-            print("crit sub integral 0:")
-            print(is_monotone_arr(radiator, 'decreasing'))
+            print("critical-subsequent integral is monotonic",
+                  "(first try): ",
+                  is_monotone_arr(radiator, 'decreasing'))
 
-        radiator = np.append(radiator, 0)
-        # radiator_error = np.append(radiator_error, 0)
         xs = np.append(xs, C_ungroomed_max(beta, radius=theta_crit,
                                            acc=obs_accuracy))
 
         # DEBUG: testing monotonicity
         if local_verbose >= 3:
-            print("crit sub int:")
-            print(is_monotone_arr(radiator, 'decreasing'))
+            print("critical-subsequent integral is monotonic",
+                  "(second try): ",
+                  is_monotone_arr(radiator, 'decreasing'))
 
         # Saving the function/radiator values, bin edges, and theta value
         rads_all.append(np.array(radiator))
-        # rad_error_all.append(np.array(radiator_error))
+        rad_error_all.append(np.array(radiator_error))
 
         xs_all.append(np.array(xs))
         thetas_all.append(np.ones(len(xs))*theta_crit)
@@ -404,7 +396,8 @@ def gen_crit_sub_num_rad(rad_sampler,
 
     # DEBUG: testing monotonicity
     if local_verbose >= 2:
-        print("crit sub interps:")
+        print("critical-subsequent interpolating function",
+              " is monotonic")
         for theta in lin_log_mixed_list(epsilon, 1, 250):
             rad1d_fn = lambda x: bounded_interp_function(x, theta)
             min_arg = theta**beta * 1e-15

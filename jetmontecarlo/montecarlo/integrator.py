@@ -33,6 +33,7 @@ class integrator():
     def setBins(self, numbins, observables, binspacing,
                 min_log_bin=MIN_LOG_BIN):
         """Sets the bins to be used in weight histograms, pdfs, etc."""
+        # Bins, depending on spacing scheme (linear or logarithmic)
         if binspacing == 'lin':
             self.bins = np.linspace(0, np.max(observables), numbins)
         elif binspacing == 'log':
@@ -40,6 +41,14 @@ class integrator():
             max_bin = np.log10(np.max(observables))
             self.bins = np.logspace(min_bin, max_bin, numbins)
         self.binspacing = binspacing
+
+        # Bin midpoints, depending on spacing scheme
+        if self.binspacing == 'lin':
+            self.bin_midpoints = (self.bins[1:] + self.bins[:-1])/2.
+        elif self.binspacing == 'log':
+            self.bin_midpoints = np.exp((np.log(self.bins[1:])
+                         +np.log(self.bins[:-1]))/2.)
+
         self.hasBins = True
 
     def setLastBinBndCondition(self, bndCond):
@@ -102,13 +111,6 @@ class integrator():
         self.densityErr = ((np.sqrt(square_weightHist)/binWidths)
                            * (area/len(observables)))
 
-        # Setting x values for the density as well
-        if self.binspacing == 'lin':
-            self.density_xs = (self.bins[1:] + self.bins[:-1])/2.
-        elif self.binspacing == 'log':
-            self.density_xs = np.exp((np.log(self.bins[1:])
-                         +np.log(self.bins[:-1]))/2.)
-
         # No points in a given bin -> no information about that bin:
         self.density = np.where(num_in_bin == 0, 0, self.density)
         self.densityErr = np.where(num_in_bin == 0, 0, self.densityErr)
@@ -152,10 +154,8 @@ class integrator():
             cumInt = np.cumsum(self.density*binWidths)
 
             # Finding the value of the integral up to each bin
-            self.integral = self.firstBinBndCond + cumInt
-
-            # Storing the x values of the integral
-            self.integral_xs = self.bins[1:]
+            self.integral = [self.firstBinBndCond,
+                             *(self.firstBinBndCond + cumInt)]
 
             # Finding the error associated with this integration procedure
             self.integralErr = np.cumsum(self.densityErr*binWidths)
@@ -169,12 +169,14 @@ class integrator():
             assert self.lastBinBndCond[1] in ['plus', 'minus'], \
                 "Integration requires lastBinBndCond (plus or minus)"
             if self.lastBinBndCond[1] == 'plus':
-                self.integral = self.lastBinBndCond[0] + reverse_cumInt
+                self.integral = [
+                    *(self.lastBinBndCond[0] + reverse_cumInt),
+                    self.lastBinBndCond[0]]
+                                
             elif self.lastBinBndCond[1] == 'minus':
-                self.integral = self.lastBinBndCond[0] - reverse_cumInt
-
-            # Storing the x values of the integral
-            self.integral_xs = self.bins[:-1]
+                self.integral = [
+                    *(self.lastBinBndCond[0] - reverse_cumInt),
+                    self.lastBinBndCond[0]]
 
             # Finding the error associated with this integration procedure
             self.integralErr = np.cumsum(
@@ -193,11 +195,10 @@ class integrator():
 
     def montecarlo_data_dict(self, info=None):
         return {'bins': self.bins,
+                'bin midpoints': self.bin_midpoints,
                 'density': self.density,
-                'density xs': self.density_xs,
                 'density error': self.densityErr,
                 'integral': self.integral,
-                'integral xs:': self.integral_xs,
                 'integral error': self.integralErr,
                 'info': info}
 
@@ -218,10 +219,10 @@ class integrator():
         binning."""
         assert self.hasMCIntegral, \
             "Need MC integral to produce interpolation"
-
-        self.interpFn = get_1d_interpolation(self.integral_xs,
+        print(f"{len(self.bins)=}, {len(self.integral)=}")
+        self.interpFn = get_1d_interpolation(self.bins,
                                              self.integral,
-                                             monotone=self.monotone,
+                                             monotonic=self.monotone,
                                              **kwargs)
 
         self.hasInterpIntegral = True
@@ -251,7 +252,7 @@ class integrator():
         bins = self.bins
 
         self.interpDensity = get_1d_interpolation(xs, self.density,
-                                             monotone=False,
+                                             monotonic=False,
                                              bounds=(bins[0], bins[-1]),
                                              bound_values=(0., 0.))
         self.hasInterpDensity = True
@@ -294,7 +295,7 @@ class integrator():
         if not self.hasAnalyticIntegral:
             return
 
-        xs = self.density_xs
+        xs = self.bin_midpoints
 
         self.analyticDensity = histDerivative(self.analyticIntegral(xs),
                                               bins, giveHist=False,
@@ -437,7 +438,7 @@ def integrate_1d(function, bounds,
 
     integral = this_integrator.integral
     error = this_integrator.integralErr
-    xs = this_integrator.integral_xs
+    xs = this_integrator.bins
 
     if num_bins == 2:
         return integral[0], error[0], xs[0]
@@ -471,6 +472,7 @@ class integrator_2d():
     def setBins(self, numbins, observables, binspacing,
                 min_log_bin=MIN_LOG_BIN):
         """Sets the bins to be used in weight histograms, pdfs, etc."""
+        # Bins, depending on spacing scheme (linear or logarithmic)
         bins = []
         for i in range(2):
             if binspacing == 'lin':
@@ -480,6 +482,19 @@ class integrator_2d():
                 max_bin = np.log10(np.max(observables[i]))
                 bins.append(np.logspace(min_bin, max_bin, numbins))
         self.bins = bins
+
+        # Bin midpoints, depending on spacing scheme
+        self.bin_midpoints = [[], []]
+        xs, ys = bins[0], bins[1]
+        if binspacing == 'lin':
+            self.bin_midpoints[0] = (xs[1:] + xs[:-1])/2
+            self.bin_midpoints[1] = (ys[1:] + ys[:-1])/2
+        elif binspacing == 'log':
+            self.bin_midpoints = np.exp((np.log(xs[1:])
+                                        +np.log(xs[:-1]))/2.)
+            self.bin_midpoints = np.exp((np.log(ys[1:])
+                                        +np.log(ys[:-1]))/2.)
+
         self.hasBins = True
 
     def setLastBinBndCondition(self, bndCond):
@@ -549,9 +564,6 @@ class integrator_2d():
         self.density = self.density.T
         self.densityErr = self.densityErr.T
 
-        # Getting the x and y values associated with the density
-        self.density_xs, self.density_ys = self.bins[0], self.bins[1]
-
         # Letting the integrator know that it has a weight density:
         self.hasMCDensity = True
 
@@ -617,9 +629,6 @@ class integrator_2d():
             cumError = np.flip(cumError)
             self.integralErr = cumError
 
-        # Getting the x and y values associated with the integral
-        self.integral_xs, self.integral_ys = self.bins[0], self.bins[1]
-
         # Telling the integrator that it has an integral evaulated with MC:
         self.hasMCIntegral = True
 
@@ -627,12 +636,8 @@ class integrator_2d():
     def montecarlo_data_dict(self, info=None):
         return {'bins': self.bins,
                 'density': self.density,
-                'density xs': self.density_xs,
-                'density ys': self.density_ys,
                 'density error': self.densityErr,
                 'integral': self.integral,
-                'integral xs:': self.integral_xs,
-                'integral ys:': self.integral_ys,
                 'integral error': self.integralErr,
                 'info': info}
 
@@ -656,7 +661,7 @@ class integrator_2d():
         """Makes an interpolating function for the integral."""
         assert self.hasMCIntegral, \
             "Need MC integral to produce interpolation"
-        x, y = self.integral_xs, self.integral_ys
+        x, y = self.bins[0], self.bins[1]
 
         if self.useFirstBinBndCond:
             z = []
@@ -709,19 +714,10 @@ class integrator_2d():
 
         assert False, "Unsupported function."
 
-        xs, ys = self.denisty_xs, self.density_ys
-
-        if binspacing == 'lin':
-            xs = (xs[1:] + xs[:-1])/2
-            ys = (ys[1:] + ys[:-1])/2
-        elif binspacing == 'log':
-            xs = np.exp((np.log(xs[1:])
-                         +np.log(xs[:-1]))/2.)
-            ys = np.exp((np.log(ys[1:])
-                         +np.log(ys[:-1]))/2.)
+        xs, ys = self.bin_midpoints[0], self.bin_midpoints[1]
 
         self.interpDensity = interpolate.RegularGridInterpolator(
-                                    (x, y), self.density,
+                                    (xs, ys), self.density,
                                     method='linear', bounds_error=False,
                                     fill_value=None)
         self.hasInterpDensity = True
