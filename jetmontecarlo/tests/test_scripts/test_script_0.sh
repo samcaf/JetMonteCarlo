@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name sudakov_generation
+#SBATCH --job-name test_script_0
 #SBATCH --exclusive
 #SBATCH -c 10
 #SBATCH --mem=0
@@ -19,7 +19,7 @@
 chmod +x setup/prepare_path.sh
 source setup/prepare_path.sh
 
-logfile='test_logfile'
+logfile='test_0_logfile'
 
 # Transform long options to short ones
 args="$@"
@@ -90,7 +90,7 @@ printf "# ============================
 # Date: "`date '+%F'`"-("`date '+%T'`")
 # ============================\n\n"
 
-printf 'Running scripts/test_script.sh ('"$0"') with options:'"\n"
+printf 'Running scripts/test_script_0.sh ('"$0"') with options:'"\n"
 printf '%q ' "$args"
 printf "\n\n"
 
