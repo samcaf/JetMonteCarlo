@@ -134,11 +134,6 @@ CRIT_RADIATORS = []
 PRE_RADIATORS = []
 SUB_RADIATORS = []
 
-# Setting up radiator discrete integrals
-CRIT_INTEGRAL_DATA = {}
-PRE_INTEGRAL_DATA = {}
-SUB_INTEGRAL_DATA = {}
-
 # ----------------------------------
 # Loading Radiators
 # ----------------------------------
@@ -168,6 +163,15 @@ if not LOAD_MC_RADS and SAVE_MC_RADS:
     print("Generating radiators for Monte Carlo integration:")
     if True in [COMPARE_CRIT, COMPARE_CRIT_AND_SUB,
                 COMPARE_PRE_AND_CRIT, COMPARE_ALL]:
+        # Setting up radiator discrete integrals
+        CRIT_INTEGRAL_DATA = {z_cut : {} for z_cut in Z_CUTS}
+        if use_precrit:
+            PRE_INTEGRAL_DATA = {z_cut : {} for z_cut in Z_CUTS}
+        if COMPARE_CRIT_AND_SUB or COMPARE_ALL:
+            SUB_INTEGRAL_DATA = {z_cut : {} for z_cut in Z_CUTS}
+        elif COMPARE_RAW:
+            SUB_INTEGRAL_DATA = {beta : {} for beta in BETAS}
+
         for i, z_cut in enumerate(Z_CUTS):
             if MAKE_CRIT_RAD:
                 print("    Generating critical radiator with cutoff z_cut="
@@ -183,7 +187,7 @@ if not LOAD_MC_RADS and SAVE_MC_RADS:
                                                     fixed_coupling=FIXED_COUPLING,
                                                     num_bins=NUM_RAD_BINS)
                 CRIT_RADIATORS.append(crit_rad)
-                CRIT_INTEGRAL_DATA.append(crit_rad_data)
+                CRIT_INTEGRAL_DATA[z_cut] = crit_rad_data
 
             # Pre-critical radiators
             pre_rad = None
@@ -199,7 +203,7 @@ if not LOAD_MC_RADS and SAVE_MC_RADS:
                                             fixed_coupling=FIXED_COUPLING,
                                             num_bins=NUM_RAD_BINS)
             PRE_RADIATORS.append(pre_rad)
-            PRE_INTEGRAL_DATA.append(pre_rad_data)
+            PRE_INTEGRAL_DATA[z_cut] = pre_rad_data
 
         sub_rad = None
 
@@ -218,7 +222,7 @@ if not LOAD_MC_RADS and SAVE_MC_RADS:
                                                fixed_coupling=FIXED_COUPLING,
                                                num_bins=NUM_RAD_BINS)
                 SUB_RADIATORS.append(sub_rad)
-                SUB_INTEGRAL_DATA.append(sub_rad_data)
+                SUB_INTEGRAL_DATA[z_cut][beta] = sub_rad_data
 
     elif COMPARE_RAW:
         for _, beta in enumerate(BETAS):
@@ -233,7 +237,7 @@ if not LOAD_MC_RADS and SAVE_MC_RADS:
                                              fixed_coupling=FIXED_COUPLING,
                                              num_bins=NUM_RAD_BINS)
             SUB_RADIATORS.append(sub_rad)
-            SUB_INTEGRAL_DATA.append(sub_rad_data)
+            SUB_INTEGRAL_DATA[beta] = sub_rad_data
 
     # ----------------------------------
     # Labeling
