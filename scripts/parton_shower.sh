@@ -117,6 +117,8 @@ done
 # -------------------------
 if [ "$supercloud_syntax" = true ] ;
 then
+  # Loading python packages
+  module load anaconda/2021b
   # Linking slurm log files to more precisely named logs
   ln -f logs/zlog-${SLURM_JOB_ID}.out logs/$logfile.out.${SLURM_JOB_ID}
   ln -f logs/zlog-${SLURM_JOB_ID}.err logs/$logfile.err.${SLURM_JOB_ID}

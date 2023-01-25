@@ -4,12 +4,6 @@
 # the syntax required for sbatch on the MIT supercloud
 source setup/prepare_path.sh
 
-if [ supercloud_syntax = true ] ;
-then
-  # Preparation for running in supercloud cluster:
-  module load anaconda/2021b
-fi
-
 
 # ============================
 # Default Parameters:
