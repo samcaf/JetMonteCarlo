@@ -3,7 +3,6 @@ import dill as pickle
 
 # Local utilities for numerics
 from jetmontecarlo.jets.jet_numerics import *
-from jetmontecarlo.tests.radiator_tests.test_precrit_jet_numerics import tst_pre_num_rad
 from examples.params import *
 
 ###########################################
