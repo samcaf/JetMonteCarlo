@@ -219,7 +219,8 @@ class integrator():
         assert self.hasMCIntegral, \
             "Need MC integral to produce interpolation"
 
-        self.interpFn = get_1d_interpolation(xs, self.integral,
+        self.interpFn = get_1d_interpolation(self.integral_xs,
+                                             self.integral,
                                              monotone=self.monotone,
                                              **kwargs)
 
