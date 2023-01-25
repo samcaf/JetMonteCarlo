@@ -15,6 +15,7 @@ from jetmontecarlo.analytics.radiators import *
 
 # Parameters
 from examples.params import *
+from examples.filenames import *
 
 ###########################################
 # Definitions and Parameters

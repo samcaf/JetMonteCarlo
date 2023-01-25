@@ -3,6 +3,7 @@ from __future__ import absolute_import
 # Loading parton shower class and parameters:
 from jetmontecarlo.montecarlo.partonshower import *
 from examples.params import *
+from examples.filenames import *
 
 SAVE_SHOWER_EVENTS = False
 LOAD_SHOWER_EVENTS = False

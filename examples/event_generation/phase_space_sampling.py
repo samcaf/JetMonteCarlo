@@ -4,6 +4,7 @@ import dill as pickle
 # Local utilities for numerics
 from jetmontecarlo.jets.jet_numerics import *
 from examples.params import *
+from filenames import *
 
 ###########################################
 # MC Integration
@@ -17,7 +18,7 @@ zc_labels.insert(0, 'z_cuts')
 
 # Additional beta labels for subsequent quantities
 beta_labels = BETAS.copy()
-beta_labels.insert(0, 'betas' if COMPARE_UNGROOMED else 'betas (2nd index)')
+beta_labels.insert(0, 'betas' if COMPARE_RAW else 'betas (2nd index)')
 
 # =====================================
 # Phase Space Sampling
@@ -33,7 +34,7 @@ SUB_SAMPLERS = []
 use_crit = True in [COMPARE_CRIT, COMPARE_CRIT_AND_SUB,
                     COMPARE_PRE_AND_CRIT, COMPARE_ALL]
 use_precrit = COMPARE_PRE_AND_CRIT or COMPARE_ALL
-use_sub = COMPARE_UNGROOMED or COMPARE_CRIT_AND_SUB or COMPARE_ALL
+use_sub = COMPARE_RAW or COMPARE_CRIT_AND_SUB or COMPARE_ALL
 
 # ----------------------------------
 # Loading Samplers
@@ -219,7 +220,7 @@ if not LOAD_MC_RADS and SAVE_MC_RADS:
                 SUB_RADIATORS.append(sub_rad)
                 SUB_INTEGRAL_DATA.append(sub_rad_data)
 
-    elif COMPARE_UNGROOMED:
+    elif COMPARE_RAW:
         for _, beta in enumerate(BETAS):
             print("    Generating subsequent radiator with beta="
                   +str(beta)+"...", flush=True)
@@ -288,7 +289,7 @@ if not LOAD_MC_RADS and SAVE_MC_RADS:
             print("Saving complete!", flush=True)
         # Saving subsequent radiators:
         if use_sub:
-            if COMPARE_UNGROOMED:
+            if COMPARE_RAW:
                 desc = 'sub'
             else:
                 desc = 'crit-sub'
