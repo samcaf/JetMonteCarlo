@@ -156,7 +156,6 @@ while getopts "f:j:o:p:m:n:b:c:s:r:v:t:e:a:vh" OPTION; do
     esac
 done
 
-echo "load_events="$load_events
 
 ###################################
 # Setting Parameters:
