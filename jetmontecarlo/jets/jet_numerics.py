@@ -1,19 +1,15 @@
 from __future__ import absolute_import
 import numpy as np
-import dill
-from scipy.interpolate import griddata, interp2d, NearestNDInterpolator
-
-import matplotlib.pyplot as plt
-
-import sympy as sp
-from sympy import sympify, lambdify
+# DEBUG: Unused import
+# from scipy.interpolate import NearestNDInterpolator
 
 # Integration utils:
+from jetmontecarlo.utils.interpolation_function_utils import\
+get_2d_interpolation
 from jetmontecarlo.montecarlo.integrator import *
 
 # Utils for monotonicity checks
 from jetmontecarlo.utils.interpolation_function_utils import lin_log_mixed_list
-from jetmontecarlo.utils.interpolation_function_utils import where_monotonic_arr
 from jetmontecarlo.utils.interpolation_function_utils import is_monotonic_arr
 from jetmontecarlo.utils.interpolation_function_utils import is_monotonic_func
 from jetmontecarlo.utils.interpolation_function_utils import monotonic_domain
@@ -121,8 +117,9 @@ def gen_numerical_radiator(rad_sampler, emission_type,
     rad_integrator.integrate()
 
     radiator = rad_integrator.integral
-    radiator_error = rad_integrator.integralErr
-    xs = rad_integrator.bins
+    # DEBUG: Unused variables
+    # radiator_error = rad_integrator.integralErr
+    # xs = rad_integrator.bins
 
     # DEBUG: testing monotonicity
     if local_verbose >= 3:
@@ -137,8 +134,6 @@ def gen_numerical_radiator(rad_sampler, emission_type,
 
     # Generating an interpolating function
     rad_integrator.makeInterpolatingFn(verbose=local_verbose)
-
-    interp_function = rad_integrator.interpFn
 
     # DEBUG: testing monotonicity
     if local_verbose >= 2:
@@ -231,7 +226,8 @@ def gen_pre_num_rad(rad_sampler, crit_rad_sampler,
     rad_integrator.integrate()
 
     radiator = rad_integrator.integral
-    radiator_error = rad_integrator.integralErr
+    # DEBUG: Unused variables
+    # radiator_error = rad_integrator.integralErr
 
     # DEBUG: testing monotonicity
     if local_verbose >= 3:
@@ -248,7 +244,8 @@ def gen_pre_num_rad(rad_sampler, crit_rad_sampler,
         print("pre-critical interpolating functions are monotonic:")
         for theta in lin_log_mixed_list(np.min(theta_crit), np.max(theta_crit), 250):
             print(f"pre, zc = {rad_sampler.zc}, {theta = }")
-            rad1d_fn = lambda x: unbounded_interp_function(x, theta)
+            def rad1d_fn(x):
+                return unbounded_interp_function(x, theta)
             # print("    Monotonic? ", is_monotonic_func(rad1d_fn,
             #                         [1e-15, rad_sampler.zc],
             #                         'decreasing'))
@@ -357,7 +354,7 @@ def gen_crit_sub_num_rad(rad_sampler,
 
         # Radiator, given a maximum angle of theta
         radiator = rad_integrator.integral
-        # radiator_error = rad_integrator.integralErr
+        radiator_error = rad_integrator.integralErr
         xs = rad_integrator.bins
 
         # DEBUG: testing monotonicity
@@ -366,8 +363,9 @@ def gen_crit_sub_num_rad(rad_sampler,
                   "(first try): ",
                   is_monotone_arr(radiator, 'decreasing'))
 
-        xs = np.append(xs, C_ungroomed_max(beta, radius=theta_crit,
-                                           acc=obs_accuracy))
+        # DEBUG: deprecated syntax
+        # xs = np.append(xs, C_ungroomed_max(beta, radius=theta_crit,
+        #                                    acc=obs_accuracy))
 
         # DEBUG: testing monotonicity
         if local_verbose >= 3:
@@ -386,9 +384,13 @@ def gen_crit_sub_num_rad(rad_sampler,
     thetas_all = np.array(thetas_all)
     rads_all = np.array(rads_all)
 
+    # DEBUG: testing monotonicity
     # points = np.array([xs_all.flatten(), thetas_all.flatten()]).T
     # unbounded_interp_function = NearestNDInterpolator(points, rads_all.flatten())
-    unbounded_interp_function = RegularGridInterpolator((xs_all, thetas_all), rads_all.flatten())
+    unbounded_interp_function = get_2d_interpolation(
+                                    xs_all.flatten(), thetas_all.flatten(),
+                                    rads_all.flatten(),
+                                    interpolation_method='linear')
 
     def bounded_interp_function(x, theta):
         return unbounded_interp_function(x, theta) * (x >= 0) * (theta >= 0) *\
@@ -399,7 +401,8 @@ def gen_crit_sub_num_rad(rad_sampler,
         print("critical-subsequent interpolating function",
               " is monotonic")
         for theta in lin_log_mixed_list(epsilon, 1, 250):
-            rad1d_fn = lambda x: bounded_interp_function(x, theta)
+            def rad1d_fn(x):
+                return bounded_interp_function(x, theta)
             min_arg = theta**beta * 1e-15
             max_arg = C_ungroomed_max(beta, radius=theta, acc=obs_accuracy)
             if max_arg < 1.1e-8:
@@ -457,4 +460,3 @@ def gen_normalized_splitting(num_samples, z_cut,
         return splitfn * (z_cut < z) * (z < 1./2.)
 
     return normed_splitting_fn
-
