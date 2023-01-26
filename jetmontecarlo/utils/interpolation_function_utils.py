@@ -176,7 +176,8 @@ def get_1d_interpolation(xs, fs, monotonic=True,
     """
     if monotonic:
         # If we want monotonic interpolation, we can use np.interp
-        interpolating_function = lambda x: np.interp(x, xs, fs)
+        def interpolating_function(x):
+            return np.interp(x, xs, fs)
 
         # Testing monotonicity:
         interp_vals = interpolating_function(xs)
@@ -216,8 +217,8 @@ def get_1d_interpolation(xs, fs, monotonic=True,
         # Setting the interpolating function below the lower bound,
         # between the upper and lower bound,
         # and above the upper bound, respectively
-        interpolating_function = lambda x:\
-            bound_values[0] * (x <= bounds[0])\
+        def interpolating_function(x):
+            return bound_values[0] * (x <= bounds[0])\
             + (bounds[0] <= x) * (x <= bounds[1]) * interpolating_function(x)\
             + bound_values[1] * (x >= bounds[1])
     else:
@@ -237,16 +238,16 @@ def get_2d_interpolation(xs, ys, zs,
         default_kwargs = {'method': 'linear', 'bounds_error': False,
                           'fill_value': None}
         kwargs = {**default_kwargs, **kwargs}
-        # DEBUG
-        print(len(xs))
-        print(len(ys))
-        print(len(zs))
+        # DEBUG: printing debug information about array shapes
+        print(np.array(xs).shape)
+        print(np.array(ys).shape)
+        print(np.array(zs).shape)
         interpolating_function = interpolate.RegularGridInterpolator(
                                     (xs, ys), zs, **kwargs)
-    elif interpolation_method == "Linear":
+    elif interpolation_method in ["Linear", "linear"]:
         interpolating_function = interpolate.interp2d(xs, ys, zs,
                                                      kind="linear")
-    elif interpolation_method == "Cubic":
+    elif interpolation_method in ["Cubic", "cubic"]:
         interpolating_function = interpolate.interp2d(xs, ys, zs,
                                                      kind="cubic")
     else:

@@ -172,7 +172,7 @@ class integrator():
                 self.integral = [
                     *(self.lastBinBndCond[0] + reverse_cumInt),
                     self.lastBinBndCond[0]]
-                                
+
             elif self.lastBinBndCond[1] == 'minus':
                 self.integral = [
                     *(self.lastBinBndCond[0] - reverse_cumInt),
@@ -692,11 +692,9 @@ class integrator_2d():
                 zerr.append(np.zeros(len(self.bins[0])))
                 zerr = np.array(zerr).T
 
-        z = z.flatten()
         self.interpFn = get_2d_interpolation(x, y, z, **kwargs)
 
         if interpolate_error:
-            zerr = zerr.flatten()
             self.interpErr = get_2d_interpolation(x, y, zerr, **kwargs)
         else:
             self.interpErr = None
