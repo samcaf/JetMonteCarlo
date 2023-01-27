@@ -1,7 +1,10 @@
 import numpy as np
 
 from scipy import interpolate
+# For monotonicity checks:
 from scipy.misc import derivative
+
+# For saving data and functions
 
 
 # =====================================
@@ -12,13 +15,26 @@ from scipy.misc import derivative
 # given domain; these will eventually be useful for
 # interpolation functions and beyond.
 
-def lin_log_mixed_list(lower_bound, upper_bound, num_bins):
+def lin_log_mixed_list(lower_bound, upper_bound, num_vals):
+    """Creates a array containing both linearly and
+    logarithmically spaced data.
+
+    Parameters
+    ----------
+        lower_bound : lower bound (>0) for the array
+        upper_bound : upper bound (>0) for the array
+        num_vals : number of values in the array
+
+    Returns
+    -------
+    np.array :  array with linearly and logarithmically spaced data
+    """
     # Mixing linear and logarithmic bins for the list of thetas
     mixed_list = np.logspace(np.log10(lower_bound), np.log10(upper_bound),
-                             int(num_bins/2)+2)
+                             int(num_vals/2)+2)
     mixed_list = np.append(mixed_list,
                            np.linspace(lower_bound, upper_bound,
-                                       int(num_bins/2)))
+                                       int(num_vals/2)))
     # Sorting and removing the duplicate values of upper and lower bound
     mixed_list = np.sort(mixed_list[1:-1])
     mixed_list = mixed_list[~np.isnan(mixed_list)]
@@ -61,7 +77,7 @@ def is_monotonic_arr(arr, check_only=None):
     assert check_only in ['increasing', 'decreasing', None]
     if check_only in ['increasing']:
         return (arr[1:] >= arr[:-1]).all()
-    elif check_only in ['decreasing']:
+    if check_only in ['decreasing']:
         return (arr[:-1] >= arr[1:]).all()
     # Otherwise, if check_only is None:
     return (arr[1:] >= arr[:-1]).all() or (arr[:-1] >= arr[1:]).all()
@@ -169,7 +185,7 @@ def monotonic_domain(func, domain, include_point=None, check_only=None):
 
 def get_1d_interpolation(xs, fs, monotonic=True,
                          bounds=None, bound_values=[None, None],
-                         verbose=0):
+                         savefile=None, verbose=0):
     """Returns a function that interpolates the data `(x, y)`
     using the interpolation method `kind`.
 
@@ -225,12 +241,16 @@ def get_1d_interpolation(xs, fs, monotonic=True,
         assert bound_values is None, "Cannot assign boundary values if"+\
             " no bounds for the interpolation function are given."
 
+    if savefile is not None:
+        # DEBUG
+        pass
+
     return interpolating_function
 
 
 def get_2d_interpolation(xs, ys, zs,
         interpolation_method="RectangularGrid",
-        **kwargs):
+        savefile=None, **kwargs):
     """Returns a function that interpolates the data `(x, y, z)`
     using the interpolation method `interpolation_method`.
     """
@@ -255,6 +275,10 @@ def get_2d_interpolation(xs, ys, zs,
             (xs, ys), zs)
     else:
         raise ValueError(f"Unknown interpolation method {interpolation_method}")
+
+    if savefile is not None:
+        # DEBUG
+        pass
 
     return interpolating_function
 
