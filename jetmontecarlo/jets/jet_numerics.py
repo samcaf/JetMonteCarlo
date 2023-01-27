@@ -148,6 +148,7 @@ def gen_numerical_radiator(rad_sampler, emission_type,
     if save_discrete_file is not None:
         rad_integrator.save_montecarlo_data(save_discrete_file)
 
+    print(rad_integrator.interpFn)
     return rad_integrator.interpFn, rad_integrator.montecarlo_data_dict()
 
 
@@ -264,6 +265,7 @@ def gen_pre_num_rad(rad_sampler, crit_rad_sampler,
     if save_discrete_file is not None:
         rad_integrator.save_montecarlo_data(save_discrete_file)
 
+    print(rad_integrator.interpFn)
     return rad_integrator.interpFn, rad_integrator.montecarlo_data_dict()
 
 
@@ -390,7 +392,7 @@ def gen_crit_sub_num_rad(rad_sampler,
     unbounded_interp_function = get_2d_interpolation(
                                     xs_all.flatten(), thetas_all.flatten(),
                                     rads_all.flatten(),
-                                    interpolation_method='linear')
+                                    interpolation_method='nearest')
 
     def bounded_interp_function(x, theta):
         return unbounded_interp_function(x, theta) * (x >= 0) * (theta >= 0) *\

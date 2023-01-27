@@ -239,9 +239,9 @@ def get_2d_interpolation(xs, ys, zs,
                           'fill_value': None}
         kwargs = {**default_kwargs, **kwargs}
         # DEBUG: printing debug information about array shapes
-        print(np.array(xs).shape)
-        print(np.array(ys).shape)
-        print(np.array(zs).shape)
+        # print(np.array(xs).shape)
+        # print(np.array(ys).shape)
+        # print(np.array(zs).shape)
         interpolating_function = interpolate.RegularGridInterpolator(
                                     (xs, ys), zs, **kwargs)
     elif interpolation_method in ["Linear", "linear"]:
@@ -250,6 +250,9 @@ def get_2d_interpolation(xs, ys, zs,
     elif interpolation_method in ["Cubic", "cubic"]:
         interpolating_function = interpolate.interp2d(xs, ys, zs,
                                                      kind="cubic")
+    elif interpolation_method in ["Nearest", "nearest"]:
+        interpolating_function = interpolate.NearestNDInterpolator(
+            (xs, ys), zs)
     else:
         raise ValueError(f"Unknown interpolation method {interpolation_method}")
 
