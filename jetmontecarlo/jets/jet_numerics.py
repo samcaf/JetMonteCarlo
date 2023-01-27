@@ -31,9 +31,9 @@ from jetmontecarlo.analytics.radiators_fixedcoupling import *
 local_verbose = 0
 
 
-###########################################
+# =====================================
 # Numerical Radiator Calculations:
-###########################################
+# =====================================
 # ------------------------------------
 # Radiator Generation:
 # ------------------------------------
@@ -422,9 +422,9 @@ def gen_crit_sub_num_rad(rad_sampler,
 
     return bounded_interp_function, rad_integrator.montecarlo_data_dict()
 
-###########################################
+# =====================================
 # Splitting Functions:
-###########################################
+# =====================================
 # Generation of Normalizing Factors for Splitting Functions:
 def gen_normalized_splitting(num_samples, z_cut,
                              jet_type='quark', accuracy='LL',
