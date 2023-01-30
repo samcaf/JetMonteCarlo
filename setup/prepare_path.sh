@@ -8,8 +8,8 @@
 # computing cluster.
 # They should also be changed depending on whether one is
 # using MacOS or Linux.
-supercloud_syntax=true
-linux_or_macos="linux"
+supercloud_syntax=false
+linux_or_macos="macos"
 
 # Changing syntax based on operating system.
 # In particular, the syntax of `sed` changes between linux and macos
@@ -65,6 +65,9 @@ output_folder=output
 
 # Making a folder for output figures
 mkdir -p $output_folder/figures/current
+
+# Making a catalog file for the output
+touch $output_folder/catalog.yaml
 
 # Creating folders for generated Monte Carlo samples
 for data_type in phase_space radiators splitting_functions sudakov_functions parton_showers

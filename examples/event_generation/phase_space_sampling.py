@@ -9,27 +9,9 @@ from examples.filenames import *
 ###########################################
 # MC Integration
 ############################################
-# ----------------------------------
-# Labels:
-# ----------------------------------
-# z_cut labels for pre-critical and critical quantities
-zc_labels = Z_CUTS.copy()
-zc_labels.insert(0, 'z_cuts')
-
-# Additional beta labels for subsequent quantities
-beta_labels = BETAS.copy()
-beta_labels.insert(0, 'betas' if COMPARE_RAW else 'betas (2nd index)')
-
 # =====================================
 # Phase Space Sampling
 # =====================================
-# ----------------------------------
-# Setting Up Samplers
-# ----------------------------------
-CRIT_SAMPLERS = []
-PRE_SAMPLERS = []
-SUB_SAMPLERS = []
-
 # Choosing which samples to load or to generate
 use_crit = True in [COMPARE_CRIT, COMPARE_CRIT_AND_SUB,
                     COMPARE_PRE_AND_CRIT, COMPARE_ALL]
@@ -43,16 +25,16 @@ if LOAD_MC_EVENTS:
     print("Loading Monte Carlo events...")
     if use_crit:
         print("    Loading critical events...", flush=True)
-        with open(critfile_path, 'rb') as f:
-            CRIT_SAMPLERS = pickle.load(f)
+        with open(critfile_path, 'rb') as file:
+            CRIT_SAMPLERS = pickle.load(file)
     if use_precrit:
         print("    Loading pre-critical events...", flush=True)
-        with open(prefile_path, 'rb') as f:
-            PRE_SAMPLERS = pickle.load(f)
+        with open(prefile_path, 'rb') as file:
+            PRE_SAMPLERS = pickle.load(file)
     if use_sub:
         print("    Loading subsequent events...", flush=True)
-        with open(subfile_path, 'rb') as f:
-            SUB_SAMPLERS = pickle.load(f)
+        with open(subfile_path, 'rb') as file:
+            SUB_SAMPLERS = pickle.load(file)
     print("Monte Carlo events loaded!", flush=True)
 
 # ----------------------------------
@@ -69,13 +51,13 @@ else:
                   +str(z_cut)+"...", flush=True)
             # Critical samplers
             crit_sampler = criticalSampler(BIN_SPACE, zc=z_cut,
-                                             epsilon=EPSILON)
+                                           epsilon=EPSILON)
             crit_sampler.generateSamples(NUM_MC_EVENTS)
             CRIT_SAMPLERS.append(crit_sampler)
 
             # Pre-critical sampler
             pre_sampler = precriticalSampler(BIN_SPACE, zc=z_cut,
-                                               epsilon=EPSILON)
+                                             epsilon=EPSILON)
 
             # If we should generate pre-critical samples:
             if use_precrit:
@@ -96,18 +78,20 @@ else:
     # Labeling
     # ----------------------------------
     # Additional information for z_cut dependent samplers:
-    zcsampdict = {'z_cuts' : Z_CUTS,
-                  'epsilon' : EPSILON,
-                  'sample space' : BIN_SPACE,
-                  'num events' : NUM_MC_EVENTS}
-    CRIT_SAMPLERS.append(zcsampdict)
-    PRE_SAMPLERS.append(zcsampdict)
+    # DEBUG: Removing dicts because they play poorly with dill
+    # zcsampdict = {'z_cuts' : Z_CUTS,
+    #               'epsilon' : EPSILON,
+    #               'sample space' : BIN_SPACE,
+    #               'num events' : NUM_MC_EVENTS}
+    # CRIT_SAMPLERS.append(zcsampdict)
+    # PRE_SAMPLERS.append(zcsampdict)
 
     # No z_cut label for subsequent samplers:
-    subsampdict = {'epsilon' : EPSILON,
-                   'sample space' : BIN_SPACE,
-                   'num events' : NUM_MC_EVENTS}
-    SUB_SAMPLERS.append(subsampdict)
+    # DEBUG: Removing dicts because they play poorly with dill
+    # subsampdict = {'epsilon' : EPSILON,
+    #                'sample space' : BIN_SPACE,
+    #                'num events' : NUM_MC_EVENTS}
+    # SUB_SAMPLERS.append(subsampdict)
 
     # ----------------------------------
     # Saving Samplers
@@ -115,16 +99,16 @@ else:
     if SAVE_MC_EVENTS:
         # Saving critical samplers:
         if use_crit:
-            with open(critfile_path, 'wb') as f:
-                pickle.dump(CRIT_SAMPLERS, f)
+            with open(critfile_path, 'wb') as file:
+                pickle.dump(CRIT_SAMPLERS, file)
         # Saving pre-critical samplers:
         if use_precrit:
-            with open(prefile_path, 'wb') as f:
-                pickle.dump(PRE_SAMPLERS, f)
+            with open(prefile_path, 'wb') as file:
+                pickle.dump(PRE_SAMPLERS, file)
         # Saving subsequent sampler:
         if use_sub:
-            with open(subfile_path, 'wb') as f:
-                pickle.dump(SUB_SAMPLERS, f)
+            with open(subfile_path, 'wb') as file:
+                pickle.dump(SUB_SAMPLERS, file)
 
 # =====================================
 # Radiators by integration
@@ -141,19 +125,19 @@ print()
 if LOAD_MC_RADS:
     print("Loading radiators...")
     print("    Loading critical radiators...", flush=True)
-    with open(critrad_path, 'rb') as f:
-        CRIT_RADIATORS = pickle.load(f)
+    with open(critrad_path, 'rb') as file:
+        CRIT_RADIATORS = pickle.load(file)
     print("    Loading pre-critical radiators...", flush=True)
-    with open(prerad_path, 'rb') as f:
-        PRE_RADIATORS = pickle.load(f)
+    with open(prerad_path, 'rb') as file:
+        PRE_RADIATORS = pickle.load(file)
     print("    Loading subsequent radiators...", flush=True)
-    with open(subrad_path, 'rb') as f:
-        SUB_RADIATORS = pickle.load(f)
+    with open(subrad_path, 'rb') as file:
+        SUB_RADIATORS = pickle.load(file)
     print("Radiators loaded!")
 elif not MAKE_CRIT_RAD:
     print("Loading critical radiators...", flush=True)
-    with open(critrad_path, 'rb') as f:
-        CRIT_RADIATORS = pickle.load(f)
+    with open(critrad_path, 'rb') as file:
+        CRIT_RADIATORS = pickle.load(file)
     print("Radiators loaded!")
 
 # ----------------------------------
@@ -243,29 +227,31 @@ if not LOAD_MC_RADS and SAVE_MC_RADS:
     # Labeling
     # ----------------------------------
     # Additional information for z_cut dependent radiators:
-    zcraddict = {'z_cuts' : Z_CUTS,
-                 'jet type' : JET_TYPE,
-                 'fixed coupling' : FIXED_COUPLING,
-                 'observable accuracy' : OBS_ACC,
-                 'split fn accuracy' : SPLITFN_ACC,
-                 'epsilon' : EPSILON,
-                 'sample space' : BIN_SPACE,
-                 'num events' : NUM_MC_EVENTS,
-                 'num bins' : NUM_RAD_BINS}
-    CRIT_SAMPLERS.append(zcraddict)
-    PRE_SAMPLERS.append(zcraddict)
+    # DEBUG: Removing dicts because they play poorly with dill
+    # zcraddict = {'z_cuts' : Z_CUTS,
+    #              'jet type' : JET_TYPE,
+    #              'fixed coupling' : FIXED_COUPLING,
+    #              'observable accuracy' : OBS_ACC,
+    #              'split fn accuracy' : SPLITFN_ACC,
+    #              'epsilon' : EPSILON,
+    #              'sample space' : BIN_SPACE,
+    #              'num events' : NUM_MC_EVENTS,
+    #              'num bins' : NUM_RAD_BINS}
+    # CRIT_SAMPLERS.append(zcraddict)
+    # PRE_SAMPLERS.append(zcraddict)
 
     # Additional information for subsequent radiators:
-    subraddict = {'betas' : BETAS,
-                  'jet type' : JET_TYPE,
-                  'fixed coupling' : FIXED_COUPLING,
-                  'observable accuracy' : OBS_ACC,
-                  'split fn accuracy' : SPLITFN_ACC,
-                  'epsilon' : EPSILON,
-                  'sample space' : BIN_SPACE,
-                  'num events' : NUM_MC_EVENTS,
-                  'num bins' : NUM_RAD_BINS}
-    SUB_SAMPLERS.append(subraddict)
+    # DEBUG: Removing dicts because they play poorly with dill
+    # subraddict = {'betas' : BETAS,
+    #               'jet type' : JET_TYPE,
+    #               'fixed coupling' : FIXED_COUPLING,
+    #               'observable accuracy' : OBS_ACC,
+    #               'split fn accuracy' : SPLITFN_ACC,
+    #               'epsilon' : EPSILON,
+    #               'sample space' : BIN_SPACE,
+    #               'num events' : NUM_MC_EVENTS,
+    #               'num bins' : NUM_RAD_BINS}
+    # SUB_SAMPLERS.append(subraddict)
 
     # ----------------------------------
     # Saving Radiators:
@@ -275,21 +261,23 @@ if not LOAD_MC_RADS and SAVE_MC_RADS:
         if use_crit and MAKE_CRIT_RAD:
             print("Saving critical radiator to "+str(critrad_path), flush=True)
             # Saving interpolating functions
-            with open(critrad_path, 'wb') as f:
-                pickle.dump(CRIT_RADIATORS, f)
+            with open(critrad_path, 'wb') as file:
+                print(np.array(CRIT_RADIATORS))
+                print(CRIT_RADIATORS[0])
+                np.save(file, np.array(CRIT_RADIATORS))
             # Saving discretely generated numerical data
-            with open(critrad_int_path, 'wb') as f:
-                pickle.dump(CRIT_RADIATORS, f)
+            with open(critrad_int_path, 'wb') as file:
+                np.savez(file, **CRIT_INTEGRAL_DATA)
             print("Saving complete!", flush=True)
         # Saving pre-critical radiators:
         if use_precrit:
             print("Saving pre-crit radiator to "+str(prerad_path), flush=True)
             # Saving interpolating functions
-            with open(prerad_path, 'wb') as f:
-                pickle.dump(PRE_RADIATORS, f)
+            with open(prerad_path, 'wb') as file:
+                pickle.dump(PRE_RADIATORS, file)
             # Saving discretely generated numerical data
-            with open(prerad_int_path, 'wb') as f:
-                pickle.dump(PRE_RADIATORS, f)
+            with open(prerad_int_path, 'wb') as file:
+                np.savez(file, **PRE_INTEGRAL_DATA)
             print("Saving complete!", flush=True)
         # Saving subsequent radiators:
         if use_sub:
@@ -299,11 +287,11 @@ if not LOAD_MC_RADS and SAVE_MC_RADS:
                 desc = 'crit-sub'
             print("Saving "+desc+" radiator to "+str(subrad_path), flush=True)
             # Saving interpolating functions
-            with open(subrad_path, 'wb') as f:
-                pickle.dump(SUB_RADIATORS, f)
+            with open(subrad_path, 'wb') as file:
+                pickle.dump(SUB_RADIATORS, file)
             # Saving discretely generated numerical data
-            with open(subrad_int_path, 'wb') as f:
-                pickle.dump(SUB_RADIATORS, f)
+            with open(subrad_int_path, 'wb') as file:
+                np.savez(file, **SUB_INTEGRAL_DATA)
             print("Saving complete!", flush=True)
 
 # =====================================
@@ -333,21 +321,22 @@ if SAVE_SPLITTING_FNS and not LOAD_SPLITTING_FNS:
     # Labeling
     # ----------------------------------
     # Additional information for z_cut dependent splitting functions:
-    splitdict = {'z_cuts' : Z_CUTS,
-                 'jet type' : JET_TYPE,
-                 'fixed coupling' : FIXED_COUPLING,
-                 'accuracy' : SPLITFN_ACC,
-                 'epsilon' : EPSILON,
-                 'sample space' : BIN_SPACE,
-                 'num events' : NUM_MC_EVENTS,
-                 'num bins' : NUM_SPLITFN_BINS}
-    SPLITTING_FNS.append(splitdict)
+    # DEBUG: Removing dicts because they play poorly with dill
+    # splitdict = {'z_cuts' : Z_CUTS,
+    #              'jet type' : JET_TYPE,
+    #              'fixed coupling' : FIXED_COUPLING,
+    #              'accuracy' : SPLITFN_ACC,
+    #              'epsilon' : EPSILON,
+    #              'sample space' : BIN_SPACE,
+    #              'num events' : NUM_MC_EVENTS,
+    #              'num bins' : NUM_SPLITFN_BINS}
+    # SPLITTING_FNS.append(splitdict)
 
     # ----------------------------------
     # Saving Splitting Functions
     # ----------------------------------
-    with open(splitfn_path, 'wb') as f:
-        pickle.dump(SPLITTING_FNS, f)
+    with open(splitfn_path, 'wb') as file:
+        pickle.dump(SPLITTING_FNS, file)
     print("Saved splitting functions to "+str(splitfn_path)+".", flush=True)
 
 # ----------------------------------
@@ -355,5 +344,5 @@ if SAVE_SPLITTING_FNS and not LOAD_SPLITTING_FNS:
 # ----------------------------------
 elif LOAD_SPLITTING_FNS:
     print("Loading normalized splitting functions...", flush=True)
-    with open(splitfn_path, 'rb') as f:
-        SPLITTING_FNS = pickle.load(f)
+    with open(splitfn_path, 'rb') as file:
+        SPLITTING_FNS = pickle.load(file)
