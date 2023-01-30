@@ -3,7 +3,7 @@ import itertools
 
 # Parameters
 from examples.params import *
-from examples.filenames import *
+from examples.file_manager import fig_folder
 from examples.sudakov_comparisons.sudakov_utils import *
 
 save_cdf = False

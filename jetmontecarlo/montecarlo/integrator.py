@@ -631,15 +631,57 @@ class integrator_2d():
 
         # Telling the integrator that it has an integral evaulated with MC:
         self.hasMCIntegral = True
+        self.set_extended_integral()
 
+
+    def set_extended_integral(self):
+        """Stores an extended version of the monte carlo integral
+        which includes its boundary values.
+        """
+        assert self.hasMCIntegral, "Cannot set extension of"\
+            +" the integration to the boundaries without an integral."
+
+        if self.useFirstBinBndCond:
+            z = []
+            z.append(np.ones(len(self.bins[0])) * self.firstBinBndCond)
+            for z_i in self.integral:
+                z.append(np.append(self.firstBinBndCond, z_i))
+            z = np.array(z).T
+
+            zerr = []
+            zerr.append(np.zeros(len(self.bins[0])))
+            for z_i in self.integralErr:
+                zerr.append(np.append(0, z_i))
+            zerr = np.array(zerr).T
+
+        elif self.useLastBinBndCond:
+            z = []
+            for z_i in self.integral:
+                z.append(np.append(z_i, self.lastBinBndCond[0]))
+            z.append(np.ones(len(self.bins[0])) * self.lastBinBndCond[0])
+
+            z = np.array(z).T
+
+            zerr = []
+            for z_i in self.integralErr:
+                zerr.append(np.append(0, z_i))
+            zerr.append(np.zeros(len(self.bins[0])))
+            zerr = np.array(zerr).T
+
+        self.extended_integral = z
+        self.extended_integralErr = zerr
 
     def montecarlo_data_dict(self, info=None):
-        return {'bins': self.bins,
-                'density': self.density,
-                'density error': self.densityErr,
-                'integral': self.integral,
-                'integral error': self.integralErr,
-                'info': info}
+        data_dict =  {'bins': self.bins,
+                      'density': self.density,
+                      'density error': self.densityErr,
+                      'integral': self.extended_integral,
+                      'integral error': self.extended_integralErr}
+
+        if info is not None:
+            data_dict['info'] = info
+
+        return data_dict
 
 
     def save_montecarlo_data(self, filename, info=None):
@@ -662,35 +704,6 @@ class integrator_2d():
         assert self.hasMCIntegral, \
             "Need MC integral to produce interpolation"
         x, y = self.bins[0], self.bins[1]
-
-        if self.useFirstBinBndCond:
-            z = []
-            z.append(np.ones(len(self.bins[0])) * self.firstBinBndCond)
-            for z_i in self.integral:
-                z.append(np.append(self.firstBinBndCond, z_i))
-            z = np.array(z).T
-
-            if interpolate_error:
-                zerr = []
-                zerr.append(np.zeros(len(self.bins[0])))
-                for z_i in self.integralErr:
-                    zerr.append(np.append(0, z_i))
-                zerr = np.array(zerr).T
-
-        elif self.useLastBinBndCond:
-            z = []
-            for z_i in self.integral:
-                z.append(np.append(z_i, self.lastBinBndCond[0]))
-            z.append(np.ones(len(self.bins[0])) * self.lastBinBndCond[0])
-
-            z = np.array(z).T
-
-            if interpolate_error:
-                zerr = []
-                for z_i in self.integralErr:
-                    zerr.append(np.append(0, z_i))
-                zerr.append(np.zeros(len(self.bins[0])))
-                zerr = np.array(zerr).T
 
         self.interpFn = get_2d_interpolation(x, y, z, **kwargs)
 
