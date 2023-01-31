@@ -66,17 +66,17 @@ NUM_MC_EVENTS = int(1e4)
 NUM_SHOWER_EVENTS = int(5e5)
 
 # MC Sampling Switches:
-LOAD_MC_EVENTS = False
+LOAD_MC_EVENTS = True
 # Default True: phase space doesn't change, only weights do
 SAVE_MC_EVENTS = True
 
 # MC Radiator Switches:
-LOAD_MC_RADS = False
+LOAD_MC_RADS = True
 # Default False, to generate radiators with the correct parameters
 SAVE_MC_RADS = True
 
 # MC Splitting Function Switches:
-LOAD_SPLITTING_FNS = False
+LOAD_SPLITTING_FNS = True
 # Default False, to generate splitting functions with the correct parameters
 SAVE_SPLITTING_FNS = True
 
@@ -113,8 +113,37 @@ SHOWER_INFO = 'cutoff'+str(SHOWER_CUTOFF)\
            or (FIXED_COUPLING and SHOWER_CUTOFF not in [1e-10, 1e-15])\
        else ''
 
+# =====================================
+# All Monte Carlo related parameters
+# =====================================
+
+ALL_MC_PARAMS = {
+    'fixed coupling' : FIXED_COUPLING,
+    'multiple emissions' : MULTIPLE_EMISSIONS,
+    'observable accuracy' : OBS_ACC,
+    'splitting function accuracy' : SPLITFN_ACC,
+    'jet type' : JET_TYPE,
+    'number of MC events' : NUM_MC_EVENTS,
+    'number of radiator bins' : NUM_RAD_BINS,
+    'number of splitting function bins' : NUM_SPLITFN_BINS,
+    'epsilon' : EPSILON,
+    'bin space' : BIN_SPACE
+}
+
+ALL_SHOWER_PARAMS = {
+    'fixed coupling' : FIXED_COUPLING,
+    'multiple emissions' : MULTIPLE_EMISSIONS,
+    'observable accuracy' : OBS_ACC,
+    'jet type' : JET_TYPE,
+    'number of shower events' : NUM_SHOWER_EVENTS,
+    'shower cutoff' : SHOWER_CUTOFF,
+}
+
+
+
+
 # ------------------------------------
-# Emissions to Generate
+# Emissions to compare
 # ------------------------------------
 COMPARE_CRIT = True
 MAKE_CRIT_RAD = True
@@ -123,6 +152,15 @@ COMPARE_PRE_AND_CRIT = True
 COMPARE_ALL = True
 COMPARE_RAW = True not in [COMPARE_CRIT, COMPARE_CRIT_AND_SUB,
                              COMPARE_PRE_AND_CRIT, COMPARE_ALL]
+
+# - - - - - - - - - - - - - - - - -
+# Given emissions up for comparison, emissions to generate
+# - - - - - - - - - - - - - - - - -
+USE_CRIT = True in [COMPARE_CRIT, COMPARE_CRIT_AND_SUB,
+                    COMPARE_PRE_AND_CRIT, COMPARE_ALL]
+USE_PRECRIT = COMPARE_PRE_AND_CRIT or COMPARE_ALL
+USE_CRIT_SUB = COMPARE_RAW or COMPARE_CRIT_AND_SUB or COMPARE_ALL
+
 
 
 ###########################################
