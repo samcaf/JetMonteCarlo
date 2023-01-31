@@ -148,7 +148,6 @@ def gen_numerical_radiator(rad_sampler, emission_type,
     if save_discrete_file is not None:
         rad_integrator.save_montecarlo_data(save_discrete_file)
 
-    print(rad_integrator.interpFn)
     return rad_integrator.interpFn, rad_integrator.montecarlo_data_dict()
 
 

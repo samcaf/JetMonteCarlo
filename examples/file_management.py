@@ -5,19 +5,6 @@ import warnings
 import uuid
 import yaml
 
-# Other utils
-import numpy as np
-
-# Timing
-from jetmontecarlo.utils.time_utils import timing
-
-# Help with MC sampling
-from jetmontecarlo.utils.montecarlo_utils import samples_from_cdf
-from jetmontecarlo.montecarlo.partonshower import parton_shower
-
-# Parameters for use in default arguments for filenames
-from examples.params import *
-
 # ===================================
 # Folders and Fundamental Files
 # ===================================
@@ -46,12 +33,15 @@ emission_types = ['ungroomed', 'critical', 'subsequent', 'pre-critical']
 function_types = ['radiator', 'sudakov_function']
 all_functions = [emission+' '+function for emission in emission_types
                     for function in function_types]
+all_functions.append('splitting function')
 
 recognized_data_sources = {
-    'montecarlo samples': ['phase space', 'parton shower',
+    'montecarlo samples': [*(emission+' phase space'
+                            for emission in emission_types),
+                           'parton shower',
                            'sudakov inverse transform'],
-    'numerical_integrals': all_functions,
-    'serialized functions': all_functions
+    'numerical integral': all_functions,
+    'serialized function': all_functions
 }
 
 
@@ -68,7 +58,8 @@ def check_data_type(data_type, warn_only=True):
 def check_data_source(data_type, data_source, warn_only=True):
     """Check if the data source is recognized."""
     recognized_data_source = (data_source in
-                              recognized_data_sources.get(data_type))
+              recognized_data_sources.get(data_type))
+
     if warn_only and not recognized_data_source:
         warnings.warn(f"Unrecognized data source {data_source} from"
                       +f" data type {data_type}.")

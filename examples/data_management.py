@@ -4,12 +4,11 @@ import numpy as np
 
 # Interpolation functions
 from jetmontecarlo.utils.interpolation_function_utils import get_1d_interpolation
-from jetmontecarlo.utils.interpolation_function_utils import
-get_2d_interpolation
+from jetmontecarlo.utils.interpolation_function_utils import get_2d_interpolation
 
 # Local file management
-from examples.file_manager import new_cataloged_filename
-from examples.file_manager import filename_from_catalog
+from examples.file_management import new_cataloged_filename
+from examples.file_management import filename_from_catalog
 
 
 def save_new_data(data, data_type, data_source,
@@ -21,15 +20,17 @@ def save_new_data(data, data_type, data_source,
     filename = new_cataloged_filename(data_type, data_source,
                                       params, extension)
 
-    # Save the data to the new file with the given extension
-    with open(filename, 'w') as file:
-        if extension == '.pkl':
+    # If pickling, save bytes to the new .pkl file
+    if extension == '.pkl':
+        with open(filename, 'wb') as file:
             pickle.dump(data, file)
-        elif extension == '.npy':
-            if isinstance(data, dict):
-                np.savez(file, **data)
-            else:
-                np.save(file, data)
+
+    # If using numpy, save arrays to the new .npz file
+    elif extension == '.npz':
+        if isinstance(data, dict):
+            np.savez(filename, **data)
+        else:
+            np.save(filename, data)
 
 
 def load_data(data_type, data_source, params):
@@ -39,13 +40,13 @@ def load_data(data_type, data_source, params):
     # Finding the file/extension associated with the given params
     filename = filename_from_catalog(data_type, data_source,
                                      params)
-    extension = filename.split('.')[-1]
+    extension = "."+filename.split('.')[-1]
 
     # Loading the associated data
     with open(filename, 'rb') as file:
         if extension == '.pkl':
             data = pickle.load(file)
-        elif extension == '.npy':
+        elif extension == '.npz':
             data = np.load(file, allow_pickle=True,
                            mmap_mode='c')
 

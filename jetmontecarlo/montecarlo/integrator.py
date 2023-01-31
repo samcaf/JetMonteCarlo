@@ -194,13 +194,17 @@ class integrator():
                 " but the integral is not monotone!"
 
     def montecarlo_data_dict(self, info=None):
-        return {'bins': self.bins,
-                'bin midpoints': self.bin_midpoints,
-                'density': self.density,
-                'density error': self.densityErr,
-                'integral': self.integral,
-                'integral error': self.integralErr,
-                'info': info}
+        data_dict = {'bins': self.bins,
+                     'bin midpoints': self.bin_midpoints,
+                     'density': self.density,
+                     'density error': self.densityErr,
+                     'integral': self.integral,
+                    'integral error': self.integralErr}
+
+        if info is not None:
+            data_dict['info'] = info
+
+        return data_dict
 
     def save_montecarlo_data(self, filename, info=None):
         """Saves the data used to produce the integral to a file"""
@@ -219,7 +223,6 @@ class integrator():
         binning."""
         assert self.hasMCIntegral, \
             "Need MC integral to produce interpolation"
-        print(f"{len(self.bins)=}, {len(self.integral)=}")
         self.interpFn = get_1d_interpolation(self.bins,
                                              self.integral,
                                              monotonic=self.monotone,

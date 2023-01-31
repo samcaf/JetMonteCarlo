@@ -1,350 +1,242 @@
-from __future__ import absolute_import
-import dill as pickle
-
 # Local utilities for numerics
 from jetmontecarlo.jets.jet_numerics import *
-from examples.params import *
-from examples.data_manager import save_new_data
-from examples.data_manager import load_data
-from examples.data_manager import load_and_interpolate
 
-###########################################
-# MC Integration
-############################################
+# Local utilities for files
+from examples.data_management import save_new_data
+from examples.data_management import load_data
+# from examples.data_management import load_and_interpolate
+
+# Parameters
+from examples.params import Z_CUTS
+from examples.params import ALL_MC_PARAMS
+from examples.params import USE_PRECRIT, USE_CRIT, USE_CRIT_SUB
+
+# Flags for saving or loading
+from examples.params import LOAD_MC_EVENTS, SAVE_MC_EVENTS
+from examples.params import LOAD_MC_RADS, SAVE_MC_RADS
+from examples.params import LOAD_SPLITTING_FNS
+from examples.params import SAVE_SPLITTING_FNS
+
+
+# =====================================
+# Parameters
+# =====================================
+params = ALL_MC_PARAMS
+
+# DEBUG: Fixing beta to 2 for now
+beta = 2
+
+jet_type = params['jet type']
+fixed_coupling = params['fixed coupling']
+obs_acc = params['observable accuracy']
+splitfn_acc = params['splitting function accuracy']
+
+num_mc_events = params['number of MC events']
+epsilon = params['epsilon']
+bin_space = params['bin space']
+
+num_rad_bins = params['number of radiator bins']
+num_splitfn_bins = params['number of splitting function bins']
+
+
 # =====================================
 # Phase Space Sampling
 # =====================================
-# Choosing which samples to load or to generate
-use_crit = True in [COMPARE_CRIT, COMPARE_CRIT_AND_SUB,
-                    COMPARE_PRE_AND_CRIT, COMPARE_ALL]
-use_precrit = COMPARE_PRE_AND_CRIT or COMPARE_ALL
-use_sub = COMPARE_RAW or COMPARE_CRIT_AND_SUB or COMPARE_ALL
+# Telling something to the audience
+print("Loading Monte Carlo events and integrals." if LOAD_MC_EVENTS
+      else "Generating Monte Carlo events and integrals.")
 
-# ----------------------------------
-# Loading Samplers
-# ----------------------------------
-if LOAD_MC_EVENTS:
-    print("Loading Monte Carlo events...")
-    if use_crit:
-        print("    Loading critical events...", flush=True)
-        with open(critfile_path, 'rb') as file:
-            CRIT_SAMPLERS = pickle.load(file)
-    if use_precrit:
-        print("    Loading pre-critical events...", flush=True)
-        with open(prefile_path, 'rb') as file:
-            PRE_SAMPLERS = pickle.load(file)
-    if use_sub:
-        print("    Loading subsequent events...", flush=True)
-        with open(subfile_path, 'rb') as file:
-            SUB_SAMPLERS = pickle.load(file)
-    print("Monte Carlo events loaded!", flush=True)
+# ---------------------------------
+# - - - - - - - - - - - - - - - - -
+# NOTE on the structure of the code below
+# - - - - - - - - - - - - - - - - -
+# ---------------------------------
+# First looping over all zcut values
+#   Loading or saving splitting functions
+#   Then considering each type of emission, and
+#       Loading or saving samples and radiators
 
-# ----------------------------------
-# Generating Samplers
-# ----------------------------------
-else:
-    print("Generating events for Monte Carlo integration...")
-    if SAVE_MC_EVENTS:
-        print("    Preparing to save new events for MC integration...")
+# ---------------------------------
+# Looping over zcut values
+# ---------------------------------
+for iz, z_cut in enumerate(Z_CUTS):
+    print(f"    Considering {z_cut = }.", flush=True)
 
-    if use_crit:
-        for _, z_cut in enumerate(Z_CUTS):
-            print("    Generating critical emissions with cutoff z_cut="
-                  +str(z_cut)+"...", flush=True)
-            # Critical samplers
-            crit_sampler = criticalSampler(BIN_SPACE, zc=z_cut,
-                                           epsilon=EPSILON)
-            crit_sampler.generateSamples(NUM_MC_EVENTS)
-            CRIT_SAMPLERS.append(crit_sampler)
+    params['z_cut'] = z_cut
 
-            # Pre-critical sampler
-            pre_sampler = precriticalSampler(BIN_SPACE, zc=z_cut,
-                                             epsilon=EPSILON)
+    # - - - - - - - - - - - - - - - - -
+    # Splitting Functions
+    # - - - - - - - - - - - - - - - - -
+    # Loading data
+    if LOAD_SPLITTING_FNS:
+        splitting_function = load_data("serialized function",
+                                       "splitting function",
+                                       params)
 
-            # If we should generate pre-critical samples:
-            if use_precrit:
-                print("    Generating pre-critical emissions with cutoff z_cut="
-                      +str(z_cut)+"...", flush=True)
-                pre_sampler.generateSamples(NUM_MC_EVENTS)
-            PRE_SAMPLERS.append(pre_sampler)
+    # Generating data
+    else:
+        split_fn = gen_normalized_splitting(num_mc_events, z_cut,
+                         jet_type=jet_type, accuracy=splitfn_acc,
+                         fixed_coupling=fixed_coupling,
+                         num_bins=num_splitfn_bins)
+        # Saving data
+        if SAVE_SPLITTING_FNS:
+            save_new_data(split_fn, "serialized function",
+                          "splitting function", params,
+                          '.pkl')
 
-    # Subsequent sampler:
-    sub_sampler = ungroomedSampler(BIN_SPACE, epsilon=EPSILON)
-    # If we should generate subsequent samples:
-    if use_sub:
-        print("    Generating subsequent emissions...", flush=True)
-        sub_sampler.generateSamples(NUM_MC_EVENTS)
-    SUB_SAMPLERS.append(sub_sampler)
 
-    # ----------------------------------
-    # Labeling
-    # ----------------------------------
-    # Additional information for z_cut dependent samplers:
-    # DEBUG: Removing dicts because they play poorly with dill
-    # zcsampdict = {'z_cuts' : Z_CUTS,
-    #               'epsilon' : EPSILON,
-    #               'sample space' : BIN_SPACE,
-    #               'num events' : NUM_MC_EVENTS}
-    # CRIT_SAMPLERS.append(zcsampdict)
-    # PRE_SAMPLERS.append(zcsampdict)
+    # - - - - - - - - - - - - - - - - -
+    # Critical Emissions
+    # - - - - - - - - - - - - - - - - -
+    if USE_CRIT:
+        # - - - - - - - - - - - - - - - - -
+        # Critical phase space
+        # - - - - - - - - - - - - - - - - -
+        # Loading data
+        if LOAD_MC_EVENTS:
+            crit_sampler = load_data("montecarlo samples",
+                                     "critical phase space",
+                                     params)
+        # Generating data
+        else:
+            crit_sampler = criticalSampler(bin_space, zc=z_cut,
+                                           epsilon=epsilon)
+            crit_sampler.generateSamples(num_mc_events)
 
-    # No z_cut label for subsequent samplers:
-    # DEBUG: Removing dicts because they play poorly with dill
-    # subsampdict = {'epsilon' : EPSILON,
-    #                'sample space' : BIN_SPACE,
-    #                'num events' : NUM_MC_EVENTS}
-    # SUB_SAMPLERS.append(subsampdict)
+            # Saving data
+            if SAVE_MC_EVENTS:
+                save_new_data(crit_sampler, "montecarlo samples",
+                              "critical phase space", params,
+                              ".pkl")
 
-    # ----------------------------------
-    # Saving Samplers
-    # ----------------------------------
-    if SAVE_MC_EVENTS:
-        # Saving critical samplers:
-        if use_crit:
-            with open(critfile_path, 'wb') as file:
-                pickle.dump(CRIT_SAMPLERS, file)
-        # Saving pre-critical samplers:
-        if use_precrit:
-            with open(prefile_path, 'wb') as file:
-                pickle.dump(PRE_SAMPLERS, file)
-        # Saving subsequent sampler:
-        if use_sub:
-            with open(subfile_path, 'wb') as file:
-                pickle.dump(SUB_SAMPLERS, file)
+        # - - - - - - - - - - - - - - - - -
+        # Critical radiators
+        # - - - - - - - - - - - - - - - - -
+        # Loading data
+        if LOAD_MC_RADS:
+            critical_radiator_data = load_data("numerical integral",
+                                          "critical radiator",
+                                          params)
+        # Generating data
+        else:
+            _, critical_radiator_data = gen_numerical_radiator(
+                                crit_sampler, 'crit',
+                                jet_type,
+                                obs_accuracy=obs_acc,
+                                splitfn_accuracy=splitfn_acc,
+                                beta=None,
+                                bin_space=bin_space,
+                                fixed_coupling=fixed_coupling,
+                                num_bins=num_rad_bins)
 
-# =====================================
-# Radiators by integration
-# =====================================
-# Setting up radiators
-CRIT_RADIATORS = []
-PRE_RADIATORS = []
-SUB_RADIATORS = []
+            # Saving data
+            if SAVE_MC_RADS:
+                save_new_data(critical_radiator_data,
+                              "numerical integral", "critical radiator",
+                              params, ".npz")
 
-# ----------------------------------
-# Loading Radiators
-# ----------------------------------
-print()
-if LOAD_MC_RADS:
-    print("Loading radiators...")
-    print("    Loading critical radiators...", flush=True)
-    with open(critrad_path, 'rb') as file:
-        CRIT_RADIATORS = pickle.load(file)
-    print("    Loading pre-critical radiators...", flush=True)
-    with open(prerad_path, 'rb') as file:
-        PRE_RADIATORS = pickle.load(file)
-    print("    Loading subsequent radiators...", flush=True)
-    with open(subrad_path, 'rb') as file:
-        SUB_RADIATORS = pickle.load(file)
-    print("Radiators loaded!")
-elif not MAKE_CRIT_RAD:
-    print("Loading critical radiators...", flush=True)
-    with open(critrad_path, 'rb') as file:
-        CRIT_RADIATORS = pickle.load(file)
-    print("Radiators loaded!")
+    # - - - - - - - - - - - - - - - - -
+    # Pre-critical Emissions
+    # - - - - - - - - - - - - - - - - -
+    if USE_PRECRIT:
+        # - - - - - - - - - - - - - - - - -
+        # Pre-critical phase space
+        # - - - - - - - - - - - - - - - - -
+        # Loading data
+        if LOAD_MC_EVENTS:
+            pre_sampler = load_data("montecarlo samples",
+                                    "pre-critical phase space",
+                                    params)
+        # Generating data
+        else:
+            pre_sampler = precriticalSampler(bin_space, zc=z_cut,
+                                             epsilon=epsilon)
+            pre_sampler.generateSamples(num_mc_events)
 
-# ----------------------------------
-# Generating Radiators
-# ----------------------------------
-if not LOAD_MC_RADS and SAVE_MC_RADS:
-    print("Generating radiators for Monte Carlo integration:")
-    if True in [COMPARE_CRIT, COMPARE_CRIT_AND_SUB,
-                COMPARE_PRE_AND_CRIT, COMPARE_ALL]:
-        # Setting up radiator discrete integrals
-        CRIT_INTEGRAL_DATA = {z_cut : {} for z_cut in Z_CUTS}
-        if use_precrit:
-            PRE_INTEGRAL_DATA = {z_cut : {} for z_cut in Z_CUTS}
-        if COMPARE_CRIT_AND_SUB or COMPARE_ALL:
-            SUB_INTEGRAL_DATA = {z_cut : {} for z_cut in Z_CUTS}
-        elif COMPARE_RAW:
-            SUB_INTEGRAL_DATA = {beta : {} for beta in BETAS}
+            # Saving data
+            if SAVE_MC_EVENTS:
+                save_new_data(pre_sampler, "montecarlo samples",
+                              "pre-critical phase space", params,
+                              ".pkl")
 
-        for i, z_cut in enumerate(Z_CUTS):
-            if MAKE_CRIT_RAD:
-                print("    Generating critical radiator with cutoff z_cut="
-                      +str(z_cut)+"...", flush=True)
-                # Critical radiators
-                crit_rad, crit_rad_data = gen_numerical_radiator(
-                                                    CRIT_SAMPLERS[i], 'crit',
-                                                    JET_TYPE,
-                                                    obs_accuracy=OBS_ACC,
-                                                    splitfn_accuracy=SPLITFN_ACC,
-                                                    beta=None,
-                                                    bin_space=BIN_SPACE,
-                                                    fixed_coupling=FIXED_COUPLING,
-                                                    num_bins=NUM_RAD_BINS)
-                CRIT_RADIATORS.append(crit_rad)
-                CRIT_INTEGRAL_DATA[z_cut] = crit_rad_data
+        # - - - - - - - - - - - - - - - - -
+        # Pre-critical radiators
+        # - - - - - - - - - - - - - - - - -
+        # Loading data
+        if LOAD_MC_RADS:
+            precrit_radiator_data = load_data("numerical integral",
+                                          "pre-critical radiator",
+                                          params)
+        # Generating data
+        else:
+            _, precrit_radiator_data = gen_numerical_radiator(
+                                crit_sampler, 'crit',
+                                jet_type,
+                                obs_accuracy=obs_acc,
+                                splitfn_accuracy=splitfn_acc,
+                                beta=None,
+                                bin_space=bin_space,
+                                fixed_coupling=fixed_coupling,
+                                num_bins=num_rad_bins)
 
-            # Pre-critical radiators
-            pre_rad = None
-            if COMPARE_PRE_AND_CRIT or COMPARE_ALL:
-                print("    Generating pre-critical radiator with cutoff z_cut="
-                      +str(z_cut)+"...", flush=True)
-                pre_rad, pre_rad_data = gen_pre_num_rad(PRE_SAMPLERS[i],
-                                            CRIT_SAMPLERS[i],
-                                            JET_TYPE,
-                                            obs_accuracy=OBS_ACC,
-                                            splitfn_accuracy=SPLITFN_ACC,
-                                            bin_space=BIN_SPACE,
-                                            fixed_coupling=FIXED_COUPLING,
-                                            num_bins=NUM_RAD_BINS)
-            PRE_RADIATORS.append(pre_rad)
-            PRE_INTEGRAL_DATA[z_cut] = pre_rad_data
+            # Saving data
+            if SAVE_MC_RADS:
+                save_new_data(precrit_radiator_data,
+                              "numerical integral", "pre-critical radiator",
+                              params, ".npz")
 
-        sub_rad = None
+    # - - - - - - - - - - - - - - - - -
+    # Subsequent Emissions
+    # - - - - - - - - - - - - - - - - -
+    if USE_CRIT_SUB:
+        # Noting that subsequent phase space is independent of z_cut
+        sub_sampler_params = {key: params[key]
+            for key in params.keys() - {'z_cut'}}
 
+        # - - - - - - - - - - - - - - - - -
+        # Subsequent phase space
+        # - - - - - - - - - - - - - - - - -
+        # Loading data
+        if LOAD_MC_EVENTS and iz == 0:
+            sub_sampler = load_data("montecarlo samples",
+                                    "subsequent phase space",
+                                    params)
+        # Generating data
+        elif not LOAD_MC_EVENTS and iz == 0:
+            sub_sampler = ungroomedSampler(bin_space, epsilon=epsilon)
+            sub_sampler.generateSamples(num_mc_events)
+
+            # Saving data
+            if SAVE_MC_EVENTS:
+                save_new_data(sub_sampler, "montecarlo samples",
+                              "subsequent phase space", params,
+                              ".pkl")
+
+        # - - - - - - - - - - - - - - - - -
         # Subsequent radiators
-        if COMPARE_CRIT_AND_SUB or COMPARE_ALL:
-            for _, beta in enumerate(BETAS):
-                print("    Generating critical/subsequent radiator "
-                      "with beta="+str(beta)+"...", flush=True)
-                sub_rad, sub_rad_data = gen_crit_sub_num_rad(SUB_SAMPLERS[0],
-                                               JET_TYPE,
-                                               obs_accuracy=OBS_ACC,
-                                               splitfn_accuracy=SPLITFN_ACC,
-                                               beta=beta,
-                                               epsilon=EPSILON,
-                                               bin_space=BIN_SPACE,
-                                               fixed_coupling=FIXED_COUPLING,
-                                               num_bins=NUM_RAD_BINS)
-                SUB_RADIATORS.append(sub_rad)
-                SUB_INTEGRAL_DATA[z_cut][beta] = sub_rad_data
+        # - - - - - - - - - - - - - - - - -
+        # Loading data
+        if LOAD_MC_RADS:
+            sub_radiator_data = load_data("numerical integral",
+                                          "subsequent radiator",
+                                          params)
+        # Generating data
+        else:
+            _, sub_radiator_data = gen_crit_sub_num_rad(sub_sampler,
+                                           jet_type,
+                                           obs_accuracy=obs_acc,
+                                           splitfn_accuracy=splitfn_acc,
+                                           beta=beta,
+                                           epsilon=epsilon,
+                                           bin_space=bin_space,
+                                           fixed_coupling=fixed_coupling,
+                                           num_bins=num_rad_bins)
 
-    elif COMPARE_RAW:
-        for _, beta in enumerate(BETAS):
-            print("    Generating subsequent radiator with beta="
-                  +str(beta)+"...", flush=True)
-            sub_rad, sub_rad_data = gen_numerical_radiator(SUB_SAMPLERS[0], 'sub',
-                                             JET_TYPE,
-                                             obs_accuracy=OBS_ACC,
-                                             splitfn_accuracy=SPLITFN_ACC,
-                                             beta=beta,
-                                             bin_space=BIN_SPACE,
-                                             fixed_coupling=FIXED_COUPLING,
-                                             num_bins=NUM_RAD_BINS)
-            SUB_RADIATORS.append(sub_rad)
-            SUB_INTEGRAL_DATA[beta] = sub_rad_data
+            # Saving data
+            if SAVE_MC_RADS:
+                save_new_data(sub_radiator_data,
+                              "numerical integral", "subsequent radiator",
+                              params, ".npz")
 
-    # ----------------------------------
-    # Labeling
-    # ----------------------------------
-    # Additional information for z_cut dependent radiators:
-    # DEBUG: Removing dicts because they play poorly with dill
-    # zcraddict = {'z_cuts' : Z_CUTS,
-    #              'jet type' : JET_TYPE,
-    #              'fixed coupling' : FIXED_COUPLING,
-    #              'observable accuracy' : OBS_ACC,
-    #              'split fn accuracy' : SPLITFN_ACC,
-    #              'epsilon' : EPSILON,
-    #              'sample space' : BIN_SPACE,
-    #              'num events' : NUM_MC_EVENTS,
-    #              'num bins' : NUM_RAD_BINS}
-    # CRIT_SAMPLERS.append(zcraddict)
-    # PRE_SAMPLERS.append(zcraddict)
-
-    # Additional information for subsequent radiators:
-    # DEBUG: Removing dicts because they play poorly with dill
-    # subraddict = {'betas' : BETAS,
-    #               'jet type' : JET_TYPE,
-    #               'fixed coupling' : FIXED_COUPLING,
-    #               'observable accuracy' : OBS_ACC,
-    #               'split fn accuracy' : SPLITFN_ACC,
-    #               'epsilon' : EPSILON,
-    #               'sample space' : BIN_SPACE,
-    #               'num events' : NUM_MC_EVENTS,
-    #               'num bins' : NUM_RAD_BINS}
-    # SUB_SAMPLERS.append(subraddict)
-
-    # ----------------------------------
-    # Saving Radiators:
-    # ----------------------------------
-    if SAVE_MC_RADS:
-        # Saving critical radiators:
-        if use_crit and MAKE_CRIT_RAD:
-            print("Saving critical radiator to "+str(critrad_path), flush=True)
-            # Saving interpolating functions
-            with open(critrad_path, 'wb') as file:
-                print(np.array(CRIT_RADIATORS))
-                print(CRIT_RADIATORS[0])
-                np.save(file, np.array(CRIT_RADIATORS))
-            # Saving discretely generated numerical data
-            with open(critrad_int_path, 'wb') as file:
-                np.savez(file, **CRIT_INTEGRAL_DATA)
-            print("Saving complete!", flush=True)
-        # Saving pre-critical radiators:
-        if use_precrit:
-            print("Saving pre-crit radiator to "+str(prerad_path), flush=True)
-            # Saving interpolating functions
-            with open(prerad_path, 'wb') as file:
-                pickle.dump(PRE_RADIATORS, file)
-            # Saving discretely generated numerical data
-            with open(prerad_int_path, 'wb') as file:
-                np.savez(file, **PRE_INTEGRAL_DATA)
-            print("Saving complete!", flush=True)
-        # Saving subsequent radiators:
-        if use_sub:
-            if COMPARE_RAW:
-                desc = 'sub'
-            else:
-                desc = 'crit-sub'
-            print("Saving "+desc+" radiator to "+str(subrad_path), flush=True)
-            # Saving interpolating functions
-            with open(subrad_path, 'wb') as file:
-                pickle.dump(SUB_RADIATORS, file)
-            # Saving discretely generated numerical data
-            with open(subrad_int_path, 'wb') as file:
-                np.savez(file, **SUB_INTEGRAL_DATA)
-            print("Saving complete!", flush=True)
-
-# =====================================
-# Splitting Functions by integration
-# =====================================
-# Setting up
-SPLITTING_FNS = []
-
-# ----------------------------------
-# Generating Splitting Functions
-# ----------------------------------
-print()
-if SAVE_SPLITTING_FNS and not LOAD_SPLITTING_FNS:
-    print("Saving normalized splitting functions...")
-    for _, z_cut in enumerate(Z_CUTS):
-        print("    Generating splitting function with cutoff z_cut="
-              +str(z_cut)+"...", flush=True)
-        # Splitting function generation
-        split_fn = gen_normalized_splitting(NUM_MC_EVENTS, z_cut,
-                                     jet_type=JET_TYPE, accuracy=SPLITFN_ACC,
-                                     fixed_coupling=FIXED_COUPLING,
-                                     num_bins=NUM_SPLITFN_BINS)
-
-        SPLITTING_FNS.append(split_fn)
-
-    # ----------------------------------
-    # Labeling
-    # ----------------------------------
-    # Additional information for z_cut dependent splitting functions:
-    # DEBUG: Removing dicts because they play poorly with dill
-    # splitdict = {'z_cuts' : Z_CUTS,
-    #              'jet type' : JET_TYPE,
-    #              'fixed coupling' : FIXED_COUPLING,
-    #              'accuracy' : SPLITFN_ACC,
-    #              'epsilon' : EPSILON,
-    #              'sample space' : BIN_SPACE,
-    #              'num events' : NUM_MC_EVENTS,
-    #              'num bins' : NUM_SPLITFN_BINS}
-    # SPLITTING_FNS.append(splitdict)
-
-    # ----------------------------------
-    # Saving Splitting Functions
-    # ----------------------------------
-    with open(splitfn_path, 'wb') as file:
-        pickle.dump(SPLITTING_FNS, file)
-    print("Saved splitting functions to "+str(splitfn_path)+".", flush=True)
-
-# ----------------------------------
-# Loading Splitting Functions
-# ----------------------------------
-elif LOAD_SPLITTING_FNS:
-    print("Loading normalized splitting functions...", flush=True)
-    with open(splitfn_path, 'rb') as file:
-        SPLITTING_FNS = pickle.load(file)
+print("Complete!")
