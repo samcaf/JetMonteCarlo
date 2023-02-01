@@ -1,15 +1,13 @@
 from __future__ import absolute_import
+import warnings
 import dill as pickle
 from pathlib import Path
 
 from jetmontecarlo.utils.partonshower_utils import *
 
-
 # Defining the folder in which we store the parton shower data
-shower_folder = Path("output/montecarlo_samples/parton_showers/")
+shower_folder = Path("output/examples/parton_showers/")
 ps_sample_folder = shower_folder
-# Used to be different with old file structure, now the same.
-# Keeping names for flexibility.
 
 class parton_shower():
     # ------------------------------------
@@ -25,9 +23,13 @@ class parton_shower():
     # ------------------------------------
     # File paths
     # ------------------------------------
-    # DEBUG: Deprecated
-    def showerfile_path(self, info=''):
+    def showerfile_path(self, info='', warn=True):
         """Sets up a path for loading or saving shower events."""
+        if warn:
+            warnings.warn("Loading or saving pickled parton showers, with"
+                          " a list of jets and all associated kinematic"
+                          " information, is very expensive. Consider saving"
+                          " processed versions of the data instead.")
         info += '' if self.jet_type == 'quark' else '_'+self.jet_type
 
         if self.fixed_coupling:

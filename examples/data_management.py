@@ -76,7 +76,7 @@ def load_and_interpolate(data_source, params, **interp_kwargs):
         if data_source not in unbinned_data_sources:
             raise ValueError("No bins found for data source "\
                              +f"{data_source}.")
-        # DEBUG: A bit hacked/not general, but we know the
+        # NOTE: A bit hacked/not general, but we know the
         #        shape of the subsequent radiator data
         dimensionality = 2
         xs = data.get('xs')
@@ -94,11 +94,6 @@ def load_and_interpolate(data_source, params, **interp_kwargs):
         # After setting monotonicity args, get the interpolation
         interpolation = get_1d_interpolation(bins, integral,
                                              **interp_kwargs)
-        # DEBUG: Bad behavior of crit radiator
-        testbin = int(3*len(bins)/4)
-        testval = interpolation(bins[testbin])
-        print("bin, integral, interpolation | ",
-              bins[testbin], integral[testbin], testval)
 
     elif dimensionality == 2:
         interpolation = get_2d_interpolation(xs, ys, integral,

@@ -154,7 +154,7 @@ def new_cataloged_filename(data_type: str, data_source: str,
     # Storing the updated catalog
     if catalog_dict:
         with open(example_catalog, 'w') as file:
-            yaml.safe_dump(catalog_dict, file)
+            yaml.safe_dump(catalog_dict, file, width=float("inf"))
     return filename
 
 

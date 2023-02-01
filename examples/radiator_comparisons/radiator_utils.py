@@ -13,8 +13,10 @@ from jetmontecarlo.analytics.radiators import *
 
 # Parameters and Utilities
 from examples.params import tab, BETAS, RADIATOR_PARAMS
-from examples.data_management import load_and_interpolate
 from examples.file_management import fig_folder
+
+# Radiator function utilities
+from examples.load_data import load_radiators
 
 
 # =====================================
@@ -58,31 +60,11 @@ def fig_file_name(rad_type):
 # =====================================
 # Getting radiators
 # =====================================
-critical_radiator = {}
-precritical_radiator = {}
-subsequent_radiator = {}
+radiators = load_radiators()
 
-print("Loading critical radiators\n")
-for z_cut in Z_CUT_PLOT:
-    critical_radiator[z_cut] = load_and_interpolate(
-                    'critical radiator',
-                    params=dict(**params, **{'z_cut': z_cut}),
-                    monotonic=True, bounds=(1e-10, 1),
-    )
-
-print("Loading pre-critical radiators\n")
-for z_cut in Z_CUT_PLOT:
-    precritical_radiator[z_cut] = load_and_interpolate(
-                    'pre-critical radiator',
-                    params=dict(**params, **{'z_cut': z_cut}),
-                    interpolation_method="RectangularGrid")
-
-print("Loading subsequent radiators\n")
-for b in BETAS:
-    subsequent_radiator[b] = load_and_interpolate(
-                    'subsequent radiator',
-                    params=dict(**params, **{'beta': b}),
-                    interpolation_method='Nearest')
+critical_radiator = radiators['critical']
+precritical_radiator = radiators['pre-critical']
+subsequent_radiator = radiators['subsequent']
 
 
 ###########################################

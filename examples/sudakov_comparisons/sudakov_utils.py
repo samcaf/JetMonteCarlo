@@ -1,28 +1,28 @@
-from __future__ import absolute_import
-import dill as pickle
-from pathlib import Path
-
-from scipy.misc import derivative
-
-# Local utilities for comparison
+# Local analytics
 from jetmontecarlo.utils.montecarlo_utils import getLinSample
 from jetmontecarlo.jets.observables import *
-from examples.comparison_plot_utils import *
-
-# Local analytics
 from jetmontecarlo.analytics.radiators import *
 from jetmontecarlo.analytics.radiators_fixedcoupling import *
 from jetmontecarlo.analytics.sudakovFactors_fixedcoupling import *
 from jetmontecarlo.montecarlo.partonshower import *
 
+# Plotting utilities
+from examples.comparison_plot_utils import *
+
 # Parameters and Filenames
+# DEBUG: Remove * imports
 from examples.params import *
-from examples.file_management import fig_folder
+
+# Loading Data and Functions
+from examples.load_data import load_radiators
+from examples.load_data import load_splittingfns
+from examples.load_data import load_sudakov_samples
 
 
-###########################################
+# =====================================
 # Definitions and Parameters
-###########################################
+# =====================================
+
 # ------------------------------------
 # Parameters for plotting
 # ------------------------------------
@@ -33,9 +33,6 @@ F_SOFT_PLOT = [.5, 1]
 F_SOFT_PLOT_IVS = [.5, 1, 'ivs']
 F_SOFT_STR = ['1/2', '1']
 
-save_cdf = False
-
-#f_colors = {.5: OrangeShade3, 1: GreenShade2, 'ivs': PurpleShade2}
 f_colors = {.5: 'goldenrod', 1: 'forestgreen', 'ivs': 'darkmagenta'}
 
 plot_colors = {k: {
@@ -62,19 +59,26 @@ if F_SOFT:
     plot_label += '_f{}'.format(F_SOFT)
 
 
+# ---------------------------------
+# Loading Samples
+# ---------------------------------
+# DEBUG: Need to implement
+sudakov_inverse_transforms = load_sudakov_samples()
+
 # ------------------------------------
 # Loading Functions:
 # ------------------------------------
-split_fn_num = get_splitting_function()
+splitting_functions = load_splittingfns()
 
 radiators = {}
 if not(LOAD_MC_EVENTS):
-    radiators = get_radiator_functions()
+    radiators = load_radiators()
 
 
 ###########################################
 # Additional Plot Utils
 ###########################################
+# DEBUG: Too buggy, leaving out
 def plot_mc_banded(ax, ys, err, bins, label, col, drawband=False):
     if BIN_SPACE == 'lin':
         xs = (bins[:-1] + bins[1:])/2.
@@ -86,9 +90,13 @@ def plot_mc_banded(ax, ys, err, bins, label, col, drawband=False):
         err = xs * err * np.log(10) # delta( dY / d log10 C)
 
     line = ax.plot(xs, ys, ls='-', lw=2., color=col, label=label)
-    if drawband:
-        band = draw_error_band(ax, xs, ys, err, color=col, alpha=.4)
-        return line, band
+
+    # DEBUG: Leaving out error bands because they act weird
+    # if drawband:
+    #     band = draw_error_band(ax, xs, ys, err,
+    #                            color=col, alpha=.4)
+    #     return line, band
+
     return line, None
 
 def full_legend(ax, labels, loc='upper left', drawband=False):
@@ -124,13 +132,18 @@ def plot_mc_crit(axes_pdf, axes_cdf, z_cut, beta, f_soft, col,
     sud_integrator = integrator()
     sud_integrator.setLastBinBndCondition([1., 'minus'])
 
-    theta_crits, theta_crit_weights, load = get_theta_crits(
-                          z_cut, beta, load=load, save=True,
-                          rad_crit=radiators.get('critical', None))
+    # DEBUG: Need to use both samples and weights when saving
+    theta_crits        = sudakov_inverse_transforms['critical']\
+                                    [z_cut][beta]['samples']
+    theta_crit_weights = sudakov_inverse_transforms['critical']\
+                                    [z_cut][beta]['weights']
+    # theta_crits, theta_crit_weights, load = get_theta_crits(
+    #                       z_cut, beta, load=load, save=True,
+    #                       rad_crit=radiators.get('critical', None))
 
     z_crits = np.array([getLinSample(z_cut, 1./2.)
                         for i in range(NUM_MC_EVENTS)])
-    weights = split_fn_num(z_crits, theta_crits, z_cut)
+    weights = splitting_functions[z_cut](z_crits, theta_crits)
 
     obs = C_groomed(z_crits, theta_crits, z_cut, beta,
                     z_pre=0., f=f_soft, acc=OBS_ACC)
@@ -184,21 +197,37 @@ def plot_mc_all(axes_pdf, axes_cdf, z_cut, beta, f_soft, col,
     sud_integrator = integrator()
     sud_integrator.setLastBinBndCondition([1., 'minus'])
 
-    theta_crits, theta_crit_weights, load = get_theta_crits(
-                          z_cut, beta, load=load, save=True,
-                          rad_crit=radiators.get('critical', None))
+    # DEBUG: Need to use both samples and weights when saving
+    theta_crits        = sudakov_inverse_transforms['critical']\
+                                    [z_cut][beta]['samples']
+    theta_crit_weights = sudakov_inverse_transforms['critical']\
+                                    [z_cut][beta]['weights']
+    # theta_crits, theta_crit_weights, load = get_theta_crits(
+    # theta_crits, theta_crit_weights, load = get_theta_crits(
+    #                       z_cut, beta, load=load, save=True,
+    #                       rad_crit=radiators.get('critical', None))
 
-    c_subs, c_sub_weights, load = get_c_subs(z_cut, beta,
-                         load=load, save=True, theta_crits=theta_crits,
-                         rad_crit_sub=radiators.get('subsequent', None))
+    # DEBUG: Need to use both samples and weights when saving
+    c_subs        = sudakov_inverse_transforms['subsequent']\
+                                    [z_cut][beta]['samples']
+    c_sub_weights = sudakov_inverse_transforms['subsequent']\
+                                    [z_cut][beta]['weights']
+    # c_subs, c_sub_weights, load = get_c_subs(z_cut, beta,
+    #                      load=load, save=True, theta_crits=theta_crits,
+    #                      rad_crit_sub=radiators.get('subsequent', None))
 
-    z_pres, z_pre_weights, load = get_z_pres(z_cut, load=load, save=True,
-                        theta_crits=theta_crits,
-                        rad_pre=radiators.get('pre-critical', None))
+    # DEBUG: Need to use both samples and weights when saving
+    z_pres        = sudakov_inverse_transforms['pre-critical']\
+                                    [z_cut]['samples']
+    z_pre_weights = sudakov_inverse_transforms['pre-critical']\
+                                    [z_cut]['weights']
+    # z_pres, z_pre_weights, load = get_z_pres(z_cut, load=load, save=True,
+    #                     theta_crits=theta_crits,
+    #                     rad_pre=radiators.get('pre-critical', None))
 
     z_crits = np.array([getLinSample(z_cut, 1./2.)
                         for i in range(NUM_MC_EVENTS)])
-    weights = split_fn_num(z_crits, theta_crits, z_cut)
+    weights = splitting_functions[z_cut](z_crits, theta_crits)
 
     c_crits = C_groomed(z_crits, theta_crits, z_cut, beta,
                         z_pre=z_pres, f=f_soft, acc=OBS_ACC)
@@ -239,75 +268,5 @@ def plot_mc_all(axes_pdf, axes_cdf, z_cut, beta, f_soft, col,
 
         print("All MC adjusted normalization:",
               np.sum(pdf * (np.log10(bins[1:])-np.log10(bins[:-1]))))
-
-    return pdfline, pdfband, cdfline, cdfband
-
-###########################################
-# IVS
-###########################################
-def plot_mc_ivs(axes_pdf, axes_cdf, z_cut, beta, f_soft, col,
-                emissions=['crit'],
-                load=LOAD_INV_SAMPLES):
-    sud_integrator = integrator()
-    sud_integrator.setLastBinBndCondition([1., 'minus'])
-
-    if 'crit' in emissions:
-        theta_crits, theta_crit_weights, load = get_theta_crits(
-                              z_cut, beta, load=load, save=True,
-                              rad_crit=radiators.get('critical', None))
-
-    if 'sub' in emissions:
-        c_subs, c_sub_weights, load = get_c_subs(z_cut, beta,
-                             load=load, save=True, theta_crits=theta_crits,
-                             rad_crit_sub=radiators.get('subsequent', None))
-
-    if 'pre' in emissions:
-        z_pres, z_pre_weights, load = get_z_pres(z_cut, load=load, save=True,
-                            theta_crits=theta_crits,
-                            rad_pre=radiators.get('pre-critical', None))
-
-    z_crits = np.array([getLinSample(z_cut, 1./2.)
-                        for i in range(NUM_MC_EVENTS)])
-    weights = split_fn_num(z_crits, theta_crits, z_cut)
-
-    c_crits = np.zeros_like(z_crits)
-    if 'pre' in emissions:
-        assert 'crit' in emissions, "Must consider critical emissions to " \
-            + "consider pre-critical emissions."
-        c_crits = C_groomed(z_crits, theta_crits, z_cut, beta,
-                            z_pre=z_pres, f=f_ivs(theta_crits),
-                            acc=OBS_ACC)
-    elif 'crit' in emissions:
-        c_crits = C_groomed(z_crits, theta_crits, z_cut, beta,
-                            z_pre=np.zeros_like(z_crits),
-                            f=f_ivs(theta_crits),
-                            acc=OBS_ACC)
-    if 'sub' in emissions:
-        obs = np.maximum(c_crits, c_subs)
-    else:
-        obs = c_crits
-
-    # Weights, binned observables, and area
-    if BIN_SPACE == 'lin':
-        sud_integrator.bins = np.linspace(0, .5, NUM_BINS)
-    if BIN_SPACE == 'log':
-        sud_integrator.bins = np.logspace(np.log10(EPSILON)-1, np.log10(.5),
-                                          NUM_BINS)
-    sud_integrator.hasBins = True
-
-    sud_integrator.setDensity(obs, weights, 1./2.-z_cut)
-    sud_integrator.integrate()
-
-    pdf = sud_integrator.density
-    pdf_err = sud_integrator.densityErr
-    integral = sud_integrator.integral
-    integralerr = sud_integrator.integralErr
-
-    pdfline, pdfband = plot_mc_banded(axes_pdf[0], pdf, 2.*pdf_err,
-                                      sud_integrator.bins,
-                                      label=None, col=col)
-    cdfline, cdfband = plot_mc_banded(axes_cdf[0], integral, integralerr,
-                                      sud_integrator.bins,
-                                      label=None, col=col)
 
     return pdfline, pdfband, cdfline, cdfband

@@ -155,6 +155,9 @@ SHOWER_PARAMS = {
     'jet type' : JET_TYPE,
     'number of shower events' : NUM_SHOWER_EVENTS,
     'shower cutoff' : SHOWER_CUTOFF,
+    # The angularity which orders the shower will need
+    # to be defined for each instance
+    'shower beta' : None
 }
 
 

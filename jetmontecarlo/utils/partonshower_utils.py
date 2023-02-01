@@ -444,7 +444,7 @@ def getangs(jet_list, beta=2., acc='LL', emission_type=None,
 # -----------------------------------------
 def getECFs_ungroomed(jet_list, beta=2.,
                       obs_acc='LL', n_emissions=1,
-                      verbose=1):
+                      verbose=0):
     """Retrieves a list of ungroomed jet energy correlation functions from a
     list of ungroomed jets.
     """
@@ -501,7 +501,7 @@ def getECFs_ungroomed(jet_list, beta=2.,
 def getECFs_rss(jet_list, z_cut, beta=2., f=1.,
                 obs_acc='LL', emission_type='precritsub',
                 n_emissions=1, few_pres=True,
-                rescale_hard=True, verbose=1):
+                rescale_hard=True, verbose=0):
     """Retrieves a list of groomed jet energy correlation functions from a
     list of *ungroomed* jets.
     In particular, ungroomed jets do not record "types" of emissions, so in
@@ -675,7 +675,7 @@ def getECFs_rss(jet_list, z_cut, beta=2., f=1.,
 
 def getECFs_softdrop(jet_list, z_cut, beta=2., beta_sd=0.,
                      obs_acc='LL', n_emissions=1,
-                     verbose=1, reproduce_approximations=True):
+                     verbose=0, reproduce_approximations=True):
     """Retrieves a list of soft drop groomed jet energy correlation
     functions from a list of *ungroomed* jets.
     Note in particular that this does not take into account

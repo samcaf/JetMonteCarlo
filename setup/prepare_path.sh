@@ -68,3 +68,7 @@ mkdir -p $output_folder/logs
 # Making a catalog file for the output of the examples
 mkdir -p $output_folder/examples/current
 touch $output_folder/examples/file_catalog.yaml
+
+# Making a folder to store pickled parton showers,
+# for backward compatibility
+mkdir -p $output_folder/examples/parton_showers/

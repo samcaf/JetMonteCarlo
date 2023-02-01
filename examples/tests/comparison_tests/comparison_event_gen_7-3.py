@@ -71,7 +71,7 @@ subradfile = 'sub_rads_{:.0e}events_{:.0e}bins.pkl'.format(NUM_MC_EVENTS,
                                                            NUM_RAD_BINS)
 
 # Relative paths
-# DEBUG: Haven't checked this since changing file structure
+# NOTE: Haven't checked this since changing output file structure
 sample_folder = Path("output/montecarlo_samples/")
 jetfile_path = sample_folder / "parton_showers" / jetfile
 critfile_path = sample_folder / "radiators" / critfile
