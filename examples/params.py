@@ -226,7 +226,7 @@ if __name__ == '__main__':
               +"\n"+tab+"# Monte Carlo:\n"+tab+"# -----------------------------")
         print(tab+tab+"# Number of events for MC integration: {:.1e}".format(NUM_MC_EVENTS))
         if VERBOSE > 1:
-            print("\n"+tab+tab+"# Basic MC Integraion Information:")
+            print("\n"+tab+tab+"# Basic MC Integration Information:")
             print(tab+tab+tab+"# Integration space: " + str(BIN_SPACE) +
                   " (if log, integration cutoff of " + str(EPSILON) + ")")
             if VERBOSE > 2:
