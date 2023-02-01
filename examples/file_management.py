@@ -14,6 +14,7 @@ fig_folder = Path('output/figures/current/')
 # Example output folder
 example_output_folder = Path('output/examples')
 example_storage       = Path('output/examples/current')
+example_trashbin      = Path('output/examples/overwritten')
 example_catalog       = example_output_folder / 'file_catalog.yaml'
 
 
@@ -67,6 +68,18 @@ def check_data_source(data_type, data_source, warn_only=True):
     assert recognized_data_source, "Unrecognized data source"\
         +f" {data_source} from data type {data_type}."
 
+def check_params(params, warn_only=True):
+    """Check if there are unexpected entries in the given params."""
+    # We don't expect any `None`s in the values of params
+    nones_in_values = "None" in params.values()\
+        or None in params.values()
+
+    if nones_in_values:
+        if warn_only:
+            warnings.warn("There are None values in the given params.")
+            return
+        assert False, "There are None values in the params."
+
 
 # ---------------------------------
 # Catalog file utilities:
@@ -93,12 +106,14 @@ def dict_to_yaml_key(d, pair_separator=' : ',
 
 def new_cataloged_filename(data_type: str, data_source: str,
                            params: dict,
-                           extension: str = '.pkl'):
+                           extension: str = '.pkl',
+                           overwrite_mode: str = 'delete'):
     """Add a new entry to the example catalog file and returns
     the associated filename.
     """
     check_data_type(data_type)
     check_data_source(data_type, data_source)
+    check_params(params)
 
     filename = unique_filename(data_type, data_source, extension)
 
@@ -118,10 +133,23 @@ def new_cataloged_filename(data_type: str, data_source: str,
         # Making a key for the yaml file
         yaml_key = dict_to_yaml_key(params)
 
+        # Checking if the set of parameters already has an entry
+        entry = catalog_dict[data_type][data_source].get(yaml_key)
+        if entry is not None:
+            file_path = Path(entry['filename'])
+            if file_path.exists():
+                if overwrite_mode == 'delete':
+                    Path.unlink(file_path)
+                elif overwrite_mode == 'trash':
+                    Path.rename(filename,
+                            example_trashbin / file_path.name)
+
         # Updating the dict with the given params and filenames
-        params = dict({key: str(value) for key, value in params.items()})
+        params = dict({key: str(value)
+                       for key, value in params.items()})
         catalog_dict[data_type][data_source][yaml_key] = params
-        catalog_dict[data_type][data_source][yaml_key]['filename'] = str(filename)
+        catalog_dict[data_type][data_source][yaml_key]\
+            ['filename'] = str(filename)
 
     # Storing the updated catalog
     if catalog_dict:
@@ -134,6 +162,7 @@ def filename_from_catalog(data_type, data_source, params):
     """Retrieve a filename from the example catalog file."""
     check_data_type(data_type)
     check_data_source(data_type, data_source)
+    check_params(params)
 
     # Open the catalog
     with open(example_catalog, 'r') as file:

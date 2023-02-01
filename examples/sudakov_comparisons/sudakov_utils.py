@@ -17,7 +17,7 @@ from jetmontecarlo.montecarlo.partonshower import *
 
 # Parameters and Filenames
 from examples.params import *
-from examples.file_manager import fig_folder
+from examples.file_management import fig_folder
 
 
 ###########################################

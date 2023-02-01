@@ -197,8 +197,9 @@ def angularity_split(ang_init, beta, jet_type,
             if cut > 1:
                 raise ValueError("The pdf must be everywhere less than the"
                                  + "proposed pdf!")
-            elif cut > .6:
-                print("Dangerous value of "+str(cut)+" for pdf ratio in the veto algorithm.", flush=True)
+            if cut > .6:
+                print(f"Dangerous value of {cut} for pdf ratio "
+                      +"in the veto algorithm.", flush=True)
 
             if random.random() < cut:
                 # If we accept the emission, stop the algorithm here

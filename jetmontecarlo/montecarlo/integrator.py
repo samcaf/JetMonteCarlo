@@ -5,8 +5,8 @@ import dill
 # Local utils
 from jetmontecarlo.utils.hist_utils import histDerivative
 from jetmontecarlo.montecarlo.sampler import simpleSampler
-from jetmontecarlo.utils.interpolation_function_utils import get_1d_interpolation
-from jetmontecarlo.utils.interpolation_function_utils import get_2d_interpolation
+from jetmontecarlo.utils.interpolation import get_1d_interpolation
+from jetmontecarlo.utils.interpolation import get_2d_interpolation
 
 MIN_LOG_BIN = 1e-15
 
@@ -199,7 +199,7 @@ class integrator():
                      'density': self.density,
                      'density error': self.densityErr,
                      'integral': self.integral,
-                    'integral error': self.integralErr}
+                     'integral error': self.integralErr}
 
         if info is not None:
             data_dict['info'] = info
@@ -707,6 +707,7 @@ class integrator_2d():
         assert self.hasMCIntegral, \
             "Need MC integral to produce interpolation"
         x, y = self.bins[0], self.bins[1]
+        z = self.extended_integral
 
         self.interpFn = get_2d_interpolation(x, y, z, **kwargs)
 

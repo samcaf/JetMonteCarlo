@@ -1,17 +1,35 @@
-# Local utilities for numerics
-from jetmontecarlo.jets.jet_numerics import *
+# =====================================
+# Imports
+# =====================================
+# ---------------------------------
+# Local utilities
+# ---------------------------------
+# Local utilities for phase space sampling
+from jetmontecarlo.jets.jetSamplers import criticalSampler,\
+            precriticalSampler, ungroomedSampler
+
+# Local utilities for function generation
+from jetmontecarlo.jets.jet_numerics import gen_normalized_splitting,\
+            gen_numerical_radiator, gen_pre_num_rad,\
+            gen_crit_sub_num_rad
 
 # Local utilities for files
 from examples.data_management import save_new_data
 from examples.data_management import load_data
-# from examples.data_management import load_and_interpolate
 
 # Parameters
-from examples.params import Z_CUTS
-from examples.params import ALL_MC_PARAMS
+from examples.params import tab
+from examples.params import ALL_MONTECARLO_PARAMS
+from examples.params import PHASESPACE_PARAMS
+from examples.params import RADIATOR_PARAMS
+from examples.params import SPLITTINGFN_PARAMS
+
+from examples.params import BETAS, Z_CUTS
 from examples.params import USE_PRECRIT, USE_CRIT, USE_CRIT_SUB
 
+# ---------------------------------
 # Flags for saving or loading
+# ---------------------------------
 from examples.params import LOAD_MC_EVENTS, SAVE_MC_EVENTS
 from examples.params import LOAD_MC_RADS, SAVE_MC_RADS
 from examples.params import LOAD_SPLITTING_FNS
@@ -21,21 +39,26 @@ from examples.params import SAVE_SPLITTING_FNS
 # =====================================
 # Parameters
 # =====================================
-params = ALL_MC_PARAMS
+params             = ALL_MONTECARLO_PARAMS
 
-# DEBUG: Fixing beta to 2 for now
-beta = 2
+splittingfn_params = SPLITTINGFN_PARAMS
 
-jet_type = params['jet type']
-fixed_coupling = params['fixed coupling']
-obs_acc = params['observable accuracy']
-splitfn_acc = params['splitting function accuracy']
+phasespace_params  = PHASESPACE_PARAMS
 
-num_mc_events = params['number of MC events']
-epsilon = params['epsilon']
-bin_space = params['bin space']
+radiator_params    = RADIATOR_PARAMS
+del radiator_params['beta']
 
-num_rad_bins = params['number of radiator bins']
+# Unpacking parameters
+jet_type         = params['jet type']
+fixed_coupling   = params['fixed coupling']
+obs_acc          = params['observable accuracy']
+splitfn_acc      = params['splitting function accuracy']
+
+num_mc_events    = params['number of MC events']
+epsilon          = params['epsilon']
+bin_space        = params['bin space']
+
+num_rad_bins     = params['number of radiator bins']
 num_splitfn_bins = params['number of splitting function bins']
 
 
@@ -43,8 +66,9 @@ num_splitfn_bins = params['number of splitting function bins']
 # Phase Space Sampling
 # =====================================
 # Telling something to the audience
-print("Loading Monte Carlo events and integrals." if LOAD_MC_EVENTS
-      else "Generating Monte Carlo events and integrals.")
+print("Loading Monte Carlo events and integrals" if LOAD_MC_EVENTS
+      else "Generating Monte Carlo events and integrals")
+print()
 
 # ---------------------------------
 # - - - - - - - - - - - - - - - - -
@@ -55,26 +79,34 @@ print("Loading Monte Carlo events and integrals." if LOAD_MC_EVENTS
 #   Loading or saving splitting functions
 #   Then considering each type of emission, and
 #       Loading or saving samples and radiators
+# Then loading or saving subsequent radiators,
+#  which are independent of z_cut
 
 # ---------------------------------
 # Looping over zcut values
 # ---------------------------------
 for iz, z_cut in enumerate(Z_CUTS):
-    print(f"    Considering {z_cut = }.", flush=True)
+    print(tab+f"Considering {z_cut = }", flush=True)
 
-    params['z_cut'] = z_cut
+    splittingfn_params['z_cut'] = z_cut
+    phasespace_params['z_cut']  = z_cut
+    radiator_params['z_cut']    = z_cut
 
     # - - - - - - - - - - - - - - - - -
     # Splitting Functions
     # - - - - - - - - - - - - - - - - -
     # Loading data
     if LOAD_SPLITTING_FNS:
+        print(tab+tab+"Loading splitting functions",
+              flush=True)
         splitting_function = load_data("serialized function",
                                        "splitting function",
-                                       params)
+                                       splittingfn_params)
 
     # Generating data
     else:
+        print(tab+tab+"Generating splitting functions",
+              flush=True)
         split_fn = gen_normalized_splitting(num_mc_events, z_cut,
                          jet_type=jet_type, accuracy=splitfn_acc,
                          fixed_coupling=fixed_coupling,
@@ -82,7 +114,7 @@ for iz, z_cut in enumerate(Z_CUTS):
         # Saving data
         if SAVE_SPLITTING_FNS:
             save_new_data(split_fn, "serialized function",
-                          "splitting function", params,
+                          "splitting function", splittingfn_params,
                           '.pkl')
 
 
@@ -95,11 +127,15 @@ for iz, z_cut in enumerate(Z_CUTS):
         # - - - - - - - - - - - - - - - - -
         # Loading data
         if LOAD_MC_EVENTS:
+            print(tab+tab+"Loading critical phase space",
+                  flush=True)
             crit_sampler = load_data("montecarlo samples",
                                      "critical phase space",
-                                     params)
+                                     phasespace_params)
         # Generating data
         else:
+            print(tab+tab+"Generating critical phase space",
+                  flush=True)
             crit_sampler = criticalSampler(bin_space, zc=z_cut,
                                            epsilon=epsilon)
             crit_sampler.generateSamples(num_mc_events)
@@ -107,7 +143,8 @@ for iz, z_cut in enumerate(Z_CUTS):
             # Saving data
             if SAVE_MC_EVENTS:
                 save_new_data(crit_sampler, "montecarlo samples",
-                              "critical phase space", params,
+                              "critical phase space",
+                              phasespace_params,
                               ".pkl")
 
         # - - - - - - - - - - - - - - - - -
@@ -115,11 +152,15 @@ for iz, z_cut in enumerate(Z_CUTS):
         # - - - - - - - - - - - - - - - - -
         # Loading data
         if LOAD_MC_RADS:
+            print(tab+tab+"Loading critical radiators",
+                  flush=True)
             critical_radiator_data = load_data("numerical integral",
                                           "critical radiator",
-                                          params)
+                                          radiator_params)
         # Generating data
         else:
+            print(tab+tab+"Generating critical radiators",
+                  flush=True)
             _, critical_radiator_data = gen_numerical_radiator(
                                 crit_sampler, 'crit',
                                 jet_type,
@@ -134,7 +175,7 @@ for iz, z_cut in enumerate(Z_CUTS):
             if SAVE_MC_RADS:
                 save_new_data(critical_radiator_data,
                               "numerical integral", "critical radiator",
-                              params, ".npz")
+                              radiator_params, ".npz")
 
     # - - - - - - - - - - - - - - - - -
     # Pre-critical Emissions
@@ -145,11 +186,15 @@ for iz, z_cut in enumerate(Z_CUTS):
         # - - - - - - - - - - - - - - - - -
         # Loading data
         if LOAD_MC_EVENTS:
+            print(tab+tab+"Loading pre-critical phase space",
+                  flush=True)
             pre_sampler = load_data("montecarlo samples",
                                     "pre-critical phase space",
-                                    params)
+                                    phasespace_params)
         # Generating data
         else:
+            print(tab+tab+"Generating pre-critical phase space",
+                  flush=True)
             pre_sampler = precriticalSampler(bin_space, zc=z_cut,
                                              epsilon=epsilon)
             pre_sampler.generateSamples(num_mc_events)
@@ -157,7 +202,8 @@ for iz, z_cut in enumerate(Z_CUTS):
             # Saving data
             if SAVE_MC_EVENTS:
                 save_new_data(pre_sampler, "montecarlo samples",
-                              "pre-critical phase space", params,
+                              "pre-critical phase space",
+                              phasespace_params,
                               ".pkl")
 
         # - - - - - - - - - - - - - - - - -
@@ -165,17 +211,19 @@ for iz, z_cut in enumerate(Z_CUTS):
         # - - - - - - - - - - - - - - - - -
         # Loading data
         if LOAD_MC_RADS:
+            print(tab+tab+"Loading pre-critical radiators",
+                  flush=True)
             precrit_radiator_data = load_data("numerical integral",
                                           "pre-critical radiator",
-                                          params)
+                                          radiator_params)
         # Generating data
         else:
-            _, precrit_radiator_data = gen_numerical_radiator(
-                                crit_sampler, 'crit',
+            print(tab+tab+"Generating pre-critical radiators",
+                  flush=True)
+            _, precrit_radiator_data = gen_pre_num_rad(
+                                pre_sampler, crit_sampler,
                                 jet_type,
-                                obs_accuracy=obs_acc,
                                 splitfn_accuracy=splitfn_acc,
-                                beta=None,
                                 bin_space=bin_space,
                                 fixed_coupling=fixed_coupling,
                                 num_bins=num_rad_bins)
@@ -184,45 +232,68 @@ for iz, z_cut in enumerate(Z_CUTS):
             if SAVE_MC_RADS:
                 save_new_data(precrit_radiator_data,
                               "numerical integral", "pre-critical radiator",
-                              params, ".npz")
+                              radiator_params, ".npz")
+
+# ---------------------------------
+# Subsequent Emissions
+# ---------------------------------
+# Noting that subsequent phase space and radiator is
+# independent of z_cut:
+del phasespace_params['z_cut']
+del radiator_params['z_cut']
+
+if USE_CRIT_SUB:
+    print("\n"+tab+"Considering subsequent emissions",
+          flush=True)
+    # - - - - - - - - - - - - - - - - -
+    # Subsequent phase space
+    # - - - - - - - - - - - - - - - - -
+    # Loading data
+    if LOAD_MC_EVENTS:
+        print(tab+tab+"Loading subsequent phase space",
+              flush=True)
+        sub_sampler = load_data("montecarlo samples",
+                                "subsequent phase space",
+                                phasespace_params)
+    # Generating data
+    elif not LOAD_MC_EVENTS:
+        print(tab+tab+"Generating subsequent phase space",
+              flush=True)
+        sub_sampler = ungroomedSampler(bin_space, epsilon=epsilon)
+        sub_sampler.generateSamples(num_mc_events)
+
+        # Saving data
+        if SAVE_MC_EVENTS:
+            save_new_data(sub_sampler, "montecarlo samples",
+                          "subsequent phase space",
+                          phasespace_params,
+                          ".pkl")
 
     # - - - - - - - - - - - - - - - - -
-    # Subsequent Emissions
+    # Subsequent radiators
     # - - - - - - - - - - - - - - - - -
-    if USE_CRIT_SUB:
-        # Noting that subsequent phase space is independent of z_cut
-        sub_sampler_params = {key: params[key]
-            for key in params.keys() - {'z_cut'}}
+    # Loading data
+    if LOAD_MC_RADS:
+        print(tab+tab+f"Loading subsequent radiators",
+              flush=True)
+        # Looping over beta values
+        for beta in BETAS:
+            print(tab+tab+tab+f"Considering {beta = }", flush=True)
+            radiator_params['beta'] = beta
 
-        # - - - - - - - - - - - - - - - - -
-        # Subsequent phase space
-        # - - - - - - - - - - - - - - - - -
-        # Loading data
-        if LOAD_MC_EVENTS and iz == 0:
-            sub_sampler = load_data("montecarlo samples",
-                                    "subsequent phase space",
-                                    params)
-        # Generating data
-        elif not LOAD_MC_EVENTS and iz == 0:
-            sub_sampler = ungroomedSampler(bin_space, epsilon=epsilon)
-            sub_sampler.generateSamples(num_mc_events)
-
-            # Saving data
-            if SAVE_MC_EVENTS:
-                save_new_data(sub_sampler, "montecarlo samples",
-                              "subsequent phase space", params,
-                              ".pkl")
-
-        # - - - - - - - - - - - - - - - - -
-        # Subsequent radiators
-        # - - - - - - - - - - - - - - - - -
-        # Loading data
-        if LOAD_MC_RADS:
             sub_radiator_data = load_data("numerical integral",
                                           "subsequent radiator",
-                                          params)
-        # Generating data
-        else:
+                                          radiator_params)
+    # Generating data
+    else:
+        print(tab+tab+f"Generating subsequent radiators",
+              flush=True)
+
+        # Looping over beta values
+        for beta in BETAS:
+            print(tab+tab+tab+f"Considering {beta = }", flush=True)
+            radiator_params['beta'] = beta
+
             _, sub_radiator_data = gen_crit_sub_num_rad(sub_sampler,
                                            jet_type,
                                            obs_accuracy=obs_acc,
@@ -236,7 +307,8 @@ for iz, z_cut in enumerate(Z_CUTS):
             # Saving data
             if SAVE_MC_RADS:
                 save_new_data(sub_radiator_data,
-                              "numerical integral", "subsequent radiator",
-                              params, ".npz")
+                              "numerical integral",
+                              "subsequent radiator",
+                              radiator_params, ".npz")
 
-print("Complete!")
+print("\nComplete!")

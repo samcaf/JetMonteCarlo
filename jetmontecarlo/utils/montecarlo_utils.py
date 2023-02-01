@@ -6,7 +6,7 @@ from scipy.misc import derivative
 from pynverse import inversefunc
 
 # Local utils for function interpolation
-from jetmontecarlo.utils.interpolation_function_utils import lin_log_mixed_list
+from jetmontecarlo.utils.interpolation import lin_log_mixed_list
 
 
 def getLinSample(sample_min, sample_max):
@@ -168,7 +168,7 @@ def samples_from_cdf(cdf, num_samples, domain=None,
                 # monotonicity here in the same way that we would
                 # using `force_monotone` later
                 samples = inverse_transform_samples(cdf_vals, pnts,
-                                                    num_samples) 
+                                                    num_samples)
                 weights = np.ones_like(samples)
                 return samples, weights
 
@@ -214,7 +214,7 @@ def samples_from_cdf(cdf, num_samples, domain=None,
                 return np.zeros(num_samples), np.ones(num_samples)
 
             # - - - - - - - - - - - - - -
-            # If the CDF starts at 1 
+            # If the CDF starts at 1
             # - - - - - - - - - - - - - -
             # If the lowest fluctation is at the lower bound of the domain,
             # and the cdf appears to be 1 near there

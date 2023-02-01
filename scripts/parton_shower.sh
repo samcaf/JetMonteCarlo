@@ -3,8 +3,8 @@
 #SBATCH --exclusive
 #SBATCH -c 10
 #SBATCH --mem=0
-#SBATCH -o logs/zlog-%j.out
-#SBATCH -e logs/zlog-%j.err
+#SBATCH -o output/logs/zlog-%j.out
+#SBATCH -e output/logs/zlog-%j.err
 #SBATCH --constraint=xeon-p8
 
 ###################################
@@ -120,12 +120,12 @@ then
   # Loading python packages
   module load anaconda/2021b
   # Linking slurm log files to more precisely named logs
-  ln -f logs/zlog-${SLURM_JOB_ID}.out logs/$logfile.out.${SLURM_JOB_ID}
-  ln -f logs/zlog-${SLURM_JOB_ID}.err logs/$logfile.err.${SLURM_JOB_ID}
+  ln -f output/logs/zlog-${SLURM_JOB_ID}.out output/logs/$logfile.out.${SLURM_JOB_ID}
+  ln -f output/logs/zlog-${SLURM_JOB_ID}.err output/logs/$logfile.err.${SLURM_JOB_ID}
 else
   # Writing to log files without slurm
-  exec 1>logs/$logfile.out
-  exec 2>logs/$logfile.err
+  exec 1>output/logs/$logfile.out
+  exec 2>output/logs/$logfile.err
 fi
 
 
@@ -158,8 +158,8 @@ python3 examples/event_generation/parton_shower_gen.py
 if [ "$supercloud_syntax" = true ] ;
 then
   # Remove duplicate log files:
-  rm logs/zlog-${SLURM_JOB_ID}.out
-  rm logs/zlog-${SLURM_JOB_ID}.err
+  rm output/logs/zlog-${SLURM_JOB_ID}.out
+  rm output/logs/zlog-${SLURM_JOB_ID}.err
 fi
 
 printf "# ============================

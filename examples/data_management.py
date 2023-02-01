@@ -2,13 +2,13 @@
 import dill as pickle
 import numpy as np
 
-# Interpolation functions
-from jetmontecarlo.utils.interpolation_function_utils import get_1d_interpolation
-from jetmontecarlo.utils.interpolation_function_utils import get_2d_interpolation
-
 # Local file management
 from examples.file_management import new_cataloged_filename
 from examples.file_management import filename_from_catalog
+
+# Interpolation functions
+from jetmontecarlo.utils.interpolation import get_1d_interpolation
+from jetmontecarlo.utils.interpolation import get_2d_interpolation
 
 
 def save_new_data(data, data_type, data_source,
@@ -43,38 +43,66 @@ def load_data(data_type, data_source, params):
     extension = "."+filename.split('.')[-1]
 
     # Loading the associated data
-    with open(filename, 'rb') as file:
-        if extension == '.pkl':
+    if extension == '.pkl':
+        with open(filename, 'rb') as file:
             data = pickle.load(file)
-        elif extension == '.npz':
-            data = np.load(file, allow_pickle=True,
-                           mmap_mode='c')
+    elif extension == '.npz':
+        data = np.load(filename, allow_pickle=True,
+                       mmap_mode='c')
+    else:
+        raise ValueError("Extension must be .pkl or .npz, not"\
+                         +f" {extension}.")
 
     return data
 
 
-def load_and_interpolate(data_source, params, **kwargs):
+def load_and_interpolate(data_source, params, **interp_kwargs):
     """Loads data of the given data source and parameters,
     and interpolates it to the given parameters.
     """
+    # Expect bins unless dealing with subsequent radiators
+    #   (whose domain has a weird 2 dimensional shape
+    #    not amenable to binning)
+    unbinned_data_sources = ['subsequent radiator']
+
     # Loading the data
     data = load_data('numerical integral', data_source, params)
 
     # Formatting the data
-    bins = data['bins']
+    bins     = data.get('bins')
     integral = data['integral']
-    dimensionality = bins.ndim
 
-    # Monotonic behavior by default
-    if kwargs.get('monotonic') is None:
-        kwargs['monotonic'] = True
+    if bins is None:
+        if data_source not in unbinned_data_sources:
+            raise ValueError("No bins found for data source "\
+                             +f"{data_source}.")
+        # DEBUG: A bit hacked/not general, but we know the
+        #        shape of the subsequent radiator data
+        dimensionality = 2
+        xs = data.get('xs')
+        ys = data.get('ys')
+    else:
+        dimensionality = bins.ndim
+        if dimensionality == 2:
+            xs, ys = bins[0], bins[1]
 
     # Interpolating the data into an interpolation function
     if dimensionality == 1:
-        interpolation = get_1d_interpolation(bins, integral, **kwargs)
+        # Monotonic behavior by default in 1d
+        if interp_kwargs.get('monotonic') is None:
+            interp_kwargs['monotonic'] = True
+        # After setting monotonicity args, get the interpolation
+        interpolation = get_1d_interpolation(bins, integral,
+                                             **interp_kwargs)
+        # DEBUG: Bad behavior of crit radiator
+        testbin = int(3*len(bins)/4)
+        testval = interpolation(bins[testbin])
+        print("bin, integral, interpolation | ",
+              bins[testbin], integral[testbin], testval)
+
     elif dimensionality == 2:
-        interpolation = get_2d_interpolation(bins, integral, **kwargs)
-        pass
+        interpolation = get_2d_interpolation(xs, ys, integral,
+                                             **interp_kwargs)
     else:
         raise ValueError('Dimensionality of data must be 1 or 2.')
 

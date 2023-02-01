@@ -185,7 +185,7 @@ def monotonic_domain(func, domain, include_point=None, check_only=None):
 
 def get_1d_interpolation(xs, fs, monotonic=True,
                          bounds=None, bound_values=[None, None],
-                         savefile=None, verbose=0):
+                         verbose=0):
     """Returns a function that interpolates the data `(x, y)`
     using the interpolation method `kind`.
 
@@ -224,7 +224,8 @@ def get_1d_interpolation(xs, fs, monotonic=True,
             bound_values = [None, None]
         assert len(bound_values) == 2, "bound_values must be a tuple of length 2"
 
-        # DEBUG: Enforcing continuity by hand -- may not always be  desirable
+        # NOTE: Enforcing continuity by hand.
+        #       This may not always be desirable.
         if bound_values[0] is None:
             bound_values[0] = interpolating_function(xs[0])
         if bound_values[1] is None:
@@ -233,7 +234,7 @@ def get_1d_interpolation(xs, fs, monotonic=True,
         # Setting the interpolating function below the lower bound,
         # between the upper and lower bound,
         # and above the upper bound, respectively
-        def interpolating_function(x):
+        def bounded_interpolating_function(x):
             return bound_values[0] * (x <= bounds[0])\
             + (bounds[0] <= x) * (x <= bounds[1]) * interpolating_function(x)\
             + bound_values[1] * (x >= bounds[1])
@@ -241,16 +242,12 @@ def get_1d_interpolation(xs, fs, monotonic=True,
         assert bound_values is None, "Cannot assign boundary values if"+\
             " no bounds for the interpolation function are given."
 
-    if savefile is not None:
-        # DEBUG
-        pass
-
-    return interpolating_function
+    return bounded_interpolating_function
 
 
 def get_2d_interpolation(xs, ys, zs,
         interpolation_method="RectangularGrid",
-        savefile=None, **kwargs):
+        **kwargs):
     """Returns a function that interpolates the data `(x, y, z)`
     using the interpolation method `interpolation_method`.
     """
@@ -258,10 +255,6 @@ def get_2d_interpolation(xs, ys, zs,
         default_kwargs = {'method': 'linear', 'bounds_error': False,
                           'fill_value': None}
         kwargs = {**default_kwargs, **kwargs}
-        # DEBUG: printing debug information about array shapes
-        # print(np.array(xs).shape)
-        # print(np.array(ys).shape)
-        # print(np.array(zs).shape)
         interpolating_function = interpolate.RegularGridInterpolator(
                                     (xs, ys), zs, **kwargs)
     elif interpolation_method in ["Linear", "linear"]:
@@ -271,14 +264,11 @@ def get_2d_interpolation(xs, ys, zs,
         interpolating_function = interpolate.interp2d(xs, ys, zs,
                                                      kind="cubic")
     elif interpolation_method in ["Nearest", "nearest"]:
+        points = list(zip(xs, ys))
         interpolating_function = interpolate.NearestNDInterpolator(
-            (xs, ys), zs)
+                                    points, zs)
     else:
         raise ValueError(f"Unknown interpolation method {interpolation_method}")
-
-    if savefile is not None:
-        # DEBUG
-        pass
 
     return interpolating_function
 

@@ -4,15 +4,15 @@ import numpy as np
 # from scipy.interpolate import NearestNDInterpolator
 
 # Integration utils:
-from jetmontecarlo.utils.interpolation_function_utils import\
+from jetmontecarlo.utils.interpolation import\
 get_2d_interpolation
 from jetmontecarlo.montecarlo.integrator import *
 
 # Utils for monotonicity checks
-from jetmontecarlo.utils.interpolation_function_utils import lin_log_mixed_list
-from jetmontecarlo.utils.interpolation_function_utils import is_monotonic_arr
-from jetmontecarlo.utils.interpolation_function_utils import is_monotonic_func
-from jetmontecarlo.utils.interpolation_function_utils import monotonic_domain
+from jetmontecarlo.utils.interpolation import lin_log_mixed_list
+from jetmontecarlo.utils.interpolation import is_monotonic_arr
+from jetmontecarlo.utils.interpolation import is_monotonic_func
+from jetmontecarlo.utils.interpolation import monotonic_domain
 
 # Local jet tools
 from jetmontecarlo.jets.jetSamplers import *
@@ -44,8 +44,7 @@ def gen_numerical_radiator(rad_sampler, emission_type,
                            beta = None,
                            bin_space='lin',
                            fixed_coupling=True,
-                           num_bins=100,
-                           save_discrete_file=None):
+                           num_bins=100):
     """A function which takes in a sampler with generated data,
     and returns the associated numerically integrated radiator
     (dependent on a single parameter).
@@ -145,19 +144,15 @@ def gen_numerical_radiator(rad_sampler, emission_type,
                                None, 'decreasing'))
         print()
 
-    if save_discrete_file is not None:
-        rad_integrator.save_montecarlo_data(save_discrete_file)
-
     return rad_integrator.interpFn, rad_integrator.montecarlo_data_dict()
 
 
 def gen_pre_num_rad(rad_sampler, crit_rad_sampler,
                     jet_type='quark',
-                    obs_accuracy='LL', splitfn_accuracy='LL',
+                    splitfn_accuracy='LL',
                     bin_space='lin',
                     fixed_coupling=True,
-                    num_bins=100,
-                    save_discrete_file=None):
+                    num_bins=100):
     """A function which takes in a sampler with generated data,
     and returns the associated numerically integrated pre-critical
     radiator (dependent on two parameters).
@@ -261,10 +256,6 @@ def gen_pre_num_rad(rad_sampler, crit_rad_sampler,
 
     rad_integrator.interpFn = bounded_interp_function
 
-    if save_discrete_file is not None:
-        rad_integrator.save_montecarlo_data(save_discrete_file)
-
-    print(rad_integrator.interpFn)
     return rad_integrator.interpFn, rad_integrator.montecarlo_data_dict()
 
 
@@ -274,8 +265,7 @@ def gen_crit_sub_num_rad(rad_sampler,
                          beta=2., epsilon=1e-15,
                          bin_space='log',
                          fixed_coupling=True,
-                         num_bins=1000,
-                         save_discrete_file=None):
+                         num_bins=1000):
     """A function which takes in a sampler with generated data,
     and returns the associated numerically integrated radiator
     dependent on the variables over a sampled phase space as
@@ -416,10 +406,11 @@ def gen_crit_sub_num_rad(rad_sampler,
                                    1.05e-8, 'decreasing'))
             print()
 
-    if save_discrete_file is not None:
-        rad_integrator.save_montecarlo_data(save_discrete_file)
+    data_dict = {'xs': xs_all.flatten(),
+                 'ys': thetas_all.flatten(),
+                 'integral': rads_all.flatten()}
 
-    return bounded_interp_function, rad_integrator.montecarlo_data_dict()
+    return bounded_interp_function, data_dict
 
 # =====================================
 # Splitting Functions:

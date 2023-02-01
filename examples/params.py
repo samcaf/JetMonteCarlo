@@ -16,7 +16,7 @@ tab = '    '
 # =====================================
 # Physics Inputs
 # =====================================
-FIXED_COUPLING = False
+FIXED_COUPLING = True
 MULTIPLE_EMISSIONS = False
 
 # Observable accuracy
@@ -63,20 +63,20 @@ PS_INDEX_ZC = {zc: i for i, zc in enumerate([.05, .1, .2])}
 # ------------------------------------
 # Number of generated events
 NUM_MC_EVENTS = int(1e4)
-NUM_SHOWER_EVENTS = int(5e5)
+NUM_SHOWER_EVENTS = int(5e2)
 
 # MC Sampling Switches:
-LOAD_MC_EVENTS = True
+LOAD_MC_EVENTS = False
 # Default True: phase space doesn't change, only weights do
 SAVE_MC_EVENTS = True
 
 # MC Radiator Switches:
-LOAD_MC_RADS = True
+LOAD_MC_RADS = False
 # Default False, to generate radiators with the correct parameters
 SAVE_MC_RADS = True
 
 # MC Splitting Function Switches:
-LOAD_SPLITTING_FNS = True
+LOAD_SPLITTING_FNS = False
 # Default False, to generate splitting functions with the correct parameters
 SAVE_SPLITTING_FNS = True
 
@@ -91,7 +91,7 @@ LOAD_INV_SAMPLES = LOAD_MC_EVENTS
 # Sampling Parameters
 # ------------------------------------
 # -----------------
-# MC Integration (DEBUG NOTE: EPSILON WAS 1e-10 before)
+# MC Integration
 # -----------------
 EPSILON = 1e-15 if FIXED_COUPLING else 1e-10
 BIN_SPACE = 'log'
@@ -116,8 +116,49 @@ SHOWER_INFO = 'cutoff'+str(SHOWER_CUTOFF)\
 # =====================================
 # All Monte Carlo related parameters
 # =====================================
+PHASESPACE_PARAMS = {
+    'number of MC events' : NUM_MC_EVENTS,
+    'epsilon' : EPSILON,
+    'bin space' : BIN_SPACE,
+    # z_cut will need to be defined for each instance
+    'z_cut' : None
+}
 
-ALL_MC_PARAMS = {
+RADIATOR_PARAMS = {
+    'jet type' : JET_TYPE,
+    'fixed coupling' : FIXED_COUPLING,
+    'number of MC events' : NUM_MC_EVENTS,
+    'number of bins' : NUM_RAD_BINS,
+    'epsilon' : EPSILON,
+    'bin space' : BIN_SPACE,
+    'observable accuracy' : OBS_ACC,
+    'splitting function accuracy' : SPLITFN_ACC,
+    # z_cut and beta will need to be defined for each instance
+    'z_cut' : None,
+    'beta' : None
+}
+
+SPLITTINGFN_PARAMS = {
+    'jet type' : JET_TYPE,
+    'fixed coupling' : FIXED_COUPLING,
+    'number of MC events' : NUM_MC_EVENTS,
+    'number of bins' : NUM_SPLITFN_BINS,
+    'accuracy' : SPLITFN_ACC,
+    # z_cut will need to be defined for each instance
+    'z_cut' : None
+}
+
+SHOWER_PARAMS = {
+    'fixed coupling' : FIXED_COUPLING,
+    'multiple emissions' : MULTIPLE_EMISSIONS,
+    'observable accuracy' : OBS_ACC,
+    'jet type' : JET_TYPE,
+    'number of shower events' : NUM_SHOWER_EVENTS,
+    'shower cutoff' : SHOWER_CUTOFF,
+}
+
+
+ALL_MONTECARLO_PARAMS = {
     'fixed coupling' : FIXED_COUPLING,
     'multiple emissions' : MULTIPLE_EMISSIONS,
     'observable accuracy' : OBS_ACC,
@@ -127,18 +168,10 @@ ALL_MC_PARAMS = {
     'number of radiator bins' : NUM_RAD_BINS,
     'number of splitting function bins' : NUM_SPLITFN_BINS,
     'epsilon' : EPSILON,
-    'bin space' : BIN_SPACE
-}
-
-ALL_SHOWER_PARAMS = {
-    'fixed coupling' : FIXED_COUPLING,
-    'multiple emissions' : MULTIPLE_EMISSIONS,
-    'observable accuracy' : OBS_ACC,
-    'jet type' : JET_TYPE,
+    'bin space' : BIN_SPACE,
     'number of shower events' : NUM_SHOWER_EVENTS,
     'shower cutoff' : SHOWER_CUTOFF,
 }
-
 
 
 

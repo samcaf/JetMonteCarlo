@@ -25,6 +25,7 @@ class parton_shower():
     # ------------------------------------
     # File paths
     # ------------------------------------
+    # DEBUG: Deprecated
     def showerfile_path(self, info=''):
         """Sets up a path for loading or saving shower events."""
         info += '' if self.jet_type == 'quark' else '_'+self.jet_type
@@ -45,49 +46,6 @@ class parton_shower():
 
         return shower_folder / showerfile
 
-    def correlation_path(self, beta, obs_acc, few_pres,
-                    f_soft=1., angular_ordered=False,
-                    info=''):
-        info += '' if self.jet_type == 'quark' else '_'+self.jet_type
-
-        # Preparing filename
-        ps_file = 'shower_{:.0e}_c1_'.format(self.num_events)+str(beta)
-
-        ps_file = ps_file + '_f{}'.format(f_soft)
-
-        # Angular ordering descriptor
-        if angular_ordered:
-            ps_file += '_angord'
-            assert False, "No angular ordering yet!"
-
-        # Cutoff descriptor
-        if self.fixed_coupling and self.shower_cutoff == 1e-20:
-            ps_file += '_lowcutoff'
-        elif not self.fixed_coupling and self.shower_cutoff == 1e-10:
-            ps_file += '_lowcutoff'
-
-        # Evolution variable descriptor
-        if self.shower_beta != 1.:
-            ps_file += '_showerbeta'+str(self.shower_beta)
-
-        # Correlation accuracy descriptor
-        if not self.fixed_coupling and obs_acc=='MLL':
-            ps_file += '_MLL_fewem'
-        elif not self.fixed_coupling and obs_acc=='LL':
-            ps_file += '_rc_LL_fewem'
-        else:
-            ps_file += '_' + obs_acc
-            # if few_pres:
-            ps_file += '_fewem'
-            # else:
-            #     ps_file += '_manypres.npz'
-
-        if info != '':
-            ps_file += '_' + info
-
-        ps_file = ps_file + '.npz'
-
-        return ps_sample_folder / ps_file
 
     # ------------------------------------
     # Helper functions
@@ -119,26 +77,6 @@ class parton_shower():
         if self.verbose > 0:
             print("Parton shower events loaded!", flush=True)
 
-    def save_correlations(self, beta, obs_acc, few_pres=True, f_soft=1., info=''):
-        if isinstance(beta, list):
-            for b in beta:
-                self.save_correlations(b, obs_acc, few_pres, f_soft=f_soft,
-                                       info=info)
-        else:
-            file_path = self.correlation_path(beta, obs_acc, few_pres, f_soft=f_soft,
-                                              info=info)
-            if self.verbose > 0:
-                print("Saving shower correlations to {}...".format(str(file_path)), flush=True)
-            save_shower_correlations(self.jet_list,
-                                     file_path,
-                                     beta=beta, obs_acc=obs_acc,
-                                     f_soft=f_soft,
-                                     few_pres=few_pres,
-                                     fixed_coupling=self.fixed_coupling,
-                                     verbose=self.verbose)
-
-        if self.verbose > 0:
-            print("Shower correlations saved!", flush=True)
 
     # ------------------------------------
     # Init
@@ -156,6 +94,8 @@ class parton_shower():
 
         self.radius = radius
         self.jet_type = jet_type
+
+        self.jet_list = None
 
         # Generating events
         if num_events > 0:

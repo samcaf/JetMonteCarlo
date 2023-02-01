@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-import dill as pickle
 from pathlib import Path
 
 # Local utilities for comparison
@@ -14,8 +13,9 @@ from jetmontecarlo.analytics.sudakovFactors_fixedcoupling import *
 from jetmontecarlo.montecarlo.partonshower import *
 
 # Parameters
-from examples.params import *
-from examples.filenames import *
+from examples.params import ALL_MONTECARLO_PARAMS, RADIATOR_PARAMS,\
+    SPLITTINGFN_PARAMS, SHOWER_PARAMS
+
 
 from examples.sudakov_comparisons.sudakov_utils import Z_CUT_PLOT
 from examples.sudakov_comparisons.sudakov_utils import plot_label
@@ -23,9 +23,9 @@ from examples.sudakov_comparisons.sudakov_utils import split_fn_num
 from examples.sudakov_comparisons.sudakov_utils import radiators
 from examples.sudakov_comparisons.sudakov_utils import save_cdf
 
-###########################################
+# =====================================
 # Notes:
-###########################################
+# =====================================
 # =====================================
 # To Do
 # =====================================
@@ -47,10 +47,31 @@ from examples.sudakov_comparisons.sudakov_utils import save_cdf
 # Run with fixed coupling, LL, with 5e6 samples, 5e3 bins
     # * Critical emission distributions don't look right...
 
+# =====================================
+# Definitions and Parameters
+# =====================================
+params          = ALL_MONTECARLO_PARAMS
 
-###########################################
+radiator_params = RADIATOR_PARAMS
+del radiator_params['z_cut']
+del radiator_params['beta']
+
+shower_params = SHOWER_PARAMS
+
+# ---------------------------------
+# Unpacking parameters
+# ---------------------------------
+jet_type = params['jet type']
+fixed_coupling = params['fixed coupling']
+
+num_mc_events = params['number of MC events']
+
+num_rad_bins = params['number of bins']
+
+
+# =====================================
 # Critical Emission Only
-###########################################
+# =====================================
 def plot_mc_crit(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
                  load=LOAD_MC_EVENTS, verbose=5):
     sud_integrator = integrator()
@@ -61,7 +82,7 @@ def plot_mc_crit(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
                           rad_crit=radiators.get('critical', None))
 
     z_crits = np.array([getLinSample(z_cut, 1./2.)
-                        for i in range(NUM_MC_EVENTS)])
+                        for i in range(num_mc_events)])
 
     obs = C_groomed(z_crits, theta_crits, z_cut, beta,
                     z_pre=0., f=F_SOFT, acc=OBS_ACC)
@@ -154,7 +175,7 @@ def compare_crit(beta=BETA, plot_approx=False):
                     +BIN_SPACE+'_pdf_comp'
                     +'_beta'+str(beta)
                     +'_{:.0e}showers_{:.0e}mc'.format(
-                        NUM_SHOWER_EVENTS, NUM_MC_EVENTS)
+                        num_shower_events, num_mc_events)
                     +str(this_plot_label)
                     +'.pdf',
                     format='pdf')
@@ -163,7 +184,7 @@ def compare_crit(beta=BETA, plot_approx=False):
                         +BIN_SPACE+'_cdf_comp'
                         +'_beta'+str(beta)
                         +'_{:.0e}showers_{:.0e}mc'.format(
-                            NUM_SHOWER_EVENTS,  NUM_MC_EVENTS)
+                            num_shower_events,  num_mc_events)
                         +str(this_plot_label)
                         +'.pdf',
                         format='pdf')
@@ -173,9 +194,9 @@ def compare_crit(beta=BETA, plot_approx=False):
 
     print("Plotting complete!", flush=True)
 
-###########################################
+# =====================================
 # Ungroomed Emissions
-###########################################
+# =====================================
 def plot_mc_ungroomed(axes_pdf, axes_cdf, beta, icol=0,
                 load=LOAD_MC_EVENTS):
     sud_integrator = integrator()
@@ -247,7 +268,7 @@ def compare_ungroomed():
     fig_pdf.savefig(str(fig_folder) + '/' + JET_TYPE+'_ungroomed_'
                     +BIN_SPACE+'_pdf_comp'
                     +'_{:.0e}showers_{:.0e}mc'.format(
-                        NUM_SHOWER_EVENTS, NUM_MC_EVENTS)
+                        num_shower_events, num_mc_events)
                     +str(this_plot_label)
                     +'.pdf',
                     format='pdf')
@@ -255,7 +276,7 @@ def compare_ungroomed():
         fig_cdf.savefig(str(fig_folder) + '/' + JET_TYPE+'_ungroomed_'
                         +BIN_SPACE+'_cdf_comp'
                         +'_{:.0e}showers_{:.0e}mc'.format(
-                            NUM_SHOWER_EVENTS,  NUM_MC_EVENTS)
+                            num_shower_events,  num_mc_events)
                         +str(this_plot_label)
                         +'.pdf',
                         format='pdf')
@@ -265,9 +286,9 @@ def compare_ungroomed():
 
     print("Plotting complete!", flush=True)
 
-###########################################
+# =====================================
 # Critical and Subsequent Emissions
-###########################################
+# =====================================
 def plot_mc_crit_and_sub(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
                          load=LOAD_MC_EVENTS):
     sud_integrator = integrator()
@@ -282,7 +303,7 @@ def plot_mc_crit_and_sub(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
                          rad_crit_sub=radiators.get('subsequent', None))
 
     z_crits = np.array([getLinSample(z_cut, 1./2.)
-                        for i in range(NUM_MC_EVENTS)])
+                        for i in range(num_mc_events)])
 
     c_crits = C_groomed(z_crits, theta_crits, z_cut, beta,
                         z_pre=0., f=F_SOFT, acc=OBS_ACC)
@@ -357,7 +378,7 @@ def compare_crit_and_sub(beta=BETA):
                     +BIN_SPACE+'_pdf_comp'
                     +'_beta'+str(beta)
                     +'_{:.0e}showers_{:.0e}mc'.format(
-                        NUM_SHOWER_EVENTS, NUM_MC_EVENTS)
+                        num_shower_events, num_mc_events)
                     +str(this_plot_label)
                     +'.pdf',
                     format='pdf')
@@ -366,7 +387,7 @@ def compare_crit_and_sub(beta=BETA):
                         +BIN_SPACE+'_cdf_comp'
                         +'_beta'+str(beta)
                         +'_{:.0e}showers_{:.0e}mc'.format(
-                            NUM_SHOWER_EVENTS,  NUM_MC_EVENTS)
+                            num_shower_events,  num_mc_events)
                         +str(this_plot_label)
                         +'.pdf',
                         format='pdf')
@@ -376,9 +397,9 @@ def compare_crit_and_sub(beta=BETA):
 
     print("Plotting complete!", flush=True)
 
-###########################################
+# =====================================
 # Pre + Critical Emissions
-###########################################
+# =====================================
 def plot_mc_pre_and_crit(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
                          load=LOAD_MC_EVENTS):
     sud_integrator = integrator()
@@ -393,7 +414,7 @@ def plot_mc_pre_and_crit(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
                         rad_pre=radiators.get('pre-critical', None))
 
     z_crits = np.array([getLinSample(z_cut, 1./2.)
-                        for i in range(NUM_MC_EVENTS)])
+                        for i in range(num_mc_events)])
 
     c_crits = C_groomed(z_crits, theta_crits, z_cut, beta,
                         z_pre=z_pres, f=F_SOFT, acc=OBS_ACC)
@@ -468,7 +489,7 @@ def compare_pre_and_crit(beta=BETA):
                     +BIN_SPACE+'_pdf_comp'
                     +'_beta'+str(beta)
                     +'_{:.0e}showers_{:.0e}mc'.format(
-                        NUM_SHOWER_EVENTS, NUM_MC_EVENTS)
+                        num_shower_events, num_mc_events)
                     +str(this_plot_label)
                     +'.pdf',
                     format='pdf')
@@ -477,7 +498,7 @@ def compare_pre_and_crit(beta=BETA):
                         +BIN_SPACE+'_cdf_comp'
                         +'_beta'+str(beta)
                         +'_{:.0e}showers_{:.0e}mc'.format(
-                        NUM_SHOWER_EVENTS,  NUM_MC_EVENTS)
+                        num_shower_events,  num_mc_events)
                         +str(this_plot_label)
                         +'.pdf',
                         format='pdf')
@@ -487,9 +508,9 @@ def compare_pre_and_crit(beta=BETA):
 
     print("Plotting complete!", flush=True)
 
-###########################################
+# =====================================
 # All Emissions
-###########################################
+# =====================================
 def plot_mc_all(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
                 load=LOAD_MC_EVENTS):
     sud_integrator = integrator()
@@ -508,7 +529,7 @@ def plot_mc_all(axes_pdf, axes_cdf, z_cut, beta=BETA, icol=0,
                         rad_pre=radiators.get('pre-critical', None))
 
     z_crits = np.array([getLinSample(z_cut, 1./2.)
-                        for i in range(NUM_MC_EVENTS)])
+                        for i in range(num_mc_events)])
 
     c_crits = C_groomed(z_crits, theta_crits, z_cut, beta,
                         z_pre=z_pres, f=F_SOFT, acc=OBS_ACC)
@@ -593,7 +614,7 @@ def compare_all(beta=BETA, plot_approx=False):
                     +BIN_SPACE+'_pdf_comp'
                     +'_beta'+str(beta)
                     +'_{:.0e}showers_{:.0e}mc'.format(
-                        NUM_SHOWER_EVENTS, NUM_MC_EVENTS)
+                        num_shower_events, num_mc_events)
                     +str(this_plot_label)
                     +'.pdf',
                     format='pdf')
@@ -602,7 +623,7 @@ def compare_all(beta=BETA, plot_approx=False):
                         +BIN_SPACE+'_cdf_comp'
                         +'_beta'+str(beta)
                         +'_{:.0e}showers_{:.0e}mc'.format(
-                          NUM_SHOWER_EVENTS,  NUM_MC_EVENTS)
+                          num_shower_events,  num_mc_events)
                         +str(this_plot_label)
                         +'.pdf',
                         format='pdf')
@@ -612,9 +633,9 @@ def compare_all(beta=BETA, plot_approx=False):
 
     print("Plotting complete!", flush=True)
 
-###########################################
+# =====================================
 # Main:
-###########################################
+# =====================================
 if __name__ == '__main__':
     # For each value of epsilon we want to use as an integration cutoff:
     if COMPARE_CRIT:
