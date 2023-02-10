@@ -31,7 +31,7 @@ recognized_data_types = ['montecarlo samples',
                          'serialized function']
 
 emission_types = ['ungroomed', 'critical', 'subsequent', 'pre-critical']
-function_types = ['radiator', 'sudakov_function']
+function_types = ['radiator', 'sudakov function']
 all_functions = [emission+' '+function for emission in emission_types
                     for function in function_types]
 all_functions.append('splitting function')
@@ -40,7 +40,8 @@ recognized_data_sources = {
     'montecarlo samples': [*(emission+' phase space'
                             for emission in emission_types),
                            'parton shower',
-                           'sudakov inverse transform'],
+                           *(emission+' sudakov inverse transform'
+                             for emission in emission_types)],
     'numerical integral': all_functions,
     'serialized function': all_functions
 }
@@ -170,12 +171,17 @@ def filename_from_catalog(data_type, data_source, params):
 
     # Getting info for the given params from the catalog
     yaml_key = dict_to_yaml_key(params)
-    catalog_info =  catalog_dict[data_type][data_source].get(yaml_key)
+    try:
+        catalog_info =  catalog_dict[data_type]\
+                            [data_source].get(yaml_key)
+    except KeyError as error:
+        warnings.warn(f"Ran into a KeyError: {error}")
+        catalog_info = None
 
     if catalog_info is not None:
         return catalog_info['filename']
 
-    raise ValueError(f"Could not find data type {data_type} and"
+    raise FileNotFoundError(f"Could not find data type {data_type} and"
                      +f" data source {data_source} with params"
                      +f" {params} in the catalog.")
 
