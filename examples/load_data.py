@@ -42,9 +42,6 @@ def load_sudakov_samples(sudakov_params=default_radiator_params,
         Dictionary of Sudakov inverse transform samples.
     """
     samples = {emission: {} for emission in emissions}
-    # failure_mode = None
-    # DEBUG: Include failure_mode
-    # DEBUG: Need to use both samples and weights when saving
 
     if 'critical' in emissions:
         print("Loading critical Sudakov inverse transform samples\n")
@@ -54,15 +51,14 @@ def load_sudakov_samples(sudakov_params=default_radiator_params,
                             'montecarlo samples',
                             'critical sudakov inverse transform',
                             params=dict(**sudakov_params,
-                                        **{'z_cut': z_cut,
-                                           'beta': b}))
+                                        **{'z_cut': z_cut}))
 
     if 'pre-critical' in emissions:
         print("Loading pre-critical Sudakov inverse transform samples\n")
         for z_cut in z_cuts:
             samples['pre-critical'][z_cut] = load_data(
                             'montecarlo samples',
-                            'pre-critical Sudakov inverse transform',
+                            'pre-critical sudakov inverse transform',
                             params=dict(**sudakov_params,
                                         **{'z_cut': z_cut}))
 
@@ -72,7 +68,7 @@ def load_sudakov_samples(sudakov_params=default_radiator_params,
             for b in betas:
                 samples['subsequent'][z_cut][b] = load_data(
                             'montecarlo samples',
-                            'subsequent Sudakov inverse transform',
+                            'subsequent sudakov inverse transform',
                             params=dict(**sudakov_params,
                                         **{'z_cut': z_cut,
                                            'beta': b}))
@@ -167,4 +163,3 @@ def load_splittingfns(splittingfn_params=default_splittingfn_params,
                         params=dict(**splittingfn_params,
                                     **{'z_cut': z_cut}))
     return splitting_functions
-
