@@ -1,19 +1,28 @@
-# Local analytics
+# Local MC utilities
 from jetmontecarlo.utils.montecarlo_utils import getLinSample
+from jetmontecarlo.utils.montecarlo_utils import samples_from_cdf
+from jetmontecarlo.montecarlo.integrator import integrator
+from jetmontecarlo.montecarlo.partonshower import *
+
+# Local functions and analytics
 from jetmontecarlo.jets.observables import *
 from jetmontecarlo.analytics.radiators import *
 from jetmontecarlo.analytics.radiators_fixedcoupling import *
 from jetmontecarlo.analytics.sudakovFactors_fixedcoupling import *
-from jetmontecarlo.montecarlo.partonshower import *
 
 # Plotting utilities
-from examples.comparison_plot_utils import *
+from jetmontecarlo.utils.color_utils import compcolors,\
+    adjust_lightness
+from jetmontecarlo.utils.plot_utils import modstyle, style_dashed
 
-# Parameters and Filenames
-# DEBUG: Remove * imports
-from examples.params import *
+# Parameters
+from examples.comparison_plot_utils import F_SOFT
+from examples.params import SHOWER_BETA, MULTIPLE_EMISSIONS, \
+    Z_CUTS, BETAS, LOAD_MC_EVENTS
+from examples.params import RADIATOR_PARAMS
 
 # Loading Data and Functions
+from examples.data_management import save_new_data
 from examples.load_data import load_radiators
 from examples.load_data import load_splittingfns
 from examples.load_data import load_sudakov_samples
@@ -22,6 +31,21 @@ from examples.load_data import load_sudakov_samples
 # =====================================
 # Definitions and Parameters
 # =====================================
+sudakov_params = RADIATOR_PARAMS.copy()
+del sudakov_params['z_cut']
+del sudakov_params['beta']
+
+# Unpacking parameters
+fixed_coupling   = sudakov_params['fixed coupling']
+obs_acc          = sudakov_params['observable accuracy']
+
+num_mc_events    = sudakov_params['number of MC events']
+epsilon          = sudakov_params['epsilon']
+bin_space        = sudakov_params['bin space']
+
+num_bins         = sudakov_params['number of bins']
+
+load_mc_events   = LOAD_MC_EVENTS
 
 # ------------------------------------
 # Parameters for plotting
@@ -43,36 +67,230 @@ plot_colors = {k: {
                 } for k in f_colors.keys()}
 
 def f_ivs(theta):
+    """The (theta dependent) value of f_soft which I
+    expect may be used for IVS.
+    """
     return 1./2. - theta/(np.pi*R0)
 
 
-if FIXED_COUPLING:
-    plot_label = '_fc_num_'+str(OBS_ACC)
+if fixed_coupling:
+    plot_label = f'_fc_num_{obs_acc}'
 else:
-    plot_label = '_rc_num_'+str(OBS_ACC)
+    plot_label = f'_rc_num_{obs_acc}'
 
 if MULTIPLE_EMISSIONS:
     plot_label += 'ME_'
 
-plot_label += '_showerbeta'+str(SHOWER_BETA)
+plot_label += f'_showerbeta{SHOWER_BETA}'
 if F_SOFT:
-    plot_label += '_f{}'.format(F_SOFT)
+    plot_label += '_f{F_SOFT}'
+
+
+# =====================================
+# Loading or Generating Samples
+# =====================================
+
+# ---------------------------------
+# Functions which generate samples
+# ---------------------------------
+def generate_critical_samples(radiator_fns, params,
+                              z_cut,
+                              verbose=3):
+    """Generates samples via the inverse transform method
+    for critical angles from Sudakov factors.
+    """
+    print(f"    Making critical samples with z_c={z_cut}...")
+
+    def cdf_crit(theta):
+        return np.exp(-1.*radiator_fns['critical'][z_cut](theta))
+
+    theta_crits, theta_crit_weights = samples_from_cdf(cdf_crit,
+                                            num_mc_events,
+                                            domain=[0.,1.],
+                                            backup_cdf=None,
+                                            verbose=verbose)
+
+    # Formatting samples
+    theta_crit_weights = np.where(np.isinf(theta_crits), 0,
+                                  theta_crit_weights)
+    theta_crits = np.where(np.isinf(theta_crits), 0, theta_crits)
+
+    # Saving
+    save_new_data({'samples': theta_crits,
+                   'weights': theta_crit_weights},
+                  'montecarlo samples',
+                  'critical sudakov inverse transform',
+                  params=dict(**params,
+                              **{'z_cut': z_cut}),
+                  extension='.npz')
+
+    return theta_crits, theta_crit_weights
+
+
+def generate_precritical_samples(radiator_fns, params,
+                                theta_crits, z_cut,
+                                verbose=3):
+    """Generates samples via the inverse transform method
+    for pre-critical energy fractions from Sudakov factors.
+    """
+    print("    Making pre-critical samples from critical" \
+          f" samples with z_c={z_cut}...")
+
+    z_pres = []
+    z_pre_weights = []
+
+    for i, theta in enumerate(theta_crits):
+        def cdf_pre_conditional(z_pre):
+            return np.exp(-1.*radiator_fns['pre-critical'][z_cut](
+                                            z_pre, theta))
+
+        z_pre, z_pre_weight = samples_from_cdf(cdf_pre_conditional, 1,
+                                            domain=[0,z_cut],
+                                            backup_cdf=None,
+                                            force_monotone=True,
+                                            verbose=verbose)
+        # Processing and saving one sample at a time
+        z_pre = z_pre[0]
+        z_pre_weight = z_pre_weight[0]
+
+        z_pres.append(z_pre)
+        z_pre_weights.append(z_pre_weight)
+        if (i+1)%(len(theta_crits)/10) == 0:
+            print("        Generated "+str(i+1)+" events...",
+                  flush=True)
+
+    # Formatting samples
+    z_pres = np.array(z_pres)
+    z_pre_weights = np.array(z_pre_weights)
+    z_pre_weights = np.where(np.isinf(z_pres), 0, z_pre_weights)
+    z_pres = np.where(np.isinf(z_pres), 0, z_pres)
+
+    # Saving
+    save_new_data({'samples': z_pres,
+                   'weights': z_pre_weights},
+                  'montecarlo samples',
+                  'pre-critical sudakov inverse transform',
+                  params=dict(**params,
+                              **{'z_cut': z_cut}),
+                  extension='.npz')
+
+    return z_pres, z_pre_weights
+
+
+def generate_subsequent_samples(radiator_fns, params,
+                                theta_crits, z_cut, beta,
+                                verbose=3):
+    """Generates samples via the inverse transform method
+    for subsequent ECFs from Sudakov factors.
+    """
+    print(f"    Making subsequent samples with {beta=}" \
+          f" from critical samples with z_c={z_cut}...")
+
+    c_subs = []
+    c_sub_weights = []
+
+    for i, theta in enumerate(theta_crits):
+        def cdf_sub_conditional(c_sub):
+            return np.exp(-1.*radiator_fns['subsequent'][beta](c_sub, theta))
+
+        if theta**beta/2. < 1e-10:
+            # Assigning to an underflow bin for small observable values
+            c_sub = 1e-100
+            c_sub_weight = 1.
+        else:
+            c_sub, c_sub_weight = samples_from_cdf(cdf_sub_conditional, 1,
+                                            domain=[0.,theta**beta/2.],
+                                            # DEBUG: No backup CDF
+                                            backup_cdf=None,
+                                            verbose=3)
+            c_sub, c_sub_weight = c_sub[0], c_sub_weight[0]
+
+        # Processing and saving one sample at a time
+        c_subs.append(c_sub)
+        c_sub_weights.append(c_sub_weight)
+        if (i+1)%(len(theta_crits)/10) == 0:
+            print("        Generated "+str(i+1)+" events...", flush=True)
+
+    # Formatting samples
+    c_subs = np.array(c_subs)
+    c_sub_weights = np.array(c_sub_weights)
+    c_sub_weights = np.where(np.isinf(c_subs), 0, c_sub_weights)
+    c_subs = np.where(np.isinf(c_subs), 0, c_subs)
+
+    # Saving
+    save_new_data({'samples': c_subs,
+                   'weights': c_sub_weights},
+                  'montecarlo samples',
+                  'subsequent sudakov inverse transform',
+                  params=dict(**params,
+                              **{'z_cut': z_cut,
+                                 'beta': beta}),
+                  extension='.npz')
+
+    return c_subs, c_sub_weights
+
+
+def generate_sudakov_samples(radiator_fns, params,
+                             z_cuts=Z_CUTS, betas=BETAS,
+                             emissions=['pre-critical',
+                                        'critical', 'subsequent'],
+                             verbose=3):
+    """Generates samples via the inverse transform method for
+    Sudakov factors for different emissions and parameters.
+    """
+    all_theta_crits = {zc: None for zc in z_cuts}
+    if 'critical' in emissions:
+        for z_cut in z_cuts:
+            theta_crits, _ = generate_critical_samples(
+                                             radiator_fns, params,
+                                             z_cut, verbose)
+            all_theta_crits[z_cut] = theta_crits
+
+    if 'pre-critical' in emissions:
+        assert 'critical' in emissions, \
+            "Critical Sudakov samples must be generated before " \
+            "pre-critical ones."
+        for z_cut in z_cuts:
+            generate_precritical_samples(radiator_fns, params,
+                                         all_theta_crits[z_cut],
+                                         z_cut, verbose)
+
+    if 'subsequent' in emissions:
+        assert 'critical' in emissions, \
+            "Critical Sudakov samples must be generated before " \
+            "subsequent ones."
+        for z_cut in z_cuts:
+            for beta in betas:
+                generate_subsequent_samples(radiator_fns, params,
+                                            all_theta_crits[z_cut],
+                                            z_cut, beta, verbose)
+
+    del all_theta_crits, theta_crits
+
+    sudakov_inverse_transforms = load_sudakov_samples()
+    return sudakov_inverse_transforms
 
 
 # ---------------------------------
-# Loading Samples
+# Loading
 # ---------------------------------
-# DEBUG: Need to implement
-sudakov_inverse_transforms = load_sudakov_samples()
+if load_mc_events:
+    try:
+        sudakov_inverse_transforms = load_sudakov_samples()
+    except FileNotFoundError:
+        print("Files for Sudakov inverse transform samples not found.")
+    load_mc_events = False
 
 # ------------------------------------
-# Loading Functions:
+# Loading Functions, Generating Samples:
 # ------------------------------------
 splitting_functions = load_splittingfns()
 
-radiators = {}
-if not(LOAD_MC_EVENTS):
-    radiators = load_radiators()
+radiator_fns = {}
+if not load_mc_events:
+    radiator_fns = load_radiators()
+    sudakov_inverse_transforms = generate_sudakov_samples(radiator_fns,
+                                                          sudakov_params)
 
 
 ###########################################
@@ -80,10 +298,9 @@ if not(LOAD_MC_EVENTS):
 ###########################################
 # DEBUG: Too buggy, leaving out
 def plot_mc_banded(ax, ys, err, bins, label, col, drawband=False):
-    if BIN_SPACE == 'lin':
+    if bin_space == 'lin':
         xs = (bins[:-1] + bins[1:])/2.
-        xerr = (bins[1:] - bins[:-1])
-    if BIN_SPACE == 'log':
+    if bin_space == 'log':
         xs = np.sqrt(bins[:-1]*bins[1:])
         xerr = (xs - bins[:-1], bins[1:]-xs)
         ys = xs * ys * np.log(10) # dY / d log10 C
@@ -127,34 +344,33 @@ def full_legend(ax, labels, loc='upper left', drawband=False):
 ###########################################
 # Critical Emission Only
 ###########################################
-def plot_mc_crit(axes_pdf, axes_cdf, z_cut, beta, f_soft, col,
-                 load=LOAD_INV_SAMPLES):
+def plot_mc_crit(axes_pdf, axes_cdf, z_cut, beta, f_soft, col):
+    """Plots the distribution obtained through Monte Carlo for
+    jet ECFs using only critical emissions.
+    """
     sud_integrator = integrator()
     sud_integrator.setLastBinBndCondition([1., 'minus'])
 
-    # DEBUG: Need to use both samples and weights when saving
     theta_crits        = sudakov_inverse_transforms['critical']\
                                     [z_cut][beta]['samples']
     theta_crit_weights = sudakov_inverse_transforms['critical']\
                                     [z_cut][beta]['weights']
-    # theta_crits, theta_crit_weights, load = get_theta_crits(
-    #                       z_cut, beta, load=load, save=True,
-    #                       rad_crit=radiators.get('critical', None))
 
     z_crits = np.array([getLinSample(z_cut, 1./2.)
-                        for i in range(NUM_MC_EVENTS)])
+                        for i in range(num_mc_events)])
     weights = splitting_functions[z_cut](z_crits, theta_crits)
+    weights = weights * theta_crit_weights
 
     obs = C_groomed(z_crits, theta_crits, z_cut, beta,
-                    z_pre=0., f=f_soft, acc=OBS_ACC)
+                    z_pre=0., f=f_soft, acc=obs_acc)
 
     # Weights, binned observables, and area
-    if BIN_SPACE == 'lin':
-        sud_integrator.bins = np.linspace(0, .5, NUM_BINS)
-    if BIN_SPACE == 'log':
-        sud_integrator.bins = np.logspace(np.log10(EPSILON)-1,
+    if bin_space == 'lin':
+        sud_integrator.bins = np.linspace(0, .5, num_bins)
+    if bin_space == 'log':
+        sud_integrator.bins = np.logspace(np.log10(epsilon)-1,
                                           np.log10(.75),
-                                          NUM_BINS)
+                                          num_bins)
     sud_integrator.hasBins = True
 
     sud_integrator.setDensity(obs, weights, 1./2.-z_cut)
@@ -166,7 +382,7 @@ def plot_mc_crit(axes_pdf, axes_cdf, z_cut, beta, f_soft, col,
     integralerr = sud_integrator.integralErr
     bins = sud_integrator.bins
 
-    if BIN_SPACE == 'log':
+    if bin_space == 'log':
         xs = np.sqrt(bins[:-1]*bins[1:])
         print("Critical MC normalization:",
               np.sum(pdf * (np.log10(bins[1:])-np.log10(bins[:-1]))))
@@ -179,7 +395,7 @@ def plot_mc_crit(axes_pdf, axes_cdf, z_cut, beta, f_soft, col,
                                       integralerr, bins,
                                       label=None, col=col)
 
-    if BIN_SPACE == 'log':
+    if bin_space == 'log':
         pdf = xs*pdf * np.log(10) # d sigma / d log10 C
         pdf_err = xs*pdf_err * np.log(10) # d sigma / d log10 C
         print("Critical MC adjusted normalization:",
@@ -192,53 +408,43 @@ def plot_mc_crit(axes_pdf, axes_cdf, z_cut, beta, f_soft, col,
 ###########################################
 # All Emissions
 ###########################################
-def plot_mc_all(axes_pdf, axes_cdf, z_cut, beta, f_soft, col,
-                load=LOAD_INV_SAMPLES):
+def plot_mc_all(axes_pdf, axes_cdf, z_cut, beta, f_soft, col):
+    """Plots the distribution obtained through Monte Carlo for
+    jet ECFs using all emissions.
+    """
     sud_integrator = integrator()
     sud_integrator.setLastBinBndCondition([1., 'minus'])
 
-    # DEBUG: Need to use both samples and weights when saving
     theta_crits        = sudakov_inverse_transforms['critical']\
                                     [z_cut][beta]['samples']
     theta_crit_weights = sudakov_inverse_transforms['critical']\
                                     [z_cut][beta]['weights']
-    # theta_crits, theta_crit_weights, load = get_theta_crits(
-    # theta_crits, theta_crit_weights, load = get_theta_crits(
-    #                       z_cut, beta, load=load, save=True,
-    #                       rad_crit=radiators.get('critical', None))
 
-    # DEBUG: Need to use both samples and weights when saving
     c_subs        = sudakov_inverse_transforms['subsequent']\
                                     [z_cut][beta]['samples']
     c_sub_weights = sudakov_inverse_transforms['subsequent']\
                                     [z_cut][beta]['weights']
-    # c_subs, c_sub_weights, load = get_c_subs(z_cut, beta,
-    #                      load=load, save=True, theta_crits=theta_crits,
-    #                      rad_crit_sub=radiators.get('subsequent', None))
 
-    # DEBUG: Need to use both samples and weights when saving
     z_pres        = sudakov_inverse_transforms['pre-critical']\
                                     [z_cut]['samples']
     z_pre_weights = sudakov_inverse_transforms['pre-critical']\
                                     [z_cut]['weights']
-    # z_pres, z_pre_weights, load = get_z_pres(z_cut, load=load, save=True,
-    #                     theta_crits=theta_crits,
-    #                     rad_pre=radiators.get('pre-critical', None))
 
     z_crits = np.array([getLinSample(z_cut, 1./2.)
-                        for i in range(NUM_MC_EVENTS)])
+                        for i in range(num_mc_events)])
     weights = splitting_functions[z_cut](z_crits, theta_crits)
+    weights = weights * theta_crit_weights * c_sub_weights * z_pre_weights
 
     c_crits = C_groomed(z_crits, theta_crits, z_cut, beta,
-                        z_pre=z_pres, f=f_soft, acc=OBS_ACC)
+                        z_pre=z_pres, f=f_soft, acc=obs_acc)
     obs = np.maximum(c_crits, c_subs)
 
     # Weights, binned observables, and area
-    if BIN_SPACE == 'lin':
-        sud_integrator.bins = np.linspace(0, .5, NUM_BINS)
-    if BIN_SPACE == 'log':
-        sud_integrator.bins = np.logspace(np.log10(EPSILON)-1, np.log10(.5),
-                                          NUM_BINS)
+    if bin_space == 'lin':
+        sud_integrator.bins = np.linspace(0, .5, num_bins)
+    if bin_space == 'log':
+        sud_integrator.bins = np.logspace(np.log10(epsilon)-1, np.log10(.5),
+                                          num_bins)
     sud_integrator.hasBins = True
 
     sud_integrator.setDensity(obs, weights, 1./2.-z_cut)
@@ -250,7 +456,7 @@ def plot_mc_all(axes_pdf, axes_cdf, z_cut, beta, f_soft, col,
     integralerr = sud_integrator.integralErr
     bins = sud_integrator.bins
 
-    if BIN_SPACE == 'log':
+    if bin_space == 'log':
         xs = np.sqrt(bins[:-1]*bins[1:])
         print("All MC normalization:",
               np.sum(pdf * (np.log10(bins[1:])-np.log10(bins[:-1]))))
@@ -262,7 +468,7 @@ def plot_mc_all(axes_pdf, axes_cdf, z_cut, beta, f_soft, col,
                                       integralerr, bins,
                                       label=None, col=col)
 
-    if BIN_SPACE == 'log':
+    if bin_space == 'log':
         pdf = xs*pdf * np.log(10) # d sigma / d log10 C
         pdf_err = xs*pdf_err * np.log(10) # d sigma / d log10 C
 

@@ -1,10 +1,6 @@
-from __future__ import absolute_import
-from pathlib import Path
-
-# Local utilities for comparison
+# Local jet utilities
 from jetmontecarlo.utils.montecarlo_utils import getLinSample
 from jetmontecarlo.jets.observables import *
-from examples.comparison_plot_utils import *
 
 # Local analytics
 from jetmontecarlo.analytics.radiators import *
@@ -12,16 +8,15 @@ from jetmontecarlo.analytics.radiators_fixedcoupling import *
 from jetmontecarlo.analytics.sudakovFactors_fixedcoupling import *
 from jetmontecarlo.montecarlo.partonshower import *
 
-# Parameters
-from examples.params import ALL_MONTECARLO_PARAMS, RADIATOR_PARAMS,\
-    SPLITTINGFN_PARAMS, SHOWER_PARAMS
+# Parameters and plotting utilities
+from examples.params import ALL_MONTECARLO_PARAMS,\
+    RADIATOR_PARAMS, SHOWER_PARAMS
+from examples.comparison_plot_utils import *
 
 
 from examples.sudakov_comparisons.sudakov_utils import Z_CUT_PLOT
 from examples.sudakov_comparisons.sudakov_utils import plot_label
-from examples.sudakov_comparisons.sudakov_utils import split_fn_num
 from examples.sudakov_comparisons.sudakov_utils import radiators
-from examples.sudakov_comparisons.sudakov_utils import save_cdf
 
 # =====================================
 # Notes:
