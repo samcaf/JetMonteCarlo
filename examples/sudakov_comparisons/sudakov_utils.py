@@ -93,7 +93,7 @@ if F_SOFT:
 # ---------------------------------
 # Functions which generate samples
 # ---------------------------------
-def generate_critical_samples(radiator_fns, params,
+def generate_critical_samples(radiators, params,
                               z_cut,
                               verbose=3):
     """Generates samples via the inverse transform method
@@ -102,7 +102,7 @@ def generate_critical_samples(radiator_fns, params,
     print(f"    Making critical samples with z_c={z_cut}...")
 
     def cdf_crit(theta):
-        return np.exp(-1.*radiator_fns['critical'][z_cut](theta))
+        return np.exp(-1.*radiators['critical'][z_cut](theta))
 
     theta_crits, theta_crit_weights = samples_from_cdf(cdf_crit,
                                             num_mc_events,
@@ -127,9 +127,9 @@ def generate_critical_samples(radiator_fns, params,
     return theta_crits, theta_crit_weights
 
 
-def generate_precritical_samples(radiator_fns, params,
+def generate_precritical_samples(radiators, params,
                                 theta_crits, z_cut,
-                                verbose=3):
+                                verbose=10):
     """Generates samples via the inverse transform method
     for pre-critical energy fractions from Sudakov factors.
     """
@@ -141,11 +141,15 @@ def generate_precritical_samples(radiator_fns, params,
 
     for i, theta in enumerate(theta_crits):
         def cdf_pre_conditional(z_pre):
-            return np.exp(-1.*radiator_fns['pre-critical'][z_cut](
-                                            z_pre, theta))
+            if hasattr(z_pre, "__len__"):
+                return np.exp(-1.*radiators['pre-critical'][z_cut](
+                                   [[z_p, theta] for z_p in z_pre]))
+            else:
+                return np.exp(-1.*radiators['pre-critical'][z_cut](
+                                   [z_pre, theta]))
 
         z_pre, z_pre_weight = samples_from_cdf(cdf_pre_conditional, 1,
-                                            domain=[0,z_cut],
+                                            domain=[0, z_cut],
                                             backup_cdf=None,
                                             force_monotone=True,
                                             verbose=verbose)
@@ -177,7 +181,7 @@ def generate_precritical_samples(radiator_fns, params,
     return z_pres, z_pre_weights
 
 
-def generate_subsequent_samples(radiator_fns, params,
+def generate_subsequent_samples(radiators, params,
                                 theta_crits, z_cut, beta,
                                 verbose=3):
     """Generates samples via the inverse transform method
@@ -191,7 +195,8 @@ def generate_subsequent_samples(radiator_fns, params,
 
     for i, theta in enumerate(theta_crits):
         def cdf_sub_conditional(c_sub):
-            return np.exp(-1.*radiator_fns['subsequent'][beta](c_sub, theta))
+            return np.exp(-1.*radiators['subsequent'][beta]\
+                                        (c_sub, theta))
 
         if theta**beta/2. < 1e-10:
             # Assigning to an underflow bin for small observable values
@@ -200,9 +205,9 @@ def generate_subsequent_samples(radiator_fns, params,
         else:
             c_sub, c_sub_weight = samples_from_cdf(cdf_sub_conditional, 1,
                                             domain=[0.,theta**beta/2.],
-                                            # DEBUG: No backup CDF
                                             backup_cdf=None,
-                                            verbose=3)
+                                            force_monotone=True,
+                                            verbose=verbose)
             c_sub, c_sub_weight = c_sub[0], c_sub_weight[0]
 
         # Processing and saving one sample at a time
@@ -230,11 +235,10 @@ def generate_subsequent_samples(radiator_fns, params,
     return c_subs, c_sub_weights
 
 
-def generate_sudakov_samples(radiator_fns, params,
+def generate_sudakov_samples(radiators, params,
                              z_cuts=Z_CUTS, betas=BETAS,
                              emissions=['pre-critical',
-                                        'critical', 'subsequent'],
-                             verbose=3):
+                                        'critical', 'subsequent']):
     """Generates samples via the inverse transform method for
     Sudakov factors for different emissions and parameters.
     """
@@ -242,8 +246,8 @@ def generate_sudakov_samples(radiator_fns, params,
     if 'critical' in emissions:
         for z_cut in z_cuts:
             theta_crits, _ = generate_critical_samples(
-                                             radiator_fns, params,
-                                             z_cut, verbose)
+                                             radiators, params,
+                                             z_cut)
             all_theta_crits[z_cut] = theta_crits
 
     if 'pre-critical' in emissions:
@@ -251,9 +255,9 @@ def generate_sudakov_samples(radiator_fns, params,
             "Critical Sudakov samples must be generated before " \
             "pre-critical ones."
         for z_cut in z_cuts:
-            generate_precritical_samples(radiator_fns, params,
+            generate_precritical_samples(radiators, params,
                                          all_theta_crits[z_cut],
-                                         z_cut, verbose)
+                                         z_cut)
 
     if 'subsequent' in emissions:
         assert 'critical' in emissions, \
@@ -261,9 +265,9 @@ def generate_sudakov_samples(radiator_fns, params,
             "subsequent ones."
         for z_cut in z_cuts:
             for beta in betas:
-                generate_subsequent_samples(radiator_fns, params,
+                generate_subsequent_samples(radiators, params,
                                             all_theta_crits[z_cut],
-                                            z_cut, beta, verbose)
+                                            z_cut, beta)
 
     del all_theta_crits, theta_crits
 
@@ -274,6 +278,8 @@ def generate_sudakov_samples(radiator_fns, params,
 # ---------------------------------
 # Loading
 # ---------------------------------
+sudakov_inverse_transforms = None
+
 if load_mc_events:
     try:
         sudakov_inverse_transforms = load_sudakov_samples()
@@ -286,7 +292,6 @@ if load_mc_events:
 # ------------------------------------
 splitting_functions = load_splittingfns()
 
-radiator_fns = {}
 if not load_mc_events:
     radiator_fns = load_radiators()
     sudakov_inverse_transforms = generate_sudakov_samples(radiator_fns,
