@@ -1,6 +1,9 @@
 from pathlib import Path
 import warnings
 
+# Importing time to wait if I run into `ScannerError`s
+import time
+
 # Data cataloging
 import uuid
 import yaml
@@ -120,7 +123,22 @@ def new_cataloged_filename(data_type: str, data_source: str,
 
     # Adding the filename to the catalog
     with open(example_catalog, 'r') as file:
-        catalog_dict = yaml.safe_load(file)
+        # Attempting to open the catalog file
+        open_attempts = 0
+        while open_attempts < 12:
+            try:
+                catalog_dict = yaml.safe_load(file)
+                break
+            except yaml.scanner.ScannerError as error:
+                # Sometimes I run into `ScannerError`s when
+                # I try to run multiple jobs at once.
+                # I wonder if it's because two jobs are both trying
+                # to load and modify the data in the catalog file
+                print("\nRan into a ScannerError when attempting to"
+                    f"load {params=}. Waiting before attempting again.")
+                # Keep trying for 12 attempts/60s total
+                open_attempts += 1
+                time.sleep(5)
 
         # Setting up dict structure if it does not already exist
         if catalog_dict is None:
@@ -139,9 +157,12 @@ def new_cataloged_filename(data_type: str, data_source: str,
         if entry is not None:
             file_path = Path(entry['filename'])
             if file_path.exists():
+                print("Existing file with the given parameters found.")
                 if overwrite_mode == 'delete':
+                    print("Overwriting old file.")
                     Path.unlink(file_path)
                 elif overwrite_mode == 'trash':
+                    print(f"Moving old file to {example_trashbin}.")
                     Path.rename(filename,
                             example_trashbin / file_path.name)
 
