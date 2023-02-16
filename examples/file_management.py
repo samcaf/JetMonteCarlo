@@ -202,9 +202,12 @@ def filename_from_catalog(data_type, data_source, params):
     if catalog_info is not None:
         return catalog_info['filename']
 
-    raise FileNotFoundError(f"Could not find data type {data_type} and"
-                     +f" data source {data_source} with params"
-                     +f" {params} in the catalog.")
+    raise FileNotFoundError(f"\n
+            Could not find data type {data_type} and"
+            f" data source {data_source} with params"
+            f" {params} in the catalog."
+            "\nThe associated key in the catalog would be:\n"
+            +dict_to_yaml_key(params))
 
 
 # =====================================
