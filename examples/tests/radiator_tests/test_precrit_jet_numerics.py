@@ -10,9 +10,9 @@ from matplotlib import cm
 from jetmontecarlo.montecarlo.integrator import *
 
 # Local jet tools
-from jetmontecarlo.jets.jetSamplers import *
-from jetmontecarlo.jets.observables import *
-from jetmontecarlo.jets.weights import *
+from jetmontecarlo.numerics.radiators.samplers import *
+from jetmontecarlo.numerics.observables import *
+from jetmontecarlo.numerics.weights import *
 
 # Local analytics
 from jetmontecarlo.analytics.radiators import *

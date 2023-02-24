@@ -5,7 +5,7 @@ from jetmontecarlo.montecarlo.integrator import integrator
 from jetmontecarlo.montecarlo.partonshower import *
 
 # Local functions and analytics
-from jetmontecarlo.jets.observables import *
+from jetmontecarlo.numerics.observables import *
 from jetmontecarlo.analytics.radiators import *
 from jetmontecarlo.analytics.radiators_fixedcoupling import *
 from jetmontecarlo.analytics.sudakovFactors_fixedcoupling import *

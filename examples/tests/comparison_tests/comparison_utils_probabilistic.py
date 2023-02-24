@@ -1,8 +1,8 @@
 # Local MC integration imports
 from jetmontecarlo.montecarlo.integrator import *
-from jetmontecarlo.jets.observables import *
-from jetmontecarlo.jets.weights import *
-from jetmontecarlo.jets.jetSamplers import *
+from jetmontecarlo.numerics.observables import *
+from jetmontecarlo.numerics.weights import *
+from jetmontecarlo.numerics.radiators.samplers import *
 
 # Local parton shower imports
 from jetmontecarlo.utils.partonshower_utils import *

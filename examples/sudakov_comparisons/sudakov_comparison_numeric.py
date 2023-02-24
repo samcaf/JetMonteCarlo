@@ -1,6 +1,6 @@
 # Local jet utilities
 from jetmontecarlo.utils.montecarlo_utils import getLinSample
-from jetmontecarlo.jets.observables import *
+from jetmontecarlo.numerics.observables import *
 
 # Local analytics
 from jetmontecarlo.analytics.radiators import *

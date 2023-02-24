@@ -4,7 +4,7 @@ import dill as pickle
 
 # Local utilities for jets
 from jetmontecarlo.utils.montecarlo_utils import getLinSample
-from jetmontecarlo.jets.observables import *
+from jetmontecarlo.numerics.observables import *
 from jetmontecarlo.analytics.soft_drop import *
 
 # Local utilities for comparison

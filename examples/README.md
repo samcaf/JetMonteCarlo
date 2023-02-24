@@ -12,7 +12,7 @@ Useful for Monte Carlo integration to obtain, for example, distributions of obse
 Contains examples of code for generating plots comparing observable distributions obtained with Monte Carlo integration of weighted phase space emissions and with parton shower algorithms.
 
 ## Example workflow
-The examples in this folder work together to produce plots which compare distributions of jet energy correlation functions, defined in jetmontecarlo.jets.observables, for analytic calculations in perturbative QCD (pQCD), numerical integration in pQCD, and our parton shower algorithm.
+The examples in this folder work together to produce plots which compare distributions of jet energy correlation functions, defined in jetmontecarlo.numerics.observables, for analytic calculations in perturbative QCD (pQCD), numerical integration in pQCD, and our parton shower algorithm.
 
 Below is an example bash script that implements this workflow for a particular choice of parameters out of the terminal.
 The code below compares quark jets at running coupling and MLL accuracy.

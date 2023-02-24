@@ -2,7 +2,7 @@ import dill as pickle
 from pathlib import Path
 
 # Local utilities for numerics
-from jetmontecarlo.jets.jet_numerics import *
+from jetmontecarlo.numerics.radiators.generation import *
 
 # Local comparison utilities
 from examples.comparison_plots.comparison_plot_utils import *

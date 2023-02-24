@@ -7,9 +7,9 @@ from jetmontecarlo.utils.plot_utils import *
 from jetmontecarlo.utils.color_utils import *
 
 # Local jet tools
-from jetmontecarlo.jets.jetSamplers import *
-from jetmontecarlo.jets.observables import *
-from jetmontecarlo.jets.weights import *
+from jetmontecarlo.numerics.radiators.samplers import *
+from jetmontecarlo.numerics.observables import *
+from jetmontecarlo.numerics.weights.generation import *
 
 # Local analytics
 from jetmontecarlo.analytics.radiators_fixedcoupling import *

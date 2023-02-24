@@ -4,7 +4,7 @@ import math
 import os
 
 # Local imports
-from jetmontecarlo.jets.jetSamplers import *
+from jetmontecarlo.numerics.radiators.samplers import *
 from jetmontecarlo.utils.plot_utils import *
 
 # Parameters

@@ -91,19 +91,19 @@ while getopts "t:l:v" OPTION; do
             TESTMUNP)
                 ./setup/set_params.sh "${_test_params_munp[@]}" --load_events False ;;
             FCLL)
-                ./setup/set_params.sh "${_fc_ll_params[@]}" --load_events True ;;
+                ./setup/set_params.sh "${_fc_ll_params[@]}" --load_events False ;;
             FCLLprime)
-                ./setup/set_params.sh "${_fcprime_ll_params[@]}" --load_events True ;;
+                ./setup/set_params.sh "${_fcprime_ll_params[@]}" --load_events False ;;
             RCLL)
-                ./setup/set_params.sh "${_rc_ll_params[@]}" --load_events True ;;
+                ./setup/set_params.sh "${_rc_ll_params[@]}" --load_events False ;;
             MU_NP)
-                ./setup/set_params.sh "${_munp_params[@]}" --load_events True ;;
+                ./setup/set_params.sh "${_munp_params[@]}" --load_events False ;;
             LAMBDA)
-                ./setup/set_params.sh "${_lambda_params[@]}" --load_events True ;;
+                ./setup/set_params.sh "${_lambda_params[@]}" --load_events False ;;
             ME1)
-                ./setup/set_params.sh "${_me_munp_params[@]}" --load_events True ;;
+                ./setup/set_params.sh "${_me_munp_params[@]}" --load_events False ;;
             ME2)
-                ./setup/set_params.sh "${_me_lambda_params[@]}" --load_events True ;;
+                ./setup/set_params.sh "${_me_lambda_params[@]}" --load_events False ;;
             *)
                 echo "Unrecognized parameter type "$OPTARG"."; exit 1 ;;
             esac;;

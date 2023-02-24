@@ -1,7 +1,7 @@
 # Local utilities
 from jetmontecarlo.utils.plot_utils import *
 from jetmontecarlo.utils.color_utils import *
-from jetmontecarlo.jets.jet_numerics import *
+from jetmontecarlo.numerics.radiators.generation import *
 
 # Local analytics
 from jetmontecarlo.analytics.radiators import *

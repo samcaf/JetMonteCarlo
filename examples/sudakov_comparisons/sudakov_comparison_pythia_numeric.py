@@ -4,7 +4,7 @@ from pathlib import Path
 
 # Local utilities for comparison
 from jetmontecarlo.utils.montecarlo_utils import getLinSample
-from jetmontecarlo.jets.observables import *
+from jetmontecarlo.numerics.observables import *
 from examples.comparison_plot_utils import *
 
 # Local analytics

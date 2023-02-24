@@ -5,13 +5,11 @@
 # Local utilities
 # ---------------------------------
 # Local utilities for phase space sampling
-from jetmontecarlo.jets.jetSamplers import criticalSampler,\
+from jetmontecarlo.numerics.radiators.samplers import criticalSampler,\
             precriticalSampler, ungroomedSampler
 
 # Local utilities for function generation
-from jetmontecarlo.jets.jet_numerics import gen_normalized_splitting,\
-            gen_numerical_radiator, gen_pre_num_rad,\
-            gen_crit_sub_num_rad
+from jetmontecarlo.numerics.radiators.generation import *
 
 # Local utilities for files
 from examples.data_management import save_new_data

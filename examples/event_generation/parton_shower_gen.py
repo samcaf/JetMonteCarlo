@@ -19,7 +19,7 @@ del params['shower beta']
 
 # Saving/loading flags
 SAVE_SHOWER_EVENTS = False
-LOAD_SHOWER_EVENTS = False
+LOAD_SHOWER_EVENTS = True
 SAVE_SHOWER_CORRELATIONS = True
 
 # Setting up parton shower parameters

@@ -6,7 +6,7 @@ from jetmontecarlo.utils.color_utils import *
 from jetmontecarlo.utils.vector_utils import *
 from jetmontecarlo.utils.partonshower_utils import *
 from jetmontecarlo.montecarlo.integrator import *
-from jetmontecarlo.jets.observables import *
+from jetmontecarlo.numerics.observables import *
 
 # Test imports
 from examples.tests.partonshower_tests.rejection_tests.rejection_test_utils import *
