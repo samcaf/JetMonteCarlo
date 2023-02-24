@@ -160,31 +160,23 @@ then
 fi
 
 
-if $make_rad_plot
+if $rss
 then
-	printf "
-# ============================
-# Plotting Radiators:
-# ============================
-# examples/radiator_comparisons/radiator_comparison.py
-\n"
-	python3 examples/radiator_comparisons/radiator_comparison.py
-printf "
-# Complete!
-"
-fi
-
-
-printf "
+    printf "
 # ============================
 # Plotting Sudakov Exponents:
 # ============================
 \n
 # python3 examples/sudakov_comparisons/sudakov_comparison_numeric.py
 "
-python3 examples/sudakov_comparisons/sudakov_comparison_numeric.py
+    python3 examples/sudakov_comparisons/sudakov_comparison_numeric.py
 
-# DEBUG: Include both RSS and Soft Drop, and use rss and softdrop flags to control these
+printf "
+# Complete!
+"
+fi
+
+
 
 
 if [ "$supercloud_syntax" = true ] ;
