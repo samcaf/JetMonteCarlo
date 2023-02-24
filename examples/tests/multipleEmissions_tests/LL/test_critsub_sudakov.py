@@ -12,7 +12,8 @@ from jetmontecarlo.numerics.observables import *
 from jetmontecarlo.numerics.weights.generation import *
 
 # Local analytics
-from jetmontecarlo.analytics.sudakovFactors_fixedcoupling import *
+from jetmontecarlo.analytics.sudakov_factors.fixedcoupling import *
+
 # Make this better:
 from examples.tests.partonshower_tests.test_partonshower_angularities import *
 

@@ -17,8 +17,8 @@ from jetmontecarlo.numerics.observables import *
 from jetmontecarlo.numerics.weights.generation import *
 
 # Local analytics
-from jetmontecarlo.analytics.radiators import *
-from jetmontecarlo.analytics.radiators_fixedcoupling import *
+from jetmontecarlo.analytics.radiators.running_coupling import *
+from jetmontecarlo.analytics.radiators.fixedcoupling import *
 
 
 # ------------------------------------

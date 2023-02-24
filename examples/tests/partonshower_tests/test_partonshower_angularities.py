@@ -9,8 +9,8 @@ from jetmontecarlo.utils.vector_utils import *
 from jetmontecarlo.utils.partonshower_utils import *
 from jetmontecarlo.montecarlo.integrator import *
 from jetmontecarlo.numerics.observables import *
-from jetmontecarlo.analytics.QCD_utils import *
-from jetmontecarlo.analytics.radiators import *
+from jetmontecarlo.analytics.qcd_utils import *
+from jetmontecarlo.analytics.radiators.running_coupling import *
 
 ###########################################
 # Parameters and setup:

@@ -4,6 +4,14 @@ from mpmath import polylog, hyp2f1
 import warnings
 warnings.filterwarnings("ignore", message="invalid value encountered in log")
 
+
+# =====================================
+# QCD Basics
+# =====================================
+
+# ---------------------------------
+# Basic jet type verification
+# ---------------------------------
 # Jets are quark or gluon jets:
 valid_jet_types = ['quark', 'gluon']
 def check_jet_type(jet_type):
@@ -191,3 +199,34 @@ def b_g_bar(z_c):
 # Setting up polylog for np-friendly use:
 polylog_vec = np.frompyfunc(polylog, 2, 1)
 hyp2f1_vec = np.frompyfunc(hyp2f1, 4, 1)
+
+
+
+# =====================================
+# Misc. Utilities
+# =====================================
+
+# ---------------------------------
+# Mass Scales
+# ---------------------------------
+
+# Mass Scales (in GeV)
+M_Z = 91.19
+M_W = 80.38
+M_t = 172.76
+Lambda_QCD = .245
+
+mass_val = {'qcd' : Lambda_QCD,
+             'z'   : M_Z,
+             'w'   : M_W,
+             'top' : M_t}
+
+scale_name = {'qcd' : r"$\Lambda_{\rm QCD}$",
+              'z'   : r"$m_Z$",
+              'w'   : r"$m_W$",
+              'top' : r"$m_t$"}
+
+scale_col = {'qcd' : 'rebeccapurple',
+             'z'   : 'cadetblue',
+             'w'   : 'plum',
+             'top' : 'peru'}

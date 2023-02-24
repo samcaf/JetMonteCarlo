@@ -6,7 +6,7 @@ from jetmontecarlo.utils.hist_utils import *
 from jetmontecarlo.utils.color_utils import *
 from jetmontecarlo.utils.partonshower_utils import *
 from jetmontecarlo.montecarlo.integrator import *
-from jetmontecarlo.analytics.sudakovFactors_fixedcoupling import *
+from jetmontecarlo.analytics.sudakov_factors.fixedcoupling import *
 
 # Test utility imports
 from examples.tests.partonshower_tests.one_emission.one_em_groomed_test_utils import *

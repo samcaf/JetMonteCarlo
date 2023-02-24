@@ -15,8 +15,8 @@ from jetmontecarlo.utils.plot_utils import *
 from jetmontecarlo.utils.color_utils import *
 
 # Local analytics
-from jetmontecarlo.analytics.sudakovFactors_fixedcoupling import *
-from jetmontecarlo.analytics.radiators import *
+from jetmontecarlo.analytics.sudakov_factors.fixedcoupling import *
+from jetmontecarlo.analytics.radiators.running_coupling import *
 
 # Older version of comparison code.
 # Includes veto-based showers and fudge factors for numerical integration.

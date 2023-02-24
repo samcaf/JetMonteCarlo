@@ -12,7 +12,7 @@ from jetmontecarlo.numerics.observables import *
 from jetmontecarlo.numerics.weights import *
 
 # Local analytics
-from jetmontecarlo.analytics.radiators import *
+from jetmontecarlo.analytics.radiators.running_coupling import *
 
 # Parameters
 showPlots = True

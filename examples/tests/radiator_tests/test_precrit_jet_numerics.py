@@ -15,8 +15,8 @@ from jetmontecarlo.numerics.observables import *
 from jetmontecarlo.numerics.weights import *
 
 # Local analytics
-from jetmontecarlo.analytics.radiators import *
-from jetmontecarlo.analytics.radiators_fixedcoupling import *
+from jetmontecarlo.analytics.radiators.running_coupling import *
+from jetmontecarlo.analytics.radiators.fixedcoupling import *
 
 import matplotlib.ticker as mticker
 
@@ -164,7 +164,7 @@ def tst_pre_num_rad(rad_sampler, crit_rad_sampler,
     xs, ys = np.meshgrid(xs, ys)
     xs, ys = np.log(xs), np.log(ys)
 
-    zs = [radiator, integral_interp, preRadAnalytic_fc_LL(xs, ys, .05)] 
+    zs = [radiator, integral_interp, preRadAnalytic_fc_LL(xs, ys, .05)]
     zs.append(abs(zs[0] - zs[1]))
 
     zlims = [(0, 1), (0, 1), (0, 1), (0, .1)]

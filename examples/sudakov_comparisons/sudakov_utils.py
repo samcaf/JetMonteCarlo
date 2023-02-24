@@ -6,9 +6,9 @@ from jetmontecarlo.montecarlo.partonshower import *
 
 # Local functions and analytics
 from jetmontecarlo.numerics.observables import *
-from jetmontecarlo.analytics.radiators import *
-from jetmontecarlo.analytics.radiators_fixedcoupling import *
-from jetmontecarlo.analytics.sudakovFactors_fixedcoupling import *
+from jetmontecarlo.analytics.radiators.running_coupling import *
+from jetmontecarlo.analytics.radiators.fixedcoupling import *
+from jetmontecarlo.analytics.sudakov_factors.fixedcoupling import *
 
 # Plotting utilities
 from jetmontecarlo.utils.color_utils import compcolors,\

@@ -7,9 +7,9 @@ from jetmontecarlo.utils.color_utils import *
 from jetmontecarlo.utils.hist_utils import *
 
 # Local analytics
-from jetmontecarlo.analytics.QCD_utils import *
-from jetmontecarlo.analytics.radiators_fixedcoupling import *
-from jetmontecarlo.analytics.radiators import *
+from jetmontecarlo.analytics.qcd_utils import *
+from jetmontecarlo.analytics.radiators.fixedcoupling import *
+from jetmontecarlo.analytics.radiators.running_coupling import *
 
 # Parameters and Utilities
 from examples.params import tab, BETAS, RADIATOR_PARAMS

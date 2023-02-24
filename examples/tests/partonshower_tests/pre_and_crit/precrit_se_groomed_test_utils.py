@@ -3,8 +3,8 @@ import numpy as np
 
 # Local utils:
 from jetmontecarlo.utils.vector_utils import *
-from jetmontecarlo.analytics.QCD_utils import *
 from jetmontecarlo.utils.partonshower_utils import *
+from jetmontecarlo.analytics.qcd_utils import *
 
 
 ###########################################

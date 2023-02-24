@@ -6,10 +6,10 @@ import numpy as np
 from jetmontecarlo.utils.vector_utils import *
 from jetmontecarlo.utils.montecarlo_utils import *
 from jetmontecarlo.utils.partonshower_utils import *
-from jetmontecarlo.analytics.QCD_utils import *
 
 # Utilities for analytic expressions
-from jetmontecarlo.analytics.radiators import *
+from jetmontecarlo.analytics.qcd_utils import *
+from jetmontecarlo.analytics.radiators.running_coupling import *
 from examples.tests.partonshower_tests.test_partonshower_angularities import *
 
 ########################################

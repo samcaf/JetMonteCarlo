@@ -1,5 +1,5 @@
 # Local imports
-from jetmontecarlo.analytics.QCD_utils import MU_NP, LAMBDA_QCD
+from jetmontecarlo.analytics.qcd_utils import MU_NP, LAMBDA_QCD
 
 VERBOSE = 3
 

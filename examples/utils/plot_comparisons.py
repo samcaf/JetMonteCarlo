@@ -9,10 +9,10 @@ from jetmontecarlo.utils.color_utils import *
 from jetmontecarlo.utils.hist_utils import *
 
 # Local analytics
-from jetmontecarlo.analytics.QCD_utils import *
-from jetmontecarlo.analytics.radiators import *
-from jetmontecarlo.analytics.radiators_fixedcoupling import *
-from jetmontecarlo.analytics.sudakovFactors_fixedcoupling import *
+from jetmontecarlo.analytics.qcd_utils import *
+from jetmontecarlo.analytics.radiators.running_coupling import *
+from jetmontecarlo.analytics.radiators.fixedcoupling import *
+from jetmontecarlo.analytics.sudakov_factors.fixedcoupling import *
 
 from examples.params import *
 

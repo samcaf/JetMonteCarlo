@@ -8,9 +8,9 @@ from jetmontecarlo.numerics.observables import *
 from examples.utils.plot_comparisons import *
 
 # Local analytics
-from jetmontecarlo.analytics.radiators import *
-from jetmontecarlo.analytics.radiators_fixedcoupling import *
-from jetmontecarlo.analytics.sudakovFactors_fixedcoupling import *
+from jetmontecarlo.analytics.radiators.running_coupling import *
+from jetmontecarlo.analytics.radiators.fixedcoupling import *
+from jetmontecarlo.analytics.sudakov_factors.fixedcoupling import *
 from jetmontecarlo.montecarlo.partonshower import *
 
 # Parameters

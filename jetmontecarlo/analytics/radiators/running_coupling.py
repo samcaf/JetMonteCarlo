@@ -1,6 +1,6 @@
 import numpy as np
 
-from jetmontecarlo.analytics.QCD_utils import *
+from jetmontecarlo.analytics.qcd_utils import *
 
 ############################################################
 # Subsequent Emissions, Running Coupling:

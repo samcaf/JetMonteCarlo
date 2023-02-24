@@ -4,7 +4,7 @@ from pathlib import Path
 
 # Local utils:
 from jetmontecarlo.utils.vector_utils import *
-from jetmontecarlo.analytics.QCD_utils import *
+from jetmontecarlo.analytics.qcd_utils import *
 
 ########################################
 # Basic Methods and Classes:

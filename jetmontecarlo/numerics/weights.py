@@ -1,9 +1,9 @@
 import numpy as np
 
 # Local imports
-from jetmontecarlo.analytics.QCD_utils import *
-from jetmontecarlo.analytics.radiators import *
-from jetmontecarlo.analytics.radiators_fixedcoupling import *
+from jetmontecarlo.analytics.qcd_utils import *
+from jetmontecarlo.analytics.radiators.running_coupling import *
+from jetmontecarlo.analytics.radiators.fixedcoupling import *
 
 ######################################################
 # Various weights on phase space for MC Integration:
