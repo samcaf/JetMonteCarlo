@@ -46,6 +46,7 @@ def load_sudakov_samples(sudakov_params=default_radiator_params,
     if 'critical' in emissions:
         print("Loading critical Sudakov inverse transform samples\n")
         for z_cut in z_cuts:
+            samples['critical'][z_cut] = {}
             for b in betas:
                 samples['critical'][z_cut][b] = load_data(
                             'montecarlo samples',
@@ -65,6 +66,7 @@ def load_sudakov_samples(sudakov_params=default_radiator_params,
     if 'subsequent' in emissions:
         print("Loading subsequent Sudakov inverse transform samples\n")
         for z_cut in z_cuts:
+            samples['subsequent'][z_cut] = {}
             for b in betas:
                 samples['subsequent'][z_cut][b] = load_data(
                             'montecarlo samples',
