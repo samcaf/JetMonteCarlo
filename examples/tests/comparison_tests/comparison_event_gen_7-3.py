@@ -5,7 +5,7 @@ from pathlib import Path
 from jetmontecarlo.numerics.radiators.generation import *
 
 # Local comparison utilities
-from examples.comparison_plots.comparison_plot_utils import *
+from examples.utils.plot_comparisons import *
 
 # ------------------------------------
 # Monte Carlo parameters

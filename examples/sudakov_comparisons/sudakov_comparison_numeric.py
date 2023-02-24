@@ -11,7 +11,7 @@ from jetmontecarlo.montecarlo.partonshower import *
 # Parameters and plotting utilities
 from examples.params import ALL_MONTECARLO_PARAMS,\
     RADIATOR_PARAMS, SHOWER_PARAMS
-from examples.comparison_plot_utils import *
+from examples.utils.plot_comparisons import *
 
 
 from examples.sudakov_comparisons.sudakov_utils import Z_CUT_PLOT

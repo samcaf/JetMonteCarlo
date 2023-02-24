@@ -3,7 +3,7 @@ import itertools
 
 # Parameters
 from examples.params import *
-from examples.file_manager import fig_folder
+from file_management.catalog_utils import fig_folder
 from examples.sudakov_comparisons.sudakov_utils import *
 
 index_zc = {.05: 0, .1: 1, .2: 2}

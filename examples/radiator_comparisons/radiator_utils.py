@@ -13,10 +13,10 @@ from jetmontecarlo.analytics.radiators import *
 
 # Parameters and Utilities
 from examples.params import tab, BETAS, RADIATOR_PARAMS
-from examples.file_management import fig_folder
+from file_management.catalog_utils import fig_folder
 
 # Radiator function utilities
-from examples.load_data import load_radiators
+from file_management.load_data import load_radiators
 
 
 # =====================================

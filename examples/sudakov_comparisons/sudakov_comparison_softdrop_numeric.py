@@ -8,7 +8,7 @@ from jetmontecarlo.numerics.observables import *
 from jetmontecarlo.analytics.soft_drop import *
 
 # Local utilities for comparison
-from examples.comparison_plot_utils import *
+from examples.utils.plot_comparisons import *
 
 # Parameters
 from examples.params import *

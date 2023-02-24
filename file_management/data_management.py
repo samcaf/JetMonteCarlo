@@ -3,8 +3,8 @@ import dill as pickle
 import numpy as np
 
 # Local file management
-from examples.file_management import new_cataloged_filename
-from examples.file_management import filename_from_catalog
+from file_management.catalog_utils import new_cataloged_filename
+from file_management.catalog_utils import filename_from_catalog
 
 # Interpolation functions
 from jetmontecarlo.utils.interpolation import get_1d_interpolation

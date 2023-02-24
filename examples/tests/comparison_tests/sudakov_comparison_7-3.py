@@ -1,6 +1,6 @@
 # Local utilities for comparison
 from examples.comparison_plots.comparison_event_gen import *
-from examples.comparison_plots.comparison_plot_utils import *
+from examples.utils.plot_comparisons import *
 
 # Local analytics
 from jetmontecarlo.analytics.radiators import *

@@ -16,16 +16,16 @@ from jetmontecarlo.utils.color_utils import compcolors,\
 from jetmontecarlo.utils.plot_utils import modstyle, style_dashed
 
 # Parameters
-from examples.comparison_plot_utils import F_SOFT
+from examples.utils.plot_comparisons import F_SOFT
 from examples.params import SHOWER_BETA, MULTIPLE_EMISSIONS, \
     Z_CUTS, BETAS, LOAD_MC_EVENTS
 from examples.params import RADIATOR_PARAMS
 
 # Loading Data and Functions
-from examples.data_management import save_new_data
-from examples.load_data import load_radiators
-from examples.load_data import load_splittingfns
-from examples.load_data import load_sudakov_samples
+from file_management.data_management import save_new_data
+from file_management.load_data import load_radiators
+from file_management.load_data import load_splittingfns
+from file_management.load_data import load_sudakov_samples
 
 
 # =====================================

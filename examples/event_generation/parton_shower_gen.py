@@ -5,7 +5,7 @@ from jetmontecarlo.utils.partonshower_utils import getECFs_softdrop
 from jetmontecarlo.utils.partonshower_utils import getECFs_rss
 
 # File/data management
-from examples.data_management import save_new_data, load_data
+from file_management.data_management import save_new_data, load_data
 
 # Parameters
 from examples.params import tab, BETAS, Z_CUTS, SHOWER_PARAMS

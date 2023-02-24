@@ -1,4 +1,4 @@
-from examples.data_management import load_data, load_and_interpolate
+from file_management.data_management import load_data, load_and_interpolate
 
 from examples.params import Z_CUTS, BETAS
 from examples.params import RADIATOR_PARAMS

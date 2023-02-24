@@ -12,8 +12,8 @@ from jetmontecarlo.numerics.radiators.samplers import criticalSampler,\
 from jetmontecarlo.numerics.radiators.generation import *
 
 # Local utilities for files
-from examples.data_management import save_new_data
-from examples.data_management import load_data
+from file_management.data_management import save_new_data
+from file_management.data_management import load_data
 
 # Parameters
 from examples.params import tab
