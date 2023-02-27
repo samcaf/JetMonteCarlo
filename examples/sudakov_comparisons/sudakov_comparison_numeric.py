@@ -13,10 +13,8 @@ from examples.params import ALL_MONTECARLO_PARAMS,\
     RADIATOR_PARAMS, SHOWER_PARAMS
 from examples.utils.plot_comparisons import *
 
-
 from examples.sudakov_comparisons.sudakov_utils import Z_CUT_PLOT
 from examples.sudakov_comparisons.sudakov_utils import plot_label
-from examples.sudakov_comparisons.sudakov_utils import radiators
 
 # =====================================
 # Notes:
