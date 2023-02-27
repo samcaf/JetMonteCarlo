@@ -254,7 +254,8 @@ class integrator():
             "Need MC density to produce interpolation"
         bins = self.bins
 
-        self.interpDensity = get_1d_interpolation(xs, self.density,
+        self.interpDensity = get_1d_interpolation(self.bin_midpoints,
+                                             self.density,
                                              monotonic=False,
                                              bounds=(bins[0], bins[-1]),
                                              bound_values=(0., 0.))

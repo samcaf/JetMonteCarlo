@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-
+from typing import Callable
 
 from jetmontecarlo.utils.montecarlo_utils import getLinSample,\
                                                  getLogSample
@@ -142,6 +142,15 @@ class MonteCarloProcess(sampler, KinematicProcess, ABC):
             self.num_rejected_samples += 1
 
 
+    def named_samples(self):
+        """Returns a list of dicts, each of which contains a sample
+        and the corresponding kinematic variables.
+        """
+        return [{varname: sample[i] for i, varname in
+                 enumerate(self.kinematic_vars)}
+                for sample in self.samples]
+
+
     def __max_area(self):
         """The maximum area of the phase space for the given bounds
         on the kinematic variables.
@@ -186,3 +195,47 @@ class MonteCarloProcess(sampler, KinematicProcess, ABC):
 if __name__ == "__main__":
     a = BasicProcess("test", 1.0)
     print(a)
+
+
+# =====================================
+# Observable for a Process
+# =====================================
+# Takes in the set of kinematic variables associated with a process
+# and returns an observable (function of the kinematic variables)
+@dataclass
+class MonteCarloObservable:
+    """A class designed to contain information associated with
+    a particular observable for a MonteCarloProcess.
+    Translates from the kinematic observables of the MonteCarloProcess
+    to the observable of interest.
+    """
+    process: MonteCarloProcess
+    function: Callable
+    name: str = ''
+
+    @assert_kinematic_kwargs
+    def kinematic_function(self, **kwargs):
+        """The function of the kinematic variables associated with
+        the process that is to be integrated over the phase space
+        to obtain the observable.
+        """
+        return self.function(**kwargs)
+
+
+    def update(self):
+        """Updates the observable's values based on the current
+        samples in the process.
+        """
+        # Setting up observables
+        self.observables = [self.kinematic_function(**sample)
+                            for sample in self.process.named_samples()]
+        # Weights (includes weight from differential cross section)
+        self.weights = self.process.jacobians
+
+
+    def __post_init__(self):
+        self.num_variables = self.process.num_variables
+        self.kinematic_vars = self.process.kinematic_vars
+
+        self.observables = None
+        self.weights = None
