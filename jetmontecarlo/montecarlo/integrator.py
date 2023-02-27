@@ -35,7 +35,8 @@ class integrator():
         """Sets the bins to be used in weight histograms, pdfs, etc."""
         # Bins, depending on spacing scheme (linear or logarithmic)
         if binspacing == 'lin':
-            self.bins = np.linspace(0, np.max(observables), numbins)
+            self.bins = np.linspace(min(0, np.min(observables)),
+                                    np.max(observables), numbins)
         elif binspacing == 'log':
             min_bin = np.log10(max(np.min(observables), min_log_bin))
             max_bin = np.log10(np.max(observables))
@@ -84,6 +85,9 @@ class integrator():
         """
         # One needs bins to produce the density
         assert self.hasBins, "Need bins to produce density histogram."
+
+        # as well as an area for the integration region
+        assert area is not None, "Need a valid area to produce density histogram."
 
         # Producing histograms of weights, binned in the given observable
         weightHist, _ = np.histogram(observables, self.bins,
@@ -213,7 +217,7 @@ class integrator():
 
         # Saving the data to a file
         np.savez(filename,
-                 **self.monte_carlo_data_dict(info=info))
+                 **self.montecarlo_data_dict(info=info))
 
     # ------------------
     # Integral Interpolation:
@@ -302,7 +306,7 @@ class integrator():
         xs = self.bin_midpoints
 
         self.analyticDensity = histDerivative(self.analyticIntegral(xs),
-                                              bins, giveHist=False,
+                                              self.bins, giveHist=False,
                                               binInput=binspacing)
         self.hasAnalyticDensity = True
 
@@ -356,7 +360,7 @@ class integrator():
     # ------------------
     # Init:
     # ------------------
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         """Initializes the integrator class by letting it know that it has
         no information yet. This is fixed when information is added to the
         integrator. Detailed documentation is included in the README_utils
@@ -480,7 +484,8 @@ class integrator_2d():
         bins = []
         for i in range(2):
             if binspacing == 'lin':
-                bins.append(np.linspace(0, np.max(observables[i]), numbins))
+                bins.append(np.linspace(min(0, np.min(observables)),
+                                        np.max(observables[i]), numbins))
             elif binspacing == 'log':
                 min_bin = np.log10(max(np.min(observables[i]), min_log_bin))
                 max_bin = np.log10(np.max(observables[i]))
@@ -701,7 +706,7 @@ class integrator_2d():
     # ------------------
     # Integral Interpolation:
     # ------------------
-    def makeInterpolatingFn(self, interpolate_error=False,
+    def makeInterpolatingFn(self,
                             # Extra arguments for the interpolation:
                             **kwargs):
         """Makes an interpolating function for the integral."""
@@ -712,10 +717,9 @@ class integrator_2d():
 
         self.interpFn = get_2d_interpolation(x, y, z, **kwargs)
 
-        if interpolate_error:
-            self.interpErr = get_2d_interpolation(x, y, zerr, **kwargs)
-        else:
-            self.interpErr = None
+        # Have not yet implemented the error interpolation
+        # (not sure if it would even be useful)
+        self.interpErr = None
 
         self.hasInterpIntegral = True
 
@@ -749,7 +753,7 @@ class integrator_2d():
     # ------------------
     # Init:
     # ------------------
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         """Initializes the integrator class by letting it know that it has
         no information yet. This is fixed when information is added to the
         integrator. Detailed documentation is included in the README_utils
@@ -831,7 +835,8 @@ def integrate_2d(function, bounds,
     weights = function(samples_1, samples_2)
     obs = [samples_1, samples_2]
 
-    this_integrator.setDensity(obs, weights)
+    this_integrator.setDensity(obs, weights,
+                        testSampler_1.area * testSampler_2.area)
     this_integrator.integrate()
 
     integral = this_integrator.integral

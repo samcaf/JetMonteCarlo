@@ -84,7 +84,7 @@ class sampler(ABC):
     # ------------------
     # Init:
     # ------------------
-    def __init__(self, sampleMethod, epsilon=0.):
+    def __init__(self, sampleMethod, epsilon=0., **kwargs):
         """Prepares a MC sampler with
         * The sample method ('lin'/'log') for the sample phase space, and
         * any additional valid keyword arguments:
@@ -103,6 +103,9 @@ class sampler(ABC):
         self.checkValidEpsilon()
 
         self.setArea()
+
+        # Working cooperatively with multiple inheritance:
+        super().__init__(**kwargs)
 
 
 # ------------------------------------
@@ -134,4 +137,4 @@ class simpleSampler(sampler):
     # ------------------
     def __init__(self, sampleMethod, bounds=[0,1], **kwargs):
         self.bounds = bounds
-        super().__init__(sampleMethod,**kwargs)
+        super().__init__(sampleMethod, **kwargs)

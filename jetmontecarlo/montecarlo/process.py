@@ -15,12 +15,15 @@ class BasicProcess():
     """A class designed to contain basic information associated
     with physical processes.
     """
-    name: str
-    energy: float
 
     def __str__(self):
         return f"The process [{self.name}] "\
             f"at an energy of {self.energy} GeV."\
+
+    def __init__(self, name, energy, accuracy=None, **kwargs):
+        self.name = name
+        self.energy = energy
+        self.accuracy = accuracy
 
 
 # =====================================
@@ -41,21 +44,12 @@ def assert_kinematic_kwargs(func):
     return wrapper
 
 
-@dataclass
 class KinematicProcess(ABC, BasicProcess):
     """A class designed to contain basic information, descriptions of
     kinematic variables, the phase space for the kinematics and the
     associated differential and total cross sections for a physical
     process.
     """
-    # - - - - - - - - - - - - - - - - -
-    # Kinematic Variables
-    # - - - - - - - - - - - - - - - - -
-    # A dict whose keys are the names of kinematic variables and whose
-    # values are their descriptions
-    kinematic_vars: list
-    total_cross_section: float
-
     # - - - - - - - - - - - - - - - - -
     # Phase space constraints
     # - - - - - - - - - - - - - - - - -
@@ -66,10 +60,10 @@ class KinematicProcess(ABC, BasicProcess):
 
         Ideally, not changed by subclasses.
         """
-        return self.__phasespace_constraints(**kwargs)
+        return self._phasespace_constraints(**kwargs)
 
     @abstractmethod
-    def __phasespace_constraints(self, **kwargs):
+    def _phasespace_constraints(self, **kwargs):
         """The set of phase space constraints for the given process.
         NEEDS TO BE IMPLEMENTED BY SUBCLASS.
         """
@@ -86,10 +80,10 @@ class KinematicProcess(ABC, BasicProcess):
 
         Ideally, not changed by subclasses.
         """
-        return self.__differential_xsec(**kwargs)
+        return self._differential_xsec(**kwargs)
 
     @abstractmethod
-    def __differential_xsec(self, **kwargs):
+    def _differential_xsec(self, **kwargs):
         """The differential cross section for the given process.
         NEEDS TO BE IMPLEMENTED BY SUBCLASS.
         """
@@ -98,21 +92,28 @@ class KinematicProcess(ABC, BasicProcess):
     # - - - - - - - - - - - - - - - - -
     # Additional Initialization
     # - - - - - - - - - - - - - - - - -
-    def __post_init__(self):
+    def __init__(self, kinematic_vars: list,
+                 total_cross_section=None,
+                 **kwargs):
+        self.kinematic_vars = kinematic_vars
+        self.total_cross_section = total_cross_section
         self.num_variables = len(self.kinematic_vars)
+
+        super().__init__(**kwargs)
 
 
 # =====================================
 # Monte Carlo Process
 # =====================================
 
-@dataclass
-class MonteCarloProcess(sampler, KinematicProcess, ABC):
+class MonteCarloProcess(sampler, KinematicProcess):
     """A class designed to contain and kinematic information associated
     with a physical process, and to sample from the associated phase space.
     """
-    kinematic_bounds: list
 
+    # ---------------------------------
+    # Monte Carlo Sampling
+    # ---------------------------------
     def addSample(self):
         """Adds a sample to the process' sample list."""
         while True:
@@ -143,15 +144,14 @@ class MonteCarloProcess(sampler, KinematicProcess, ABC):
 
 
     def named_samples(self):
-        """Returns a list of dicts, each of which contains a sample
-        and the corresponding kinematic variables.
+        """Returns a dict whose keys are the names of the kinematic
+        variables and whose values are the corresponding samples.
         """
-        return [{varname: sample[i] for i, varname in
-                 enumerate(self.kinematic_vars)}
-                for sample in self.samples]
+        return {varname: [sample[i] for sample in self.samples]
+                for i, varname in enumerate(self.kinematic_vars)}
 
 
-    def __max_area(self):
+    def _max_area(self):
         """The maximum area of the phase space for the given bounds
         on the kinematic variables.
         """
@@ -167,29 +167,27 @@ class MonteCarloProcess(sampler, KinematicProcess, ABC):
         """
         if len(self.samples) == 0:
             self.area = None
+            return
 
         efficiency = len(self.samples) \
             / (len(self.samples) + self.num_rejected_samples)
-        return self.__max_area() * efficiency
+        self.area = self._max_area() * efficiency
+        return
 
 
-    # - - - - - - - - - - - - - - - - -
-    # Additional Initialization
-    # - - - - - - - - - - - - - - - - -
-    # DEBUG: Do this -- montecarloprocess initialization
-    # def __init__(self, *args, **kwargs):
-        # super().__init__(*args, **kwargs)
-        # super().__post_init__()
-        # super().__init__(sampleMethod, **kwargs)
-
-    def __post_init__(self):
-        assert len(self.kinematic_bounds) == self.num_variables, \
-            "The number of bounds for the kinematic variables doesn't"\
-            " match the number of kinematic variables."
+    def __init__(self, kinematic_bounds, **kwargs):
+        # Bounds for the sampling
+        self.kinematic_bounds = kinematic_bounds
 
         # Preparing for area calculations for the phase space
         self.num_rejected_samples = 0
 
+        # Sampling and setting the area
+        super().__init__(**kwargs)
+
+        assert len(self.kinematic_bounds) == self.num_variables, \
+            "The number of bounds for the kinematic variables doesn't"\
+            " match the number of kinematic variables."
 
 
 if __name__ == "__main__":
@@ -210,32 +208,28 @@ class MonteCarloObservable:
     to the observable of interest.
     """
     process: MonteCarloProcess
-    function: Callable
+    kinematic_function: Callable
     name: str = ''
-
-    @assert_kinematic_kwargs
-    def kinematic_function(self, **kwargs):
-        """The function of the kinematic variables associated with
-        the process that is to be integrated over the phase space
-        to obtain the observable.
-        """
-        return self.function(**kwargs)
 
 
     def update(self):
         """Updates the observable's values based on the current
         samples in the process.
         """
+        # DEBUG: Inconsistent with assert_kinematic_kwargs
         # Setting up observables
-        self.observables = [self.kinematic_function(**sample)
-                            for sample in self.process.named_samples()]
+        self.observables = [self.kinematic_function(*sample)
+                            for sample in self.process.samples]
         # Weights (includes weight from differential cross section)
         self.weights = self.process.jacobians
 
 
-    def __post_init__(self):
-        self.num_variables = self.process.num_variables
-        self.kinematic_vars = self.process.kinematic_vars
+    def __str__(self):
+        return f"Observables {self.name} for process {self.process.name}:\n"\
+            + f"{self.observables}\n"
 
+
+    def __post_init__(self, *args, **kwargs):
         self.observables = None
         self.weights = None
+        self.update()
