@@ -2,7 +2,7 @@ import numpy as np
 from scipy.special import gamma
 
 # Local imports for analytics
-from jetmontecarlo.analytics.QCD_utils import *
+from jetmontecarlo.analytics.qcd_utils import *
 
 # Local imports for plotting
 from jetmontecarlo.utils.plot_utils import *

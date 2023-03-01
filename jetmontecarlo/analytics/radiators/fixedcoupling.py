@@ -1,5 +1,5 @@
 import numpy as np
-from jetmontecarlo.analytics.QCD_utils import *
+from jetmontecarlo.analytics.qcd_utils import *
 
 ############################################################
 # Fixed Coupling Critical Radiators and pdf:

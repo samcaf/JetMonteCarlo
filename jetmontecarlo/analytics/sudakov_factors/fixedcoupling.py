@@ -3,7 +3,7 @@ import numpy as np
 from scipy.special import *
 
 # Local imports
-from jetmontecarlo.analytics.QCD_utils import *
+from jetmontecarlo.analytics.qcd_utils import *
 
 # ---------------------------------------------------
 # Leading Log (critical emission only) Sudakov Factor:
