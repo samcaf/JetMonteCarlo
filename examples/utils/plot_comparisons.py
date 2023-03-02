@@ -43,7 +43,8 @@ if BIN_SPACE == 'log':
     ylim_1 = (0, .12)
     ylim_2 = (0, .40)
     ylim_3 = (0, .65)
-    xlim = (1e-8, .5) if SHOWER_CUTOFF == MU_NP else (1e-20, .5)
+    # DEBUG: FC vs RC xlims
+    xlim = (1e-8, .5) if SHOWER_CUTOFF == MU_NP else (1e-8, .5)
 
 """Verifying valid bin_space."""
 assert(BIN_SPACE in ['lin', 'log']), \
@@ -298,7 +299,6 @@ def plot_shower_pdf_cdf(vals, axespdf, axescdf,
         # Bin midpoints
         xs = np.sqrt(bins[1:-1] * bins[2:])
         xs = np.insert(xs, 0, 1e-50) # zero bin
-        # DEBUG: remains to be seen whether zero bin will throw off normalization
 
     ps_integrator = integrator()
     ps_integrator.setLastBinBndCondition([1., 'minus'])
@@ -404,7 +404,6 @@ def plot_pythia_pdf_cdf(vals, axespdf, axescdf,
         # Bin midpoints
         xs = np.sqrt(bins[1:-1] * bins[2:])
         xs = np.insert(xs, 0, 1e-50) # zero bin
-        # DEBUG: remains to be seen whether zero bin will throw off normalization
 
     bins = np.append(1e-100, bins)
     ps_integrator = integrator()

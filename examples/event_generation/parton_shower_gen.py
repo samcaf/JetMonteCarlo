@@ -19,7 +19,7 @@ del params['shower beta']
 
 # Saving/loading flags
 SAVE_SHOWER_EVENTS = False
-LOAD_SHOWER_EVENTS = False
+LOAD_SHOWER_EVENTS = True
 SAVE_SHOWER_CORRELATIONS = True
 
 # Setting up parton shower parameters
@@ -104,7 +104,7 @@ def save_correlations(shower_instance, partonshower_params,
     # Saving correlations
     save_new_data(correlations,
                   'montecarlo samples', 'parton shower',
-                  groomer_params, extension='.npz')
+                  groomer_params, extension='.npy')
 
     # Cleaning up
     del correlations

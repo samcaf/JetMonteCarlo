@@ -1,4 +1,5 @@
 # Loading data
+from file_management.catalog_utils import fig_folder
 from file_management.load_data import load_partonshower_samples
 
 # pdf utilities
@@ -43,7 +44,7 @@ num_rad_bins = params['number of radiator bins']
 # =====================================
 def compare_sudakov_emissions(z_cut, beta):
     # Preparing figures
-    fig_pdf, axes_pdf, fig_cdf, axes_cdf = \
+    fig_pdf, axes_pdf, _, axes_cdf = \
             get_axes('all', ratio_plot=False)
 
     # Analytic plot
@@ -80,6 +81,11 @@ def compare_sudakov_emissions(z_cut, beta):
             log_cutoff=-10)
         legend_info = 'MLL '
 
+        plt.plot(pythia_xs, pythia_xs * pythia_pdf,
+                 linewidth=2, linestyle='solid',
+                 label=f'{legend_info}Parton Shower',
+                 color='royalblue')
+
     # Get MC info
     one_em_mc_bins, one_em_mc_pdf = get_mc_crit(z_cut, beta)
     mul_em_mc_bins, mul_em_mc_pdf = get_mc_all(z_cut, beta)
@@ -89,12 +95,12 @@ def compare_sudakov_emissions(z_cut, beta):
                                n_emissions='1',
                                emission_type='crit',
                                z_cuts=[z_cut], betas=[beta],
-                               f_soft=F_SOFT)
+                               f_soft=F_SOFT)[z_cut][beta]
     mul_em_ps_vals = load_partonshower_samples('rss',
-                               n_emissions='1',
+                               n_emissions='2',
                                emission_type='precritsub',
                                z_cuts=[z_cut], betas=[beta],
-                               f_soft=F_SOFT)
+                               f_soft=F_SOFT)[z_cut][beta]
 
     one_em_ps_bins, one_em_ps_pdf = vals_to_pdf(
         one_em_ps_vals, num_rad_bins, bin_space='log',
@@ -105,43 +111,68 @@ def compare_sudakov_emissions(z_cut, beta):
 
 
     # Plot ME MC
-    plt.plot(mul_em_mc_bins, mul_em_mc_pdf,
+    plt.plot(mul_em_mc_bins, mul_em_mc_bins * mul_em_mc_pdf,
              linewidth=2, linestyle='solid',
              label=f'{legend_info}Monte Carlo',
              color='indianred')
 
+    print(f"{one_em_mc_bins=}")
+    print(f"{one_em_mc_pdf=}")
+    print(f"{mul_em_mc_bins=}")
+    print(f"{mul_em_mc_pdf=}")
 
-    # Plot ME PS
-    plt.plot(mul_em_ps_bins, mul_em_ps_pdf,
+    # Plot PS MC
+    plt.plot(mul_em_ps_bins, mul_em_ps_bins * mul_em_ps_pdf,
              linewidth=2, linestyle='solid',
              label=f'{legend_info}Parton Shower',
              color='royalblue')
 
+    # Plotting
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+    # Saving
+    fig_name = f'sudakov_comparison_emissions_zcut{z_cut}_beta{beta}.pdf'
+    fig_pdf.savefig(fig_folder / fig_name)
+    plt.close(fig_pdf)
+
+
+    # Plot ME PS
+    plt.plot(mul_em_ps_bins, mul_em_ps_bins * mul_em_ps_pdf,
+             linewidth=2, linestyle='solid',
+             label=f'{legend_info}Parton Shower',
+             color='royalblue')
+
+    print(f"{mul_em_ps_bins * mul_em_ps_pdf=}")
+
 
     # Make legends
-    legend = axes_pdf[0].legend(loc=(0.019,.445), prop={'size': 15})
+    axes_pdf[0].legend(loc=(0.019,.445), prop={'size': 15})
 
     # Plot 1E MC
-    plt.plot(one_em_mc_bins, one_em_mc_pdf,
+    plt.plot(one_em_mc_bins, one_em_mc_bins * one_em_mc_pdf,
              linewidth=2, linestyle='dashed',
-             color='coralred')
+             color='lightcoral')
 
     # Plot 1E PS
-    plt.plot(one_em_ps_bins, one_em_ps_pdf,
+    plt.plot(one_em_ps_bins, one_em_ps_bins * one_em_ps_pdf,
              linewidth=2, linestyle='dashed',
              color='cornflowerblue')
 
+    # DEBUG: Make legend that indicates solid = ME, dashed = 1E
 
     # Saving and closing figure
-    fig_pdf.savefig('sudakov-comparison_'+
+    fig_pdf.savefig(str(fig_folder) + 'sudakov-comparison_'+
                     f'zcut-{z_cut}_'+
                     f'beta-{beta}_'+
-                    'fixed' if fixed_coupling else 'running'+
-                    '-coupling',
-                    +'_{:.0e}showers_{:.0e}mc'.format(
-                        num_shower_events, num_mc_events)
-                    +'.pdf',
-                    format='pdf')
+                    ('fixed' if fixed_coupling else 'running')+
+                    '-coupling'+
+                    f'_{num_shower_events:.0e}showers'+
+                    f'_{num_mc_events:.0e}mc'+
+                    '.pdf',
+                    format='pdf',
+                    bbox_inches='tight')
 
     plt.close(fig_pdf)
 

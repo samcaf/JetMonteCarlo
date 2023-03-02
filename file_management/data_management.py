@@ -59,7 +59,15 @@ def save_new_data(data, data_type, data_source,
         if isinstance(data, dict):
             np.savez(filename, **data)
         else:
-            np.save(filename, data)
+            raise ValueError("Data must be a dictionary "\
+                             "to be saved as a .npz file.")
+
+    elif extension == '.npy':
+        np.save(filename, data)
+
+    else:
+        raise ValueError("Extension must be .pkl, .npz, or .npy, "\
+                         +f"not {extension}.")
 
 
 def load_data(data_type, data_source, params):
@@ -75,11 +83,11 @@ def load_data(data_type, data_source, params):
     if extension == '.pkl':
         with open(filename, 'rb') as file:
             data = BackCompatUnpickler(file).load()
-    elif extension == '.npz':
+    elif extension in ['.npz', '.npy']:
         data = np.load(filename, allow_pickle=True,
                        mmap_mode='c')
     else:
-        raise ValueError("Extension must be .pkl or .npz, not"\
+        raise ValueError("Extension must be .pkl, .npz, or .npy, "\
                          +f" {extension}.")
 
     return data

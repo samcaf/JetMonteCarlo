@@ -97,7 +97,7 @@ def vals_to_pdf(vals, num_bins, bin_space='log',
     if bin_space == 'lin':
         bins = np.linspace(0, 1, num_bins)
         xs = (bins[:-1] + bins[1:])/2
-    elif bin_space == 'log' or bin_space == 'mixed':
+    elif bin_space == 'log':
         assert log_cutoff is not None,\
             "log cutoff required for logarithmic"\
             " bins (you could try, say, -10)."

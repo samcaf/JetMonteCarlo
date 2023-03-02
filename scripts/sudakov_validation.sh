@@ -150,7 +150,7 @@ printf "# ============================
 # Date: "`date '+%F'`"-("`date '+%T'`")
 # ============================\n\n"
 
-printf 'Running scripts/sudakov_plot.sh ('"$0"') with options:'"\n"
+printf 'Running scripts/sudakov_validation.sh ('"$0"') with options:'"\n"
 printf '%q ' "$args"
 printf "\n\n"
 
@@ -167,9 +167,9 @@ then
 # Plotting Sudakov Exponents:
 # ============================
 \n
-# python3 examples/sudakov_comparisons/sudakov_comparison_numeric.py
+# python3 examples/sudakov_comparisons/sudakov_comparison_emissions.py
 "
-    python3 examples/sudakov_comparisons/sudakov_comparison_numeric.py
+    python3 examples/sudakov_comparisons/sudakov_comparison_emissions.py
 
 printf "
 # Complete!
