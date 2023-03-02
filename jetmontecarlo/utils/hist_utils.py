@@ -88,6 +88,28 @@ def histDerivative(hist, bins, giveHist=False, binInput='lin'):
         return interp, derivHist
     return interp
 
+
+def vals_to_pdf(vals, num_bins, bin_space='log',
+                log_cutoff=None):
+    """Takes in a set of values and returns the associated
+    xs and probability density.
+    """
+    if bin_space == 'lin':
+        bins = np.linspace(0, 1, num_bins)
+        xs = (bins[:-1] + bins[1:])/2
+    elif bin_space == 'log' or bin_space == 'mixed':
+        assert log_cutoff is not None,\
+            "log cutoff required for logarithmic"\
+            " bins (you could try, say, -10)."
+        bins = np.logspace(log_cutoff, 0, num_bins)
+        bins = np.insert(bins, 0, 1e-100)  # zero bin
+        xs = np.sqrt(bins[1:-1] * bins[2:])
+        xs = np.insert(xs, 0, 1e-50)  # zero bin
+
+    pdf, _ = np.histogram(vals, bins, density=True)
+    return xs, pdf
+
+
 def smooth_data(x, y):
     N = len(y)
     assert len(x) == N, "x and y must be the same length."

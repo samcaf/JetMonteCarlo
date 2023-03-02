@@ -285,7 +285,7 @@ if load_mc_events:
         sudakov_inverse_transforms = load_sudakov_samples()
     except FileNotFoundError:
         print("Files for Sudakov inverse transform samples not found.")
-    load_mc_events = False
+        load_mc_events = False
 
 # ------------------------------------
 # Loading Functions, Generating Samples:
@@ -297,6 +297,53 @@ if not load_mc_events:
     sudakov_inverse_transforms = generate_sudakov_samples(radiator_fns,
                                                           sudakov_params)
 
+def get_pythia_data(include=['raw', 'softdrop', 'rss'],
+                    levels=['partons', 'hadrons', 'charged']):
+    # Dictionary of Pythia data
+    if 'raw' in include:
+        raw_data = {level: {} for level in levels}
+    if 'softdrop' in include:
+        softdrop_data = {level: {} for level in levels}
+    if 'rss' in include:
+        rss_data = {level: {} for level in levels}
+
+    for level in levels: 
+        # Raw
+        if 'raw' in include:
+            raw_file = open('pythiadata/raw_Zq_pT3TeV_noUE_'+level+'.pkl', 'rb')
+            this_raw = pickle.load(raw_file)
+            raw_data[level] = this_raw
+            raw_file.close()
+
+        # Softdrop
+        if 'softdrop' in include:
+            for i in range(6):
+                softdrop_file = open('pythiadata/softdrop_Zq_pT3TeV_noUE_param'+str(i)
+                                     +'_'+level+'.pkl', 'rb')
+                this_softdrop = pickle.load(softdrop_file)
+                softdrop_data[level][this_softdrop['params']] = this_softdrop
+                softdrop_file.close()
+
+        # RSS
+        if 'rss' in include:
+            for i in range(9):
+                rss_file = open('pythiadata/rss_Zq_pT3TeV_noUE_param'+str(i)
+                                +'_'+level+'.pkl', 'rb')
+                this_rss = pickle.load(rss_file)
+                rss_data[level][this_rss['params']] = this_rss
+                # DEBUG: printing params
+                print(this_rss['params'])
+                rss_file.close()
+
+    pythia_data = {}
+    if 'raw' in include:
+        pythia_data['raw'] = raw_data
+    if 'softdrop' in include:
+        pythia_data['softdrop'] = softdrop_data
+    if 'rss' in include:
+        pythia_data['rss'] = rss_data
+
+    return pythia_data
 
 ###########################################
 # Additional Plot Utils
@@ -410,6 +457,52 @@ def plot_mc_crit(axes_pdf, axes_cdf, z_cut, beta, f_soft, col):
     return pdfline, pdfband, cdfline, cdfband
 
 
+def get_mc_crit(z_cut, beta,
+                load=True,
+                verbose=5):
+    sud_integrator = integrator()
+    sud_integrator.setLastBinBndCondition([1., 'minus'])
+
+    theta_crits, theta_crit_weights, load = get_theta_crits(
+                          z_cut, beta, load=load, save=True,
+                          rad_crit=radiators.get('critical', None))
+
+    z_crits = np.array([getLinSample(z_cut, 1./2.)
+                        for i in range(num_mc_events)])
+
+    obs = C_groomed(z_crits, theta_crits, z_cut, beta,
+                    z_pre=0., f=F_SOFT, acc=OBS_ACC)
+
+    weights = split_fn_num(z_crits, theta_crits, z_cut)
+    weights *= theta_crit_weights
+
+    if verbose > 1:
+        arg = np.argmax(obs)
+        print("zc: " + str(z_cut))
+        print("obs_acc: " + OBS_ACC)
+        print("maximum observable: " + str(obs[arg]))
+        print("associated with\n    z = "+str(z_crits[arg])
+              +"\n    theta = "+str(theta_crits[arg]))
+        print('', flush=True)
+
+    # Weights, binned observables, and area
+    if BIN_SPACE == 'lin':
+        sud_integrator.bins = np.linspace(0, .5, NUM_BINS)
+        sud_integrator.binspacing = 'lin'
+    if BIN_SPACE == 'log':
+        sud_integrator.bins = np.logspace(np.log10(EPSILON)-1, np.log10(.5),
+                                          NUM_BINS)
+        sud_integrator.binspacing = 'log'
+    sud_integrator.hasBins = True
+
+    sud_integrator.setDensity(obs, weights, 1./2.-z_cut)
+    sud_integrator.integrate()
+
+    pdf = sud_integrator.density
+
+    return sud_integrator.bin_midpoints, pdf
+
+
 ###########################################
 # All Emissions
 ###########################################
@@ -481,3 +574,48 @@ def plot_mc_all(axes_pdf, axes_cdf, z_cut, beta, f_soft, col):
               np.sum(pdf * (np.log10(bins[1:])-np.log10(bins[:-1]))))
 
     return pdfline, pdfband, cdfline, cdfband
+
+
+def get_mc_all(z_cut, beta,
+               load=True):
+    sud_integrator = integrator()
+    sud_integrator.setLastBinBndCondition([1., 'minus'])
+
+    theta_crits, theta_crit_weights, load = get_theta_crits(
+                          z_cut, beta, load=load, save=True,
+                          rad_crit=radiators.get('critical', None))
+
+    c_subs, c_sub_weights, load = get_c_subs(z_cut, beta,
+                         load=load, save=True, theta_crits=theta_crits,
+                         rad_crit_sub=radiators.get('subsequent', None))
+
+    z_pres, z_pre_weights, load = get_z_pres(z_cut, load=load, save=True,
+                        theta_crits=theta_crits,
+                        rad_pre=radiators.get('pre-critical', None))
+
+    z_crits = np.array([getLinSample(z_cut, 1./2.)
+                        for i in range(num_mc_events)])
+
+    c_crits = C_groomed(z_crits, theta_crits, z_cut, beta,
+                        z_pre=z_pres, f=F_SOFT, acc=OBS_ACC)
+    obs = np.maximum(c_crits, c_subs)
+
+    weights = split_fn_num(z_crits, theta_crits, z_cut)
+    weights *= theta_crit_weights * c_sub_weights * z_pre_weights
+
+    # Weights, binned observables, and area
+    if BIN_SPACE == 'lin':
+        sud_integrator.bins = np.linspace(0, .5, NUM_BINS)
+        sud_integrator.binspacing = 'lin'
+    if BIN_SPACE == 'log':
+        sud_integrator.bins = np.logspace(np.log10(EPSILON)-1, np.log10(.5),
+                                          NUM_BINS)
+        sud_integrator.binspacing = 'log'
+    sud_integrator.hasBins = True
+
+    sud_integrator.setDensity(obs, weights, 1./2.-z_cut)
+    sud_integrator.integrate()
+
+    pdf = sud_integrator.density
+
+    return sud_integrator.bin_midpoints, pdf
