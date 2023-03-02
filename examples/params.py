@@ -37,13 +37,14 @@ ANGULAR_ORDERING = False
 JET_TYPE = 'quark'
 
 Z_CUTS = [.1, .2]
-F_SOFTS = [.5, .75, 1]
+#F_SOFTS = [.5, .75, 1]
+F_SOFTS = [1]
 # Getting the allowed values of f*z_cut for our calculations modulo duplicates
 Z_CUTS = sorted(set([f*zc for zc in Z_CUTS for f in F_SOFTS]))
 
 # List of betas for the C_1^{(betas)} in which we are interested:
 # (use ints when possible for consistency across files)
-BETAS = [1./2., 1, 2, 3, 4]
+BETAS = [2, 1]
 # BETAS = [2, 1, 3, 4, 1./2.]
 
 # Setting up dictionaries to facilitate calling functions of z_cut and beta.
@@ -62,8 +63,8 @@ PS_INDEX_ZC = {zc: i for i, zc in enumerate([.05, .1, .2])}
 # MC Event Parameters
 # ------------------------------------
 # Number of generated events
-NUM_MC_EVENTS = int(5e6)
-NUM_SHOWER_EVENTS = int(5e5)
+NUM_MC_EVENTS = int(1e4)
+NUM_SHOWER_EVENTS = int(5e2)
 
 # MC Sampling Switches:
 LOAD_MC_EVENTS = False
@@ -81,8 +82,8 @@ LOAD_SPLITTING_FNS = False
 SAVE_SPLITTING_FNS = True
 
 # Number of bins for integration of radiators and splitting functions:
-NUM_RAD_BINS = int(5e3)
-NUM_SPLITFN_BINS = int(5e3)
+NUM_RAD_BINS = int(5e2)
+NUM_SPLITFN_BINS = int(5e2)
 
 # Determining whether to load inverse transform samples for full computation
 LOAD_INV_SAMPLES = LOAD_MC_EVENTS
