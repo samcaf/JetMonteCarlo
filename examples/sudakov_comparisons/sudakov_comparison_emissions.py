@@ -30,7 +30,7 @@ fixed_coupling = params['fixed coupling']
 
 num_mc_events = params['number of MC events']
 
-num_rad_bins = params['number of bins']
+num_rad_bins = params['number of radiator bins']
 
 
 # =====================================
