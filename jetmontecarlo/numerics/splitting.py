@@ -1,5 +1,5 @@
 # Utils for interpolation
-import scipy.interpolate
+from scipy import interpolate
 from jetmontecarlo.montecarlo.integrator import integrate_1d
 
 # Utils for finding reasonable theta values
