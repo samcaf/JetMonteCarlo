@@ -66,7 +66,7 @@ NUM_MC_EVENTS = int(5e6)
 NUM_SHOWER_EVENTS = int(5e5)
 
 # MC Sampling Switches:
-LOAD_MC_EVENTS = True
+LOAD_MC_EVENTS = False
 # Default True: phase space doesn't change, only weights do
 SAVE_MC_EVENTS = True
 

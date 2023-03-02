@@ -11,6 +11,32 @@ from jetmontecarlo.utils.interpolation import get_1d_interpolation
 from jetmontecarlo.utils.interpolation import get_2d_interpolation
 
 
+# =====================================
+# Backwards Compatible Unpickler
+# =====================================
+class BackCompatUnpickler(pickle.Unpickler):
+    def find_class(self, module, name):
+        new_lib = 'jetmontecarlo.numerics'
+        new_modules = [newlib+'.splitting',
+                       newlib+'.radiators.generation'
+                      ]
+
+        for try_module in [module] + new_modules:
+            try:
+                return super().find_class(
+                        try__module, name)
+            except ModuleNotFoundError:
+                pass
+
+        raise ModuleNotFoundError("Could not find "\
+                "a valid module for loading the "\
+                f"pickled object. Tried {module} "\
+                f"(given) and {new_modules}.")
+
+
+# =====================================
+# Loading and Saving Data
+# =====================================
 def save_new_data(data, data_type, data_source,
                   params, extension):
     """Saves the given data to a new file, and stores the filename
@@ -45,7 +71,7 @@ def load_data(data_type, data_source, params):
     # Loading the associated data
     if extension == '.pkl':
         with open(filename, 'rb') as file:
-            data = pickle.load(file)
+            data = BackCompatUnpickler(file).load()
     elif extension == '.npz':
         data = np.load(filename, allow_pickle=True,
                        mmap_mode='c')

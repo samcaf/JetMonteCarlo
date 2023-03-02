@@ -10,6 +10,8 @@ from jetmontecarlo.numerics.radiators.samplers import criticalSampler,\
 
 # Local utilities for function generation
 from jetmontecarlo.numerics.radiators.generation import *
+from jetmontecarlo.numerics.splitting import\
+    gen_normalized_splitting
 
 # Local utilities for files
 from file_management.data_management import save_new_data

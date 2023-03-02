@@ -144,6 +144,7 @@ cython_debug/
 # Sample Folders (generally too big to commit)
 *.npz
 *.pkl
+input/*
 output/**/*
 !output/**/*.md
 !output/figures/doc_figures/*

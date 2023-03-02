@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 import numpy as np
 
 # Integration utils:
@@ -14,7 +13,7 @@ from jetmontecarlo.utils.interpolation import monotonic_domain
 
 # Local jet tools
 from jetmontecarlo.numerics.observables import *
-from jetmontecarlo.numerics.weights.generation import *
+from jetmontecarlo.numerics.weights import *
 
 # Local analytics
 from jetmontecarlo.analytics.radiators.running_coupling import *
@@ -399,44 +398,3 @@ def gen_crit_sub_num_rad(rad_sampler,
                  'integral': rads_all.flatten()}
 
     return bounded_interp_function, data_dict
-
-# =====================================
-# Splitting Functions:
-# =====================================
-# Generation of Normalizing Factors for Splitting Functions:
-def gen_normalized_splitting(num_samples, z_cut,
-                             jet_type='quark', accuracy='LL',
-                             fixed_coupling=True,
-                             bin_space='lin', epsilon=1e-15,
-                             num_bins=100):
-    # Preparing a list of thetas, and normalizations which will depend on theta
-    theta_calc_list, norms = lin_log_mixed_list(epsilon, 1., num_bins), []
-
-    for _, theta in enumerate(theta_calc_list):
-        # Preparing the weight we want to normalize
-        def weight(z):
-            if fixed_coupling:
-                alpha = alpha_fixed
-            else:
-                alpha = alpha_s(z, theta)
-            return alpha * splittingFn(z, jet_type, accuracy)
-        # Finding the normalization factor
-        n, _, _ = integrate_1d(weight, [z_cut, 1./2.],
-                               bin_space=bin_space, epsilon=epsilon,
-                               num_samples=num_samples)
-        norms.append(n)
-
-    # Making an interpolating function for the splitting fn normalization
-    normalization = interpolate.interp1d(x=theta_calc_list,
-                                         y=norms,
-                                         fill_value="extrapolate")
-
-    def normed_splitting_fn(z, theta):
-        if fixed_coupling:
-            alpha = alpha_fixed
-        else:
-            alpha = alpha_s(z, theta)
-        splitfn =  alpha*splittingFn(z, jet_type, accuracy)/normalization(theta)
-        return splitfn * (z_cut < z) * (z < 1./2.)
-
-    return normed_splitting_fn
