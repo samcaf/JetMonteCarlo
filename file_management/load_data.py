@@ -3,6 +3,7 @@ from file_management.data_management import load_data, load_and_interpolate
 from examples.params import Z_CUTS, BETAS
 from examples.params import RADIATOR_PARAMS
 from examples.params import SPLITTINGFN_PARAMS
+from examples.params import SHOWER_PARAMS
 
 # Setting up default parameters
 default_radiator_params = RADIATOR_PARAMS.copy()
@@ -11,6 +12,9 @@ del default_radiator_params['beta']
 
 default_splittingfn_params = SPLITTINGFN_PARAMS.copy()
 del default_splittingfn_params['z_cut']
+
+default_shower_params = SHOWER_PARAMS.copy()
+del default_shower_params['shower beta']
 
 
 # =====================================
@@ -75,6 +79,32 @@ def load_sudakov_samples(sudakov_params=default_radiator_params,
                                         **{'z_cut': z_cut,
                                            'beta': b}))
 
+    return samples
+
+
+def load_partonshower_samples(groomer, n_emissions,
+                              emission_type='precritsub',
+                              shower_params=default_shower_params,
+                              z_cuts=Z_CUTS, betas=BETAS,
+                              **kwargs):
+    """Load parton shower samples from a file.
+    """
+    samples = {z_cut: {} for z_cut in z_cuts}
+
+    print("Loading parton shower samples\n")
+    for z_cut in z_cuts:
+        for b in betas:
+            samples[z_cut][b] = load_data('montecarlo samples',
+                                          'parton shower',
+                                           params=dict(
+                                            **shower_params,
+                                            **{'shower beta': b,
+                                               'groomer': groomer,
+                                               'number of emissions': n_emissions,
+                                               'emission type': emission_type,
+                                               'z_cut': z_cut},
+                                            **kwargs)
+                                         )
     return samples
 
 # =====================================

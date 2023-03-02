@@ -144,8 +144,7 @@ def generate_precritical_samples(radiators, params,
             if hasattr(z_pre, "__len__"):
                 return np.exp(-1.*radiators['pre-critical'][z_cut](
                                    [[z_p, theta] for z_p in z_pre]))
-            else:
-                return np.exp(-1.*radiators['pre-critical'][z_cut](
+            return np.exp(-1.*radiators['pre-critical'][z_cut](
                                    [z_pre, theta]))
 
         z_pre, z_pre_weight = samples_from_cdf(cdf_pre_conditional, 1,
@@ -271,8 +270,8 @@ def generate_sudakov_samples(radiators, params,
 
     del all_theta_crits, theta_crits
 
-    sudakov_inverse_transforms = load_sudakov_samples()
-    return sudakov_inverse_transforms
+    inverse_transform_data = load_sudakov_samples()
+    return inverse_transform_data
 
 
 # ---------------------------------
@@ -299,6 +298,9 @@ if not load_mc_events:
 
 def get_pythia_data(include=['raw', 'softdrop', 'rss'],
                     levels=['partons', 'hadrons', 'charged']):
+    """Returns a dict containing groomed substructure found with
+    Pythia.
+    """
     # Dictionary of Pythia data
     if 'raw' in include:
         raw_data = {level: {} for level in levels}
@@ -307,33 +309,31 @@ def get_pythia_data(include=['raw', 'softdrop', 'rss'],
     if 'rss' in include:
         rss_data = {level: {} for level in levels}
 
-    for level in levels: 
+    for level in levels:
         # Raw
         if 'raw' in include:
-            raw_file = open('pythiadata/raw_Zq_pT3TeV_noUE_'+level+'.pkl', 'rb')
-            this_raw = pickle.load(raw_file)
-            raw_data[level] = this_raw
-            raw_file.close()
+            with open('pythiadata/raw_Zq_pT3TeV_noUE_'
+                      f'{level}.pkl', 'rb') as raw_file:
+                this_raw = pickle.load(raw_file)
+                raw_data[level] = this_raw
 
         # Softdrop
         if 'softdrop' in include:
             for i in range(6):
-                softdrop_file = open('pythiadata/softdrop_Zq_pT3TeV_noUE_param'+str(i)
-                                     +'_'+level+'.pkl', 'rb')
-                this_softdrop = pickle.load(softdrop_file)
-                softdrop_data[level][this_softdrop['params']] = this_softdrop
-                softdrop_file.close()
+                with open('pythiadata/softdrop_Zq_pT3TeV_noUE_'
+                          f'param{i}_{level}.pkl', 'rb') as softdrop_file:
+                    this_softdrop = pickle.load(softdrop_file)
+                    softdrop_data[level][this_softdrop['params']] = this_softdrop
 
         # RSS
         if 'rss' in include:
             for i in range(9):
-                rss_file = open('pythiadata/rss_Zq_pT3TeV_noUE_param'+str(i)
-                                +'_'+level+'.pkl', 'rb')
-                this_rss = pickle.load(rss_file)
-                rss_data[level][this_rss['params']] = this_rss
-                # DEBUG: printing params
-                print(this_rss['params'])
-                rss_file.close()
+                with open('pythiadata/rss_Zq_pT3TeV_noUE_'
+                          f'param{i}_{level}.pkl', 'rb') as rss_file:
+                    this_rss = pickle.load(rss_file)
+                    rss_data[level][this_rss['params']] = this_rss
+                    # DEBUG: printing params
+                    print(this_rss['params'])
 
     pythia_data = {}
     if 'raw' in include:
@@ -458,49 +458,50 @@ def plot_mc_crit(axes_pdf, axes_cdf, z_cut, beta, f_soft, col):
 
 
 def get_mc_crit(z_cut, beta,
-                load=True,
                 verbose=5):
-    sud_integrator = integrator()
-    sud_integrator.setLastBinBndCondition([1., 'minus'])
-
-    theta_crits, theta_crit_weights, load = get_theta_crits(
-                          z_cut, beta, load=load, save=True,
-                          rad_crit=radiators.get('critical', None))
+    theta_crits        = sudakov_inverse_transforms['critical']\
+                                    [z_cut][beta]['samples']
+    theta_crit_weights = sudakov_inverse_transforms['critical']\
+                                    [z_cut][beta]['weights']
 
     z_crits = np.array([getLinSample(z_cut, 1./2.)
                         for i in range(num_mc_events)])
 
     obs = C_groomed(z_crits, theta_crits, z_cut, beta,
-                    z_pre=0., f=F_SOFT, acc=OBS_ACC)
+                    z_pre=0., f=F_SOFT, acc=obs_acc)
 
-    weights = split_fn_num(z_crits, theta_crits, z_cut)
+    weights = splitting_functions[z_cut](z_crits, theta_crits)
     weights *= theta_crit_weights
 
     if verbose > 1:
         arg = np.argmax(obs)
         print("zc: " + str(z_cut))
-        print("obs_acc: " + OBS_ACC)
+        print("obs_acc: " + obs_acc)
         print("maximum observable: " + str(obs[arg]))
         print("associated with\n    z = "+str(z_crits[arg])
               +"\n    theta = "+str(theta_crits[arg]))
         print('', flush=True)
 
+    sud_integrator = integrator()
+    sud_integrator.setLastBinBndCondition([1., 'minus'])
+
     # Weights, binned observables, and area
-    if BIN_SPACE == 'lin':
-        sud_integrator.bins = np.linspace(0, .5, NUM_BINS)
+    if bin_space == 'lin':
+        sud_integrator.bins = np.linspace(0, .5, num_bins)
+        bin_midpoints = .5*(sud_integrator.bins[1:] + sud_integrator.bins[:-1])
         sud_integrator.binspacing = 'lin'
-    if BIN_SPACE == 'log':
-        sud_integrator.bins = np.logspace(np.log10(EPSILON)-1, np.log10(.5),
-                                          NUM_BINS)
+    if bin_space == 'log':
+        sud_integrator.bins = np.logspace(np.log10(epsilon)-1, np.log10(.5),
+                                          num_bins)
+        bin_midpoints = np.sqrt(sud_integrator.bins[1:] * sud_integrator.bins[:-1])
         sud_integrator.binspacing = 'log'
     sud_integrator.hasBins = True
 
     sud_integrator.setDensity(obs, weights, 1./2.-z_cut)
-    sud_integrator.integrate()
 
     pdf = sud_integrator.density
 
-    return sud_integrator.bin_midpoints, pdf
+    return bin_midpoints, pdf
 
 
 ###########################################
@@ -578,44 +579,49 @@ def plot_mc_all(axes_pdf, axes_cdf, z_cut, beta, f_soft, col):
 
 def get_mc_all(z_cut, beta,
                load=True):
-    sud_integrator = integrator()
-    sud_integrator.setLastBinBndCondition([1., 'minus'])
+    theta_crits        = sudakov_inverse_transforms['critical']\
+                                    [z_cut][beta]['samples']
+    theta_crit_weights = sudakov_inverse_transforms['critical']\
+                                    [z_cut][beta]['weights']
 
-    theta_crits, theta_crit_weights, load = get_theta_crits(
-                          z_cut, beta, load=load, save=True,
-                          rad_crit=radiators.get('critical', None))
+    c_subs        = sudakov_inverse_transforms['subsequent']\
+                                    [z_cut][beta]['samples']
+    c_sub_weights = sudakov_inverse_transforms['subsequent']\
+                                    [z_cut][beta]['weights']
 
-    c_subs, c_sub_weights, load = get_c_subs(z_cut, beta,
-                         load=load, save=True, theta_crits=theta_crits,
-                         rad_crit_sub=radiators.get('subsequent', None))
+    z_pres        = sudakov_inverse_transforms['pre-critical']\
+                                    [z_cut]['samples']
+    z_pre_weights = sudakov_inverse_transforms['pre-critical']\
+                                    [z_cut]['weights']
 
-    z_pres, z_pre_weights, load = get_z_pres(z_cut, load=load, save=True,
-                        theta_crits=theta_crits,
-                        rad_pre=radiators.get('pre-critical', None))
 
     z_crits = np.array([getLinSample(z_cut, 1./2.)
                         for i in range(num_mc_events)])
 
     c_crits = C_groomed(z_crits, theta_crits, z_cut, beta,
-                        z_pre=z_pres, f=F_SOFT, acc=OBS_ACC)
+                        z_pre=z_pres, f=F_SOFT, acc=obs_acc)
     obs = np.maximum(c_crits, c_subs)
 
-    weights = split_fn_num(z_crits, theta_crits, z_cut)
+    weights = splitting_functions[z_cut](z_crits, theta_crits)
     weights *= theta_crit_weights * c_sub_weights * z_pre_weights
 
+    sud_integrator = integrator()
+    sud_integrator.setLastBinBndCondition([1., 'minus'])
+
     # Weights, binned observables, and area
-    if BIN_SPACE == 'lin':
-        sud_integrator.bins = np.linspace(0, .5, NUM_BINS)
+    if bin_space == 'lin':
+        sud_integrator.bins = np.linspace(0, .5, num_bins)
+        bin_midpoints = .5*(sud_integrator.bins[1:] + sud_integrator.bins[:-1])
         sud_integrator.binspacing = 'lin'
-    if BIN_SPACE == 'log':
-        sud_integrator.bins = np.logspace(np.log10(EPSILON)-1, np.log10(.5),
-                                          NUM_BINS)
+    if bin_space == 'log':
+        sud_integrator.bins = np.logspace(np.log10(epsilon)-1, np.log10(.5),
+                                          num_bins)
+        bin_midpoints = np.sqrt(sud_integrator.bins[1:] * sud_integrator.bins[:-1])
         sud_integrator.binspacing = 'log'
     sud_integrator.hasBins = True
 
     sud_integrator.setDensity(obs, weights, 1./2.-z_cut)
-    sud_integrator.integrate()
 
     pdf = sud_integrator.density
 
-    return sud_integrator.bin_midpoints, pdf
+    return bin_midpoints, pdf

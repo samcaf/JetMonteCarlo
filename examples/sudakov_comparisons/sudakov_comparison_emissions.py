@@ -1,3 +1,6 @@
+# Loading data
+from file_management.load_data import load_partonshower_samples
+
 # pdf utilities
 from jetmontecarlo.utils.hist_utils import vals_to_pdf
 
@@ -21,6 +24,8 @@ del radiator_params['z_cut']
 del radiator_params['beta']
 
 shower_params = SHOWER_PARAMS
+num_shower_events = shower_params['number of shower events']
+del shower_params['shower beta']
 
 # ---------------------------------
 # Unpacking parameters
@@ -53,7 +58,7 @@ def compare_sudakov_emissions(z_cut, beta):
     else:
         pythia_data = get_pythia_data(include=['raw', 'rss'],
                                       levels=['hadrons'])
-        # Narrowing in on jets with P_T > 3 TeV 
+        # Narrowing in on jets with P_T > 3 TeV
         cond_floor = (3000 < np.array(pythia_data['raw']['hadrons']['pt'][beta]))
         inds = np.where(cond_floor)[0]
         # Narrowing in on jets with P_T between 3 and 3.5 TeV
@@ -65,9 +70,10 @@ def compare_sudakov_emissions(z_cut, beta):
         try:
             pythia_vals = pythia_data['rss']['hadrons']\
                 [z_cut][F_SOFT]['C1'][beta]
-        except:
+        except KeyError as error:
             print(f"{pythia_data['rss']['hadrons'].keys()=}")
-        pythia_vals = np.array(pythia_c2s)[inds]
+            raise error
+        pythia_vals = np.array(pythia_vals)[inds]
 
         pythia_xs, pythia_pdf = vals_to_pdf(pythia_vals,
             num_rad_bins, bin_space='log',
@@ -79,8 +85,16 @@ def compare_sudakov_emissions(z_cut, beta):
     mul_em_mc_bins, mul_em_mc_pdf = get_mc_all(z_cut, beta)
 
     # Get PS info
-    one_em_ps_vals = ps_correlations(beta)['rss_c1s_two']
-    mul_em_ps_vals = ps_correlations(beta)['rss_c1s_one']
+    one_em_ps_vals = load_partonshower_samples('rss',
+                               n_emissions='1',
+                               emission_type='crit',
+                               z_cuts=[z_cut], betas=[beta],
+                               f_soft=F_SOFT)
+    mul_em_ps_vals = load_partonshower_samples('rss',
+                               n_emissions='1',
+                               emission_type='precritsub',
+                               z_cuts=[z_cut], betas=[beta],
+                               f_soft=F_SOFT)
 
     one_em_ps_bins, one_em_ps_pdf = vals_to_pdf(
         one_em_ps_vals, num_rad_bins, bin_space='log',
@@ -95,7 +109,7 @@ def compare_sudakov_emissions(z_cut, beta):
              linewidth=2, linestyle='solid',
              label=f'{legend_info}Monte Carlo',
              color='indianred')
-    
+
 
     # Plot ME PS
     plt.plot(mul_em_ps_bins, mul_em_ps_pdf,
@@ -116,7 +130,7 @@ def compare_sudakov_emissions(z_cut, beta):
     plt.plot(one_em_ps_bins, one_em_ps_pdf,
              linewidth=2, linestyle='dashed',
              color='cornflowerblue')
-    
+
 
     # Saving and closing figure
     fig_pdf.savefig('sudakov-comparison_'+

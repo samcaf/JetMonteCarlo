@@ -95,9 +95,9 @@ while getopts "t:l:vkd" OPTION; do
             0)
                 ./setup/set_params.sh "$@" ;;
             TEST)
-                ./setup/set_params.sh "${_test_params[@]}" --load_events False ;;
+                ./setup/set_params.sh "${_test_params[@]}" --load_events True ;;
             TESTMUNP)
-                ./setup/set_params.sh "${_test_params_munp[@]}" --load_events False ;;
+                ./setup/set_params.sh "${_test_params_munp[@]}" --load_events True ;;
             FCLL)
                 ./setup/set_params.sh "${_fc_ll_params[@]}" --load_events True ;;
             FCLLprime)
