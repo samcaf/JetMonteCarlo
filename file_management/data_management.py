@@ -15,16 +15,19 @@ from jetmontecarlo.utils.interpolation import get_2d_interpolation
 # Backwards Compatible Unpickler
 # =====================================
 class BackCompatUnpickler(pickle.Unpickler):
+    """A custom unpickler that allows for backwards
+    compatibility with older versions of the code.
+    """
     def find_class(self, module, name):
         new_lib = 'jetmontecarlo.numerics'
-        new_modules = [newlib+'.splitting',
-                       newlib+'.radiators.generation'
+        new_modules = [new_lib+'.splitting',
+                       new_lib+'.radiators.generation'
                       ]
 
         for try_module in [module] + new_modules:
             try:
                 return super().find_class(
-                        try__module, name)
+                        try_module, name)
             except ModuleNotFoundError:
                 pass
 
