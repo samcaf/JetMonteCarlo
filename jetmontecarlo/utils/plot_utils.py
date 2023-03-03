@@ -215,7 +215,7 @@ def draw_error_band(ax, x, y, err, normal=False, **kwargs):
         l = np.hypot(dx, dy)
         nx = dy / l
         ny = -dx / l
-        
+
         # end points of errors
         xp = x + nx * err
         yp = y + ny * err

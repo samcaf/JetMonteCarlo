@@ -90,32 +90,58 @@ def histDerivative(hist, bins, giveHist=False, binInput='lin'):
 
 
 def vals_to_pdf(vals, num_bins, bin_space='log',
+                weights=None,
                 log_cutoff=None):
     """Takes in a set of values and returns the associated
     xs and probability density.
     """
+    if weights is None:
+        weights = np.ones_like(vals)
+
     if bin_space == 'lin':
         bins = np.linspace(0, 1, num_bins)
         xs = (bins[:-1] + bins[1:])/2
+
     elif bin_space == 'log':
         assert log_cutoff is not None,\
             "log cutoff required for logarithmic"\
             " bins (you could try, say, -10)."
-        bins = np.logspace(log_cutoff, 0, num_bins)
-        bins = np.insert(bins, 0, 1e-100)  # zero bin
+        bins = np.logspace(np.log10(log_cutoff),
+                           0, num_bins)
+        bins = np.insert(bins, 0, 1e-100*log_cutoff)  # zero bin
         xs = np.sqrt(bins[1:-1] * bins[2:])
         xs = np.insert(xs, 0, 1e-50)  # zero bin
 
-    pdf, _ = np.histogram(vals, bins, density=True)
+    pdf, _ = np.histogram(vals, bins)
+
+    if bin_space == 'lin':
+        normalization = np.sum(pdf * (bins[1:] - bins[:-1]))
+    elif bin_space == 'log':
+        # DEBUG: log-normalized???
+        pdf = pdf * xs
+        dlog10x = np.log10(bins[1:]) - np.log10(bins[:-1])
+        normalization = np.sum(pdf * dlog10x)
+
+    if normalization == np.nan:
+        print("Normalization is nan!")
+
+    pdf = pdf / normalization
+
     return xs, pdf
 
 
+def nan_info(array, name):
+    """Print info associated with nans in an array."""
+    print(f'nan {name}')
+    print(len([a for a in array if np.isnan(a)]))
+
+
 def smooth_data(x, y):
+    """Smooths data using scipy functions"""
     N = len(y)
     assert len(x) == N, "x and y must be the same length."
 
     w = scipy.fftpack.rfft(y)
-    f = scipy.fftpack.rfftfreq(N, x[1]-x[0])
     spectrum = w**2
 
     cutoff_idx = spectrum < (spectrum.max()*5e-2)

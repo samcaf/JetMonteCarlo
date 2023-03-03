@@ -8,6 +8,10 @@ from jetmontecarlo.montecarlo.sampler import simpleSampler
 from jetmontecarlo.utils.interpolation import get_1d_interpolation
 from jetmontecarlo.utils.interpolation import get_2d_interpolation
 
+# DEBUG: nan utils
+from jetmontecarlo.utils.hist_utils import nan_info
+
+
 MIN_LOG_BIN = 1e-15
 
 
