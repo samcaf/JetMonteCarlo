@@ -108,24 +108,27 @@ def vals_to_pdf(vals, num_bins, bin_space='log',
             " bins (you could try, say, -10)."
         bins = np.logspace(np.log10(log_cutoff),
                            0, num_bins)
-        bins = np.insert(bins, 0, 1e-100*log_cutoff)  # zero bin
+        bins = np.insert(bins, 0, 1e-100)  # zero bin
         xs = np.sqrt(bins[1:-1] * bins[2:])
         xs = np.insert(xs, 0, 1e-50)  # zero bin
 
-    pdf, _ = np.histogram(vals, bins)
+    pdf, _ = np.histogram(vals, bins, weights=weights,
+                          density=True)
 
     if bin_space == 'lin':
-        normalization = np.sum(pdf * (bins[1:] - bins[:-1]))
+        pass
+    #     normalization = np.sum(pdf * (bins[1:] - bins[:-1]))
     elif bin_space == 'log':
-        # DEBUG: log-normalized???
-        pdf = pdf * xs
-        dlog10x = np.log10(bins[1:]) - np.log10(bins[:-1])
-        normalization = np.sum(pdf * dlog10x)
+        pdf = xs * pdf * np.log(10)
+    #     # DEBUG: log-normalized???
+    #     pdf = pdf * xs
+    #     dlog10x = np.log10(bins[1:]) - np.log10(bins[:-1])
+    #     normalization = np.sum(pdf * dlog10x)
 
-    if normalization == np.nan:
-        print("Normalization is nan!")
+    # if normalization == np.nan:
+    #     print("Normalization is nan!")
 
-    pdf = pdf / normalization
+    # pdf = pdf / normalization
 
     return xs, pdf
 

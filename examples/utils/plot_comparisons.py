@@ -361,25 +361,26 @@ def plot_shower_pdf_cdf(vals, axespdf, axescdf,
     # ------------------
     # CDF plots:
     # ------------------
-    xs = bins[:-1]
-    cdf_an = critSudakov_fc_LL(xs, z_cut, beta, f=F_SOFT,
-                               jet_type=JET_TYPE)
-    cdf_an = np.array(cdf_an.tolist(), dtype=float)
+    # DEBUG: commented out bugged cdf code
+    # xs = bins[:-1]
+    # cdf_an = critSudakov_fc_LL(xs, z_cut, beta, f=F_SOFT,
+    #                            jet_type=JET_TYPE)
+    # cdf_an = np.array(cdf_an.tolist(), dtype=float)
 
-    _, _, bars = axescdf[0].errorbar(xs, integral,
-                                     yerr=interr,
-                                     **style_yerr_ps,
-                                     color=col, ecolor=col,
-                                     label=label)
-    bars = [b.set_alpha(.5) for b in bars]
+    # _, _, bars = axescdf[0].errorbar(xs, integral,
+    #                                  yerr=interr,
+    #                                  **style_yerr_ps,
+    #                                  color=col, ecolor=col,
+    #                                  label=label)
+    # bars = [b.set_alpha(.5) for b in bars]
 
-    if len(axescdf) > 1:
-        _, _, bars_r = axescdf[1].errorbar(xs,
-                                           integral/cdf_an,
-                                           yerr=interr/cdf_an,
-                                           **style_yerr_ps,
-                                           color=col, ecolor=col)
-        bars_r = [b.set_alpha(.5) for b in bars_r]
+    # if len(axescdf) > 1:
+    #     _, _, bars_r = axescdf[1].errorbar(xs,
+    #                                        integral/cdf_an,
+    #                                        yerr=interr/cdf_an,
+    #                                        **style_yerr_ps,
+    #                                        color=col, ecolor=col)
+    #     bars_r = [b.set_alpha(.5) for b in bars_r]
 
 def plot_pythia_pdf_cdf(vals, axespdf, axescdf,
                         label='Pythia',

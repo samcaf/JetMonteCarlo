@@ -167,8 +167,8 @@ then
 # Plotting Sudakov Exponents:
 # ============================
 \n
-# python3 examples/sudakov_comparisons/sudakov_comparison_emissions.py
 "
+    # python3 examples/sudakov_comparisons/sudakov_comparison_new_numeric.py
     python3 examples/sudakov_comparisons/sudakov_comparison_emissions.py
 
 printf "
