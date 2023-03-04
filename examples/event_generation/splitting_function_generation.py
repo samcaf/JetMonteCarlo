@@ -13,7 +13,7 @@ from file_management.data_management import save_new_data
 from file_management.data_management import load_data
 
 # Parameters
-from examples.params import tab
+from examples.params import tab, Z_CUTS
 from examples.params import SPLITTINGFN_PARAMS
 
 # ---------------------------------
@@ -31,9 +31,9 @@ splittingfn_params = SPLITTINGFN_PARAMS
 # Unpacking parameters
 jet_type         = splittingfn_params['jet type']
 fixed_coupling   = splittingfn_params['fixed coupling']
-splitfn_acc      = splittingfn_params['splitting function accuracy']
+splitfn_acc      = splittingfn_params['accuracy']
 num_mc_events    = splittingfn_params['number of MC events']
-num_splitfn_bins = splittingfn_params['number of splitting function bins']
+num_splitfn_bins = splittingfn_params['number of bins']
 
 
 # =====================================

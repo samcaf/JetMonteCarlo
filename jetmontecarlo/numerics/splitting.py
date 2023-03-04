@@ -21,7 +21,16 @@ def gen_normalized_splitting(num_samples, z_cut,
     # Preparing a list of thetas, and normalizations which will depend on theta
     theta_calc_list, norms = lin_log_mixed_list(epsilon, 1., num_bins), []
 
-    for _, theta in enumerate(theta_calc_list):
+    progress_bar_size = 20
+
+    for itheta, theta in enumerate(theta_calc_list):
+        # Progress bar:
+        itheta_max = len(theta_calc_list) - 1
+        if itheta % int(itheta_max/progress_bar_size) == 0:
+            done = int(progress_bar_size * itheta/itheta_max)
+            left = progress_bar_size - done
+            print('['+'#'*done+' '*left+']', flush=True)
+
         # Preparing the weight we want to normalize
         def weight(z):
             if fixed_coupling:
