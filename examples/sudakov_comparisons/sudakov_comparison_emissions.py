@@ -29,8 +29,19 @@ plt.rcParams['text.latex.preamble']=[r"\usepackage{amsmath}"]
 # Plotting flags
 # ---------------------------------
 plot_mc = True
-plot_ps = False
+plot_ps = True
 
+# ---------------------------------
+# Plotting colors 
+# ---------------------------------
+pythiacolor='black'
+analyticcolor='black'
+
+mccolor = {'dashed': 'darkorange',
+           'solid': 'orange'}
+
+pscolor = {'dashed': 'firebrick',
+           'solid': 'indianred'}
 
 
 # =====================================
@@ -73,7 +84,7 @@ def compare_sudakov_emissions(z_cut, beta):
                            z_cut, beta,
                            jet_type='quark',
                            f_soft=F_SOFT,
-                           col='black',
+                           col=analyticcolor,
                            label=r'LL Analytic')
     else:
         legend_info = 'MLL '
@@ -110,7 +121,7 @@ def compare_sudakov_emissions(z_cut, beta):
                      # DEBUG: Wrong font for pythia in final plot
                      label='Pythia 8.244',
                      # label=r'$\texttt{Pythia 8.244}$',
-                     color='black')
+                     color=pythiacolor)
         except FileNotFoundError as error:
             print('Pythia data not found;'
                   'got FileNotFoundError\n'+tab+f'{error}.\n'
@@ -148,14 +159,14 @@ def compare_sudakov_emissions(z_cut, beta):
         axes_pdf[0].plot(mul_em_mc_bins, mul_em_mc_pdf,
              linewidth=2, linestyle='solid',
              label=f'{legend_info}Monte Carlo',
-             color='indianred')
+             color=mccolor['solid'])
 
     # Plot ME PS
     if plot_ps:
         axes_pdf[0].plot(mul_em_ps_bins, mul_em_ps_pdf,
              linewidth=2, linestyle='solid',
              label=f'{legend_info}Parton Shower',
-             color='mediumvioletred')
+             color=pscolor['solid'])
 
     # Make legends for color
     axes_pdf[0].legend(loc=(0.019,.445), prop={'size': 15}, frameon=False)
@@ -164,13 +175,13 @@ def compare_sudakov_emissions(z_cut, beta):
     if plot_mc:
         axes_pdf[0].plot(one_em_mc_bins, one_em_mc_pdf,
              linewidth=2, linestyle='dashed',
-             color='lightcoral')
+             color=mccolor['dashed'])
 
     # Plot 1E PS
     if plot_ps:
         axes_pdf[0].plot(one_em_ps_bins, one_em_ps_pdf,
              linewidth=2, linestyle='dashed',
-             color='orchid')
+             color=pscolor['dashed'])
 
     # Make legends for linestyle
     # DEBUG: Make legend that indicates solid = ME, dashed = 1E
