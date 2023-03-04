@@ -7,6 +7,7 @@ from jetmontecarlo.utils.hist_utils import vals_to_pdf
 from jetmontecarlo.utils.plot_utils import stamp
 
 # Parameters and plotting utilities
+from examples.params import tab
 from examples.params import ALL_MONTECARLO_PARAMS,\
     RADIATOR_PARAMS, SHOWER_PARAMS
 from examples.utils.plot_comparisons import F_SOFT
@@ -97,14 +98,16 @@ def compare_sudakov_emissions(z_cut, beta):
                 num_bins, bin_space='log',
                 log_cutoff=-10)
 
-            axes_pdf[0].plot(pythia_xs, pythia_xs * pythia_pdf,
+            axes_pdf[0].plot(pythia_xs, pythia_pdf,
                      linewidth=2, linestyle='solid',
                      # DEBUG: Wrong font for pythia in final plot
                      label='Pythia 8.244',
                      # label=r'$\texttt{Pythia 8.244}$',
                      color='black')
-        except FileNotFoundError:
-            print('Pythia data not found. Skipping Pythia plot.')
+        except FileNotFoundError as error:
+            print('Pythia data not found;'
+                  'got FileNotFoundError\n'+tab+f'{error}.\n'
+                  'Skipping Pythia plot.')
 
     # Get MC info
     print("\nGetting one emission MC pdf...\n", flush=True)
