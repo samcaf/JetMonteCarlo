@@ -55,7 +55,7 @@ def get_folder(data_type, data_name):
         folder = sample_folder
     if data_type == 'integral':
         folder = numerical_integral_folder
-    if data_type = 'function':
+    if data_type == 'function':
         folder = function_folder
 
 
