@@ -15,6 +15,22 @@ from examples.utils.plot_comparisons import *
 from examples.sudakov_comparisons.sudakov_utils import\
     get_mc_crit, get_mc_all, get_pythia_data
 
+# =====================================
+# Plot Setup
+# =====================================
+plt.rcParams['figure.figsize'] = (4, 4)
+plt.rcParams['figure.dpi'] = 120
+plt.rcParams['font.family'] = 'serif'
+plt.rc('text', usetex=True)
+plt.rcParams['text.latex.preamble']=[r"\usepackage{amsmath}"]
+
+# ---------------------------------
+# Plotting flags
+# ---------------------------------
+plot_mc = True
+plot_ps = False
+
+
 
 # =====================================
 # Definitions and Parameters
@@ -40,12 +56,6 @@ num_mc_events = params['number of MC events']
 num_rad_bins = params['number of radiator bins']
 num_bins = 100
 
-# ---------------------------------
-# Plotting flags
-# ---------------------------------
-plot_mc = True
-plot_ps = False
-
 
 # =====================================
 # Plotting
@@ -63,7 +73,7 @@ def compare_sudakov_emissions(z_cut, beta):
                            jet_type='quark',
                            f_soft=F_SOFT,
                            col='black',
-                           label=r'Analytic, 1 Em.')
+                           label=r'LL Analytic')
     else:
         legend_info = 'MLL '
         try:
@@ -72,6 +82,7 @@ def compare_sudakov_emissions(z_cut, beta):
             # Narrowing in on jets with P_T > 3 TeV
             cond_floor = (3000 < np.array(pythia_data['raw']['hadrons']['pt'][beta]))
             inds = np.where(cond_floor)[0]
+            # DEBUG: Using jets with pT > 3 TeV now, rather than 3 < pT < 3.5
             # Narrowing in on jets with P_T between 3 and 3.5 TeV
             # cond_ceil = (np.array(pythia_data['raw']['hadrons']['pt'][beta]) < 3500)
             # inds = np.where(cond_floor * cond_ceil)[0]
@@ -81,6 +92,7 @@ def compare_sudakov_emissions(z_cut, beta):
                 [(z_cut, F_SOFT)]['C1'][beta]
             pythia_vals = np.array(pythia_vals)[inds]
 
+            print("\nGetting Pythia pdf...\n")
             pythia_xs, pythia_pdf = vals_to_pdf(pythia_vals,
                 num_bins, bin_space='log',
                 log_cutoff=-10)
@@ -95,7 +107,9 @@ def compare_sudakov_emissions(z_cut, beta):
             print('Pythia data not found. Skipping Pythia plot.')
 
     # Get MC info
+    print("\nGetting one emission MC pdf...\n", flush=True)
     one_em_mc_bins, one_em_mc_pdf = get_mc_crit(z_cut, beta)
+    print("\nGetting all emissions MC pdf...\n", flush=True)
     mul_em_mc_bins, mul_em_mc_pdf = get_mc_all(z_cut, beta)
 
     # Get PS info
@@ -110,9 +124,11 @@ def compare_sudakov_emissions(z_cut, beta):
                                z_cuts=[z_cut], betas=[beta],
                                f_soft=F_SOFT)[z_cut][beta]
 
+    print("\nGetting one emission parton shower pdf...\n", flush=True)
     one_em_ps_bins, one_em_ps_pdf = vals_to_pdf(
         one_em_ps_vals, num_bins, bin_space='log',
         log_cutoff=1e-20 if fixed_coupling else 1e-10)
+    print("\nGetting all emissions parton shower pdf...\n", flush=True)
     mul_em_ps_bins, mul_em_ps_pdf = vals_to_pdf(
         mul_em_ps_vals, num_bins, bin_space='log',
         log_cutoff=1e-20 if fixed_coupling else 1e-10)
@@ -150,17 +166,18 @@ def compare_sudakov_emissions(z_cut, beta):
     # DEBUG: Make legend that indicates solid = ME, dashed = 1E
 
     # Stamp
+    coupling = r'$\bf{Fixed~Coupling}$' if fixed_coupling else\
+        r'$\bf{Running~Coupling}'
     obsname = r'$\mathbf{C_1^{(2)}}$' if beta == 2 else\
         (r'$\mathbf{C_1^{(1)}}$' if beta == 1 else r'$C_1^{(XXX)}$')
-    line_0 = r'$\bf{P-RSF_{1/2}~Groomed~}$'+obsname
-    coupling = 'Fixed Coupling' if fixed_coupling else 'Running Coupling'
-    line_1 = coupling+', ' + r'$p_T$=3 TeV, $R$=1, $z_{\rm cut}=$'+f'{z_cut:.1f}'
+    line_0 = coupling+" "+obsname+r', $\bf{P}$-$\bf{RSF_{1/2}}$'
+    line_1 = r'$p_T$ = 3 TeV, $R$ = 1, $z_{\rm cut}=$'+f'i {z_cut:.1f}'
 
     stamp(0.03, .94, axes_pdf[0],
           line_0=line_0, line_1=line_1,
           textops_update={'fontsize': 15})
 
-    stamp(0.03, 0.35, axes_pdf[0],
+    stamp(0.03, 0.32, axes_pdf[0],
           line_0='Solid: Mult. Em.',
           line_1='Dashed: One Em.',
           textops_update={'fontsize': 15})

@@ -2,6 +2,8 @@ import numpy as np
 import scipy.fftpack
 from scipy import interpolate
 
+from warnings import warn
+
 def histDerivative(hist, bins, giveHist=False, binInput='lin'):
     """Takes in a histogram assuming linear/uniform bins.
     Returns interpolating function for derivative of the hist
@@ -89,14 +91,30 @@ def histDerivative(hist, bins, giveHist=False, binInput='lin'):
     return interp
 
 
-def vals_to_pdf(vals, num_bins, bin_space='log',
-                weights=None,
-                log_cutoff=None):
+def vals_to_pdf(vals, num_bins, weights=None,
+                bin_space='log', log_cutoff=None,
+                make_finite=True):
     """Takes in a set of values and returns the associated
     xs and probability density.
     """
     if weights is None:
         weights = np.ones_like(vals)
+
+    if make_finite:
+        good_val_inds = np.isfinite(vals)
+        good_weight_inds = np.isfinite(weights)
+        good_inds = np.logical_and(good_val_inds, good_weight_inds)
+
+        vals = vals[good_inds]
+        weights = weights[good_inds]
+        if not any(good_val_inds):
+            warn("No finite values in `vals`, the values given to "
+                 "vals_to_pdf. Returning empty arrays.")
+            return np.array([]), np.array([])
+        if not any(good_weight_inds):
+            warn("No finite values in `weights`, the weights given to "
+                 "vals_to_pdf. Returning empty arrays.")
+            return np.array([]), np.array([])
 
     if bin_space == 'lin':
         bins = np.linspace(0, 1, num_bins)
@@ -112,23 +130,16 @@ def vals_to_pdf(vals, num_bins, bin_space='log',
         xs = np.sqrt(bins[1:-1] * bins[2:])
         xs = np.insert(xs, 0, 1e-50)  # zero bin
 
-    pdf, _ = np.histogram(vals, bins, weights=weights,
-                          density=True)
+    pdf, _ = np.histogram(vals, bins, weights=weights)
+
+    # Normalizing the pdf so its integral is 1
+    dx = np.array(np.diff(bins), float)
+    pdf = pdf / dx / pdf.sum()
 
     if bin_space == 'lin':
         pass
-    #     normalization = np.sum(pdf * (bins[1:] - bins[:-1]))
     elif bin_space == 'log':
         pdf = xs * pdf * np.log(10)
-    #     # DEBUG: log-normalized???
-    #     pdf = pdf * xs
-    #     dlog10x = np.log10(bins[1:]) - np.log10(bins[:-1])
-    #     normalization = np.sum(pdf * dlog10x)
-
-    # if normalization == np.nan:
-    #     print("Normalization is nan!")
-
-    # pdf = pdf / normalization
 
     return xs, pdf
 
