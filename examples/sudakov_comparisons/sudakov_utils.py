@@ -461,7 +461,7 @@ def plot_mc_crit(axes_pdf, axes_cdf, z_cut, beta, f_soft, col):
     return pdfline, pdfband, cdfline, cdfband
 
 
-def get_mc_crit(z_cut, beta):
+def get_mc_crit(z_cut, beta, groomer='rsf1'):
     theta_crits        = sudakov_inverse_transforms['critical']\
                         [z_cut][beta]['samples']
     theta_crit_weights = sudakov_inverse_transforms['critical']\
@@ -472,8 +472,16 @@ def get_mc_crit(z_cut, beta):
     z_crits = np.array([getLinSample(z_cut, 1./2.)
                         for i in range(num_mc_events)])
 
-    obs = C_groomed(z_crits, theta_crits, z_cut, beta,
-                    z_pre=0., f=F_SOFT, acc=obs_acc)
+    if groomer == 'rsf1':
+        obs = C_groomed(z_crits, theta_crits, z_cut, beta,
+                        z_pre=0., f=1, acc=obs_acc)
+    elif groomer == 'mmdt':
+        # mMDT is functionally the same as P-RSF,  but with
+        # all of the piranhas (additional grooming on the
+        # critical emission) removed
+        obs = C_groomed(z_crits, theta_crits, z_cut, beta,
+                        z_pre=z_cut, f=0, acc=obs_acc)
+
 
     notfinite_info(obs, 'critical obs')
     notfinite_info(theta_crit_weights, 'critical weights')
@@ -582,7 +590,7 @@ def plot_mc_all(axes_pdf, axes_cdf, z_cut, beta, f_soft, col):
     return pdfline, pdfband, cdfline, cdfband
 
 
-def get_mc_all(z_cut, beta):
+def get_mc_all(z_cut, beta, groomer='rsf1'):
     theta_crits        = sudakov_inverse_transforms['critical']\
                         [z_cut][beta]['samples']
     theta_crit_weights = sudakov_inverse_transforms['critical']\
@@ -593,10 +601,17 @@ def get_mc_all(z_cut, beta):
     c_sub_weights = sudakov_inverse_transforms['subsequent']\
                     [z_cut][beta]['weights']
 
-    z_pres        = sudakov_inverse_transforms['pre-critical']\
-                    [z_cut]['samples']
-    z_pre_weights = sudakov_inverse_transforms['pre-critical']\
-                    [z_cut]['weights']
+    if groomer == 'rsf1':
+        z_pres        = sudakov_inverse_transforms['pre-critical']\
+                                        [z_cut]['samples']
+        z_pre_weights = sudakov_inverse_transforms['pre-critical']\
+                                        [z_cut]['weights']
+    elif groomer == 'mmdt':
+        # mMDT is functionally the same as P-RSF,  but with
+        # all of the piranhas (additional grooming on the
+        # critical emission) removed
+        z_pres = z_cut
+        z_pre_weights = np.ones_like(theta_crit_weights)
 
     z_crits = np.array([getLinSample(z_cut, 1./2.)
                         for i in range(num_mc_events)])
@@ -607,13 +622,8 @@ def get_mc_all(z_cut, beta):
 
     obs = np.maximum(c_crits, c_subs)
 
-    notfinite_info(obs, 'critical obs')
-    notfinite_info(theta_crit_weights, 'critical weights')
-
     weights = splitting_functions[z_cut](z_crits, theta_crits)
-    notfinite_info(weights, 'splitting function weights')
     weights *= theta_crit_weights * c_sub_weights * z_pre_weights
-    notfinite_info(weights, 'total all emission weights')
 
     xs, pdf = vals_to_pdf(obs, num_bins,
                           weights=weights,

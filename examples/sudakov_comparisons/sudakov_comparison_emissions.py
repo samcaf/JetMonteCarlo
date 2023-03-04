@@ -56,7 +56,7 @@ plt.rcParams['text.latex.preamble']=[r"\usepackage{amsmath}"]
 # Plotting flags
 # ---------------------------------
 # Groomers
-plot_rsf1 = False
+plot_rsf1 = True
 plot_mmdt = True
 
 # Data types
@@ -174,11 +174,11 @@ def compare_sudakov_emissions(z_cut, beta,
     # DEBUG: once MC is working, fix this
     # if groomer == 'rsf1':
     print("\nGetting one emission MC pdf...\n", flush=True)
-    one_em_mc_bins, one_em_mc_pdf = get_mc_crit(z_cut, beta)
+    one_em_mc_bins, one_em_mc_pdf = get_mc_crit(z_cut, beta,
+                                                groomer=groomer)
     print("\nGetting all emissions MC pdf...\n", flush=True)
-    mul_em_mc_bins, mul_em_mc_pdf = get_mc_all(z_cut, beta)
-    # DEBUG: add mmdt MC
-    # if groomer == 'mmdt':
+    mul_em_mc_bins, mul_em_mc_pdf = get_mc_all(z_cut, beta,
+                                                groomer=groomer)
 
     # - - - - - - - - - - - - - - - - -
     # Get PS info
