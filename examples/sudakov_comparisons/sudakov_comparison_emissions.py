@@ -92,8 +92,6 @@ def compare_sudakov_emissions(z_cut, beta):
             pythia_vals = pythia_data['rss']['hadrons']\
                 [(z_cut, F_SOFT)]['C1'][beta]
             pythia_vals = np.array(pythia_vals)[inds]
-            # Removing zero bin
-            pythia_vals = pythia_vals[pythia_vals > 1e-20]
 
             print("\nGetting Pythia pdf...\n")
             pythia_xs, pythia_pdf = vals_to_pdf(pythia_vals,
