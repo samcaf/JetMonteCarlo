@@ -58,6 +58,7 @@ def compare_sudakov_emissions(z_cut, beta):
                            label=r'Analytic, 1 Em.')
     else:
         legend_info = 'MLL '
+    if False:
         pythia_data = get_pythia_data(include=['raw', 'rss'],
                                       levels=['hadrons'])
         # Narrowing in on jets with P_T > 3 TeV
