@@ -171,7 +171,7 @@ def compare_sudakov_emissions(z_cut, beta):
     obsname = r'$\mathbf{C_1^{(2)}}$' if beta == 2 else\
         (r'$\mathbf{C_1^{(1)}}$' if beta == 1 else r'$C_1^{(XXX)}$')
     line_0 = coupling+" "+obsname+r', $\bf{P}$-$\bf{RSF_{1/2}}$'
-    line_1 = r'$p_T$ = 3 TeV, $R$ = 1, $z_{\rm cut}=$'+f'i {z_cut:.1f}'
+    line_1 = r'$p_T$ = 3 TeV, $R$ = 1, $z_{\rm cut}=$'+f' {z_cut:.1f}'
 
     stamp(0.03, .94, axes_pdf[0],
           line_0=line_0, line_1=line_1,
