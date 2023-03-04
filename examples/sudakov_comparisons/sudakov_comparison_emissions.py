@@ -4,6 +4,7 @@ from file_management.load_data import load_partonshower_samples
 
 # pdf utilities
 from jetmontecarlo.utils.hist_utils import vals_to_pdf
+from jetmontecarlo.utils.plot_utils import stamp
 
 # Parameters and plotting utilities
 from examples.params import ALL_MONTECARLO_PARAMS,\
@@ -65,35 +66,33 @@ def compare_sudakov_emissions(z_cut, beta):
                            label=r'Analytic, 1 Em.')
     else:
         legend_info = 'MLL '
-        pythia_data = get_pythia_data(include=['raw', 'rss'],
-                                      levels=['hadrons'])
-        # Narrowing in on jets with P_T > 3 TeV
-        cond_floor = (3000 < np.array(pythia_data['raw']['hadrons']['pt'][beta]))
-        inds = np.where(cond_floor)[0]
-        # Narrowing in on jets with P_T between 3 and 3.5 TeV
-        # cond_ceil = (np.array(pythia_data['raw']['hadrons']['pt'][beta]) < 3500)
-        # inds = np.where(cond_floor * cond_ceil)[0]
-
-        # Getting substructure
-        # DEBUG: Testing syntax
         try:
+            pythia_data = get_pythia_data(include=['raw', 'rss'],
+                                          levels=['hadrons'])
+            # Narrowing in on jets with P_T > 3 TeV
+            cond_floor = (3000 < np.array(pythia_data['raw']['hadrons']['pt'][beta]))
+            inds = np.where(cond_floor)[0]
+            # Narrowing in on jets with P_T between 3 and 3.5 TeV
+            # cond_ceil = (np.array(pythia_data['raw']['hadrons']['pt'][beta]) < 3500)
+            # inds = np.where(cond_floor * cond_ceil)[0]
+
+            # Getting substructure
             pythia_vals = pythia_data['rss']['hadrons']\
                 [(z_cut, F_SOFT)]['C1'][beta]
-        except KeyError as error:
-            print(f"{pythia_data['rss']['hadrons'].keys()=}")
-            raise error
-        pythia_vals = np.array(pythia_vals)[inds]
+            pythia_vals = np.array(pythia_vals)[inds]
 
-        pythia_xs, pythia_pdf = vals_to_pdf(pythia_vals,
-            num_bins, bin_space='log',
-            log_cutoff=-10)
+            pythia_xs, pythia_pdf = vals_to_pdf(pythia_vals,
+                num_bins, bin_space='log',
+                log_cutoff=-10)
 
-        axes_pdf[0].plot(pythia_xs, pythia_xs * pythia_pdf,
-                 linewidth=2, linestyle='solid',
-                 # DEBUG: Wrong font for pythia in final plot
-                 label='Pythia 8.244',
-                 # label=r'$\texttt{Pythia 8.244}$',
-                 color='black')
+            axes_pdf[0].plot(pythia_xs, pythia_xs * pythia_pdf,
+                     linewidth=2, linestyle='solid',
+                     # DEBUG: Wrong font for pythia in final plot
+                     label='Pythia 8.244',
+                     # label=r'$\texttt{Pythia 8.244}$',
+                     color='black')
+        except FileNotFoundError:
+            print('Pythia data not found. Skipping Pythia plot.')
 
     # Get MC info
     one_em_mc_bins, one_em_mc_pdf = get_mc_crit(z_cut, beta)
@@ -151,29 +150,20 @@ def compare_sudakov_emissions(z_cut, beta):
     # DEBUG: Make legend that indicates solid = ME, dashed = 1E
 
     # Stamp
-    obsname = r'$C_1^{(2)}$' if beta == 2 else\
-        (r'$C_1^{(1)}$' if beta == 1 else r'$C_1^{(XXX)}$')
-    line1 = r'$\bf{P-RSF_{1/2}~Groomed~}$'+obsname
+    obsname = r'$\mathbf{C_1^{(2)}}$' if beta == 2 else\
+        (r'$\mathbf{C_1^{(1)}}$' if beta == 1 else r'$C_1^{(XXX)}$')
+    line_0 = r'$\bf{P-RSF_{1/2}~Groomed~}$'+obsname
     coupling = 'Fixed Coupling' if fixed_coupling else 'Running Coupling'
-    line2 = coupling + r', $z_{\rm cut}=$'+f'{z_cut:.1f}'
+    line_1 = coupling+', ' + r'$p_T$=3 TeV, $R$=1, $z_{\rm cut}=$'+f'{z_cut:.1f}'
 
-    fig_pdf.text(0.5, 0.925, line1,
-                 horizontalalignment='center',
-                 verticalalignment='center',
-                 fontsize=15)
-    fig_pdf.text(0.5, 0.87, line2,
-                 horizontalalignment='center',
-                 verticalalignment='center',
-                 fontsize=15)
+    stamp(0.03, .94, axes_pdf[0],
+          line_0=line_0, line_1=line_1,
+          textops_update={'fontsize': 15})
 
-    fig_pdf.text(0.2, 0.4,  'Solid: Mult. Em.',
-                 horizontalalignment='left',
-                 verticalalignment='center',
-                 fontsize=15)
-    fig_pdf.text(0.2, 0.35, 'Dashed: One Em.',
-                 horizontalalignment='left',
-                 verticalalignment='center',
-                 fontsize=15)
+    stamp(0.03, 0.35, axes_pdf[0],
+          line_0='Solid: Mult. Em.',
+          line_1='Dashed: One Em.',
+          textops_update={'fontsize': 15})
 
     # Saving and closing figure
     fig_pdf.tight_layout()
@@ -187,9 +177,7 @@ def compare_sudakov_emissions(z_cut, beta):
 
     print(f"Saving figure to {fig_loc}")
     fig_pdf.savefig(fig_loc,  bbox_inches='tight')
-
     plt.close(fig_pdf)
-
     print("Plotting complete!", flush=True)
 
 
