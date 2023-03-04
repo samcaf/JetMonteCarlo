@@ -201,6 +201,27 @@ def set_figtext(fig, text, loc, rightjustify=False, color='black'):
                     boxstyle="round,pad=0.35"))
 
 
+def stamp(left_x, top_y, ax=None, delta_y=0.075, textops_update=None, **kwargs):
+    """Function from MODplot library to add stamp to figures."""
+     # handle defualt axis
+    if ax is None:
+        ax = plt.gca()
+
+    # text options
+    textops = {'horizontalalignment': 'left',
+               'verticalalignment': 'center',
+               'fontsize': 8.5,
+               'transform': ax.transAxes}
+    if isinstance(textops_update, dict):
+        textops.update(textops_update)
+
+    # add text line by line
+    for i in range(len(kwargs)):
+        y = top_y - i*delta_y
+        t = kwargs.get('line_' + str(i))
+        if t is not None:
+            ax.text(left_x, y, t, **textops)
+
 #########################################################
 # Error Bands
 #########################################################
