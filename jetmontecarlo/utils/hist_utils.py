@@ -150,6 +150,12 @@ def nan_info(array, name):
     print(len([a for a in array if np.isnan(a)]))
 
 
+def notfinite_info(array, name):
+    """Print info associated with notfinites in an array."""
+    print(f'notfinite {name}')
+    print(len([a for a in array if not np.isfinite(a)]))
+
+
 def smooth_data(x, y):
     """Smooths data using scipy functions"""
     N = len(y)

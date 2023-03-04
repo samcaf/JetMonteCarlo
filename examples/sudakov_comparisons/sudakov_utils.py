@@ -6,6 +6,7 @@ from jetmontecarlo.montecarlo.partonshower import *
 
 # pdf utilities
 from jetmontecarlo.utils.hist_utils import vals_to_pdf
+from jetmontecarlo.utils.hist_utils import nan_info, notfinite_info
 
 # Local functions and analytics
 from jetmontecarlo.numerics.observables import *
@@ -474,7 +475,13 @@ def get_mc_crit(z_cut, beta):
     obs = C_groomed(z_crits, theta_crits, z_cut, beta,
                     z_pre=0., f=F_SOFT, acc=obs_acc)
 
+    notfinite_info(obs, 'critical obs')
+    notfinite_info(theta_crit_weights, 'critical weights')
+
     weights = splitting_functions[z_cut](z_crits, theta_crits)
+    notfinite_info(weights, 'splitting function weights')
+    weights = weights * theta_crit_weights
+    notfinite_info(weights, 'total critical weights')
 
     xs, pdf = vals_to_pdf(obs, num_bins,
                           weights=weights,
@@ -600,8 +607,13 @@ def get_mc_all(z_cut, beta):
 
     obs = np.maximum(c_crits, c_subs)
 
+    notfinite_info(obs, 'critical obs')
+    notfinite_info(theta_crit_weights, 'critical weights')
+
     weights = splitting_functions[z_cut](z_crits, theta_crits)
+    notfinite_info(weights, 'splitting function weights')
     weights *= theta_crit_weights * c_sub_weights * z_pre_weights
+    notfinite_info(weights, 'total all emission weights')
 
     xs, pdf = vals_to_pdf(obs, num_bins,
                           weights=weights,
