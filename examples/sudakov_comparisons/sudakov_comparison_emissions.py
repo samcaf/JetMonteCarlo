@@ -167,7 +167,7 @@ def compare_sudakov_emissions(z_cut, beta):
 
     # Stamp
     coupling = r'$\bf{Fixed~Coupling}$' if fixed_coupling else\
-        r'$\bf{Running~Coupling}'
+        r'$\bf{Running~Coupling}$'
     obsname = r'$\mathbf{C_1^{(2)}}$' if beta == 2 else\
         (r'$\mathbf{C_1^{(1)}}$' if beta == 1 else r'$C_1^{(XXX)}$')
     line_0 = coupling+" "+obsname+r', $\bf{P}$-$\bf{RSF_{1/2}}$'
