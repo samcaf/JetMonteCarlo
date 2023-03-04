@@ -37,6 +37,13 @@ fixed_coupling = params['fixed coupling']
 num_mc_events = params['number of MC events']
 
 num_rad_bins = params['number of radiator bins']
+num_bins = 100
+
+# ---------------------------------
+# Plotting flags
+# ---------------------------------
+plot_mc = True
+plot_ps = False
 
 
 # =====================================
@@ -58,7 +65,6 @@ def compare_sudakov_emissions(z_cut, beta):
                            label=r'Analytic, 1 Em.')
     else:
         legend_info = 'MLL '
-    if False:
         pythia_data = get_pythia_data(include=['raw', 'rss'],
                                       levels=['hadrons'])
         # Narrowing in on jets with P_T > 3 TeV
@@ -72,20 +78,21 @@ def compare_sudakov_emissions(z_cut, beta):
         # DEBUG: Testing syntax
         try:
             pythia_vals = pythia_data['rss']['hadrons']\
-                [z_cut][F_SOFT]['C1'][beta]
+                [(z_cut, F_SOFT)]['C1'][beta]
         except KeyError as error:
             print(f"{pythia_data['rss']['hadrons'].keys()=}")
             raise error
         pythia_vals = np.array(pythia_vals)[inds]
 
         pythia_xs, pythia_pdf = vals_to_pdf(pythia_vals,
-            num_rad_bins, bin_space='log',
+            num_bins, bin_space='log',
             log_cutoff=-10)
 
         axes_pdf[0].plot(pythia_xs, pythia_xs * pythia_pdf,
                  linewidth=2, linestyle='solid',
-                 label=f'{legend_info}'
-                      r'\texttt{Pythia 8.244}',
+                 # DEBUG: Wrong font for pythia in final plot
+                 label='Pythia 8.244',
+                 # label=r'$\texttt{Pythia 8.244}$',
                  color='black')
 
     # Get MC info
@@ -105,20 +112,22 @@ def compare_sudakov_emissions(z_cut, beta):
                                f_soft=F_SOFT)[z_cut][beta]
 
     one_em_ps_bins, one_em_ps_pdf = vals_to_pdf(
-        one_em_ps_vals, num_rad_bins, bin_space='log',
+        one_em_ps_vals, num_bins, bin_space='log',
         log_cutoff=1e-20 if fixed_coupling else 1e-10)
     mul_em_ps_bins, mul_em_ps_pdf = vals_to_pdf(
-        mul_em_ps_vals, num_rad_bins, bin_space='log',
+        mul_em_ps_vals, num_bins, bin_space='log',
         log_cutoff=1e-20 if fixed_coupling else 1e-10)
 
     # Plot ME MC
-    axes_pdf[0].plot(mul_em_mc_bins, mul_em_mc_pdf,
+    if plot_mc:
+        axes_pdf[0].plot(mul_em_mc_bins, mul_em_mc_pdf,
              linewidth=2, linestyle='solid',
              label=f'{legend_info}Monte Carlo',
              color='indianred')
 
-    # Plot PS MC
-    axes_pdf[0].plot(mul_em_ps_bins, mul_em_ps_pdf,
+    # Plot ME PS
+    if plot_ps:
+        axes_pdf[0].plot(mul_em_ps_bins, mul_em_ps_pdf,
              linewidth=2, linestyle='solid',
              label=f'{legend_info}Parton Shower',
              color='mediumvioletred')
@@ -127,12 +136,14 @@ def compare_sudakov_emissions(z_cut, beta):
     axes_pdf[0].legend(loc=(0.019,.445), prop={'size': 15}, frameon=False)
 
     # Plot 1E MC
-    axes_pdf[0].plot(one_em_mc_bins, one_em_mc_pdf,
+    if plot_mc:
+        axes_pdf[0].plot(one_em_mc_bins, one_em_mc_pdf,
              linewidth=2, linestyle='dashed',
              color='lightcoral')
 
     # Plot 1E PS
-    axes_pdf[0].plot(one_em_ps_bins, one_em_ps_pdf,
+    if plot_ps:
+        axes_pdf[0].plot(one_em_ps_bins, one_em_ps_pdf,
              linewidth=2, linestyle='dashed',
              color='orchid')
 

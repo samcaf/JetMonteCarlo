@@ -315,7 +315,7 @@ def get_pythia_data(include=['raw', 'softdrop', 'rss'],
     for level in levels:
         # Raw
         if 'raw' in include:
-            with open('pythiadata/raw_Zq_pT3TeV_noUE_'
+            with open('input/pythiadata/raw_Zq_pT3TeV_noUE_'
                       f'{level}.pkl', 'rb') as raw_file:
                 this_raw = pickle.load(raw_file)
                 raw_data[level] = this_raw
@@ -323,7 +323,7 @@ def get_pythia_data(include=['raw', 'softdrop', 'rss'],
         # Softdrop
         if 'softdrop' in include:
             for i in range(6):
-                with open('pythiadata/softdrop_Zq_pT3TeV_noUE_'
+                with open('input/pythiadata/softdrop_Zq_pT3TeV_noUE_'
                           f'param{i}_{level}.pkl', 'rb') as softdrop_file:
                     this_softdrop = pickle.load(softdrop_file)
                     softdrop_data[level][this_softdrop['params']] = this_softdrop
@@ -331,7 +331,7 @@ def get_pythia_data(include=['raw', 'softdrop', 'rss'],
         # RSS
         if 'rss' in include:
             for i in range(9):
-                with open('pythiadata/rss_Zq_pT3TeV_noUE_'
+                with open('input/pythiadata/rss_Zq_pT3TeV_noUE_'
                           f'param{i}_{level}.pkl', 'rb') as rss_file:
                     this_rss = pickle.load(rss_file)
                     rss_data[level][this_rss['params']] = this_rss
