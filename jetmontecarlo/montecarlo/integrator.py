@@ -453,7 +453,7 @@ def integrate_1d(function, bounds,
     xs = this_integrator.bins
 
     if num_bins == 2:
-        return integral[0], error[0], xs[0]
+        return integral[1], error[0], xs[1]
     return integral, error, xs
 
 
