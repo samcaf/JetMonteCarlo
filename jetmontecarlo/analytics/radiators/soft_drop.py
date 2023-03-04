@@ -201,7 +201,8 @@ def plot_softdrop_analytic(axespdf, axescdf, bin_space,
                            z_cut, beta, beta_sd=0,
                            jet_type='quark', acc='LL',
                            fixed_coupling=True,
-                           icol=-1, label='Analytic'):
+                           col=None, icol=-1,
+                           label='Analytic'):
     """Plot the critical emission analytic result."""
     # Preparing the bins
     if bin_space == 'lin':
@@ -256,7 +257,8 @@ def plot_softdrop_analytic(axespdf, axescdf, bin_space,
                 pdf = xs * pdf * np.log(10) # d sigma / d log10 C
 
     # Plotting
-    col = compcolors[(icol, 'light')]
+    if col is None:
+        col = compcolors[(icol, 'light')]
     axespdf[0].plot(xs, pdf, **style_dashed,
                     color=col, label=label)
     axescdf[0].plot(xs, cdf, **style_dashed,

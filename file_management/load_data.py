@@ -83,7 +83,6 @@ def load_sudakov_samples(sudakov_params=default_radiator_params,
 
 
 def load_partonshower_samples(groomer, n_emissions,
-                              emission_type='precritsub',
                               shower_params=default_shower_params,
                               z_cuts=Z_CUTS, betas=BETAS,
                               **kwargs):
@@ -101,7 +100,6 @@ def load_partonshower_samples(groomer, n_emissions,
                                             **{'shower beta': b,
                                                'groomer': groomer,
                                                'number of emissions': n_emissions,
-                                               'emission type': emission_type,
                                                'z_cut': z_cut},
                                             **kwargs)
                                          )

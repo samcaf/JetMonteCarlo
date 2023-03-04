@@ -42,7 +42,8 @@ if BIN_SPACE == 'lin':
 if BIN_SPACE == 'log':
     ylim_1 = (0, .12)
     ylim_2 = (0, .40)
-    ylim_3 = (0, .65)
+    # ylim_3 = (0, .65)
+    ylim_3 = (0, .32)
     # DEBUG: FC vs RC xlims
     xlim = (1e-8, .5) if SHOWER_CUTOFF == MU_NP else (1e-8, .5)
 
