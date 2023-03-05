@@ -16,14 +16,14 @@ tab = '    '
 # =====================================
 # Physics Inputs
 # =====================================
-FIXED_COUPLING = True
+FIXED_COUPLING = False
 MULTIPLE_EMISSIONS = False
 
 # Observable accuracy
-OBS_ACC = 'LL'
+OBS_ACC = 'MLL'
 
 # Splitting Function generation accuracy
-SPLITFN_ACC = 'LL'
+SPLITFN_ACC = 'MLL'
 
 # Angular ordering takes more time, and
 # does not change the agreement between our
@@ -63,11 +63,11 @@ PS_INDEX_ZC = {zc: i for i, zc in enumerate([.05, .1, .2])}
 # MC Event Parameters
 # ------------------------------------
 # Number of generated events
-NUM_MC_EVENTS = int(1e4)
-NUM_SHOWER_EVENTS = int(5e2)
+NUM_MC_EVENTS = int(5e6)
+NUM_SHOWER_EVENTS = int(5e5)
 
 # MC Sampling Switches:
-LOAD_MC_EVENTS = False
+LOAD_MC_EVENTS = True
 # Default True: phase space doesn't change, only weights do
 SAVE_MC_EVENTS = True
 
@@ -82,8 +82,8 @@ LOAD_SPLITTING_FNS = False
 SAVE_SPLITTING_FNS = True
 
 # Number of bins for integration of radiators and splitting functions:
-NUM_RAD_BINS = int(5e2)
-NUM_SPLITFN_BINS = int(5e2)
+NUM_RAD_BINS = int(5e3)
+NUM_SPLITFN_BINS = int(5e3)
 
 # Determining whether to load inverse transform samples for full computation
 LOAD_INV_SAMPLES = LOAD_MC_EVENTS
@@ -101,7 +101,7 @@ BIN_SPACE = 'log'
 # Parton showering
 # -----------------
 # Shower cutoff:
-SHOWER_CUTOFF = 1e-15
+SHOWER_CUTOFF = MU_NP
 
 # Shower ordering variable (ordered by angularity e^{(beta)})
 SHOWER_BETA = None

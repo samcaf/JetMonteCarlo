@@ -50,7 +50,7 @@ plt.rcParams['figure.figsize'] = (4, 4)
 plt.rcParams['figure.dpi'] = 120
 plt.rcParams['font.family'] = 'serif'
 plt.rc('text', usetex=True)
-plt.rcParams['text.latex.preamble']=[r"\usepackage{amsmath}"]
+plt.rcParams['text.latex.preamble']=r"\usepackage{amsmath}"
 
 # ---------------------------------
 # Plotting flags
@@ -171,14 +171,14 @@ def compare_sudakov_emissions(z_cut, beta,
     # - - - - - - - - - - - - - - - - -
     # Get MC info
     # - - - - - - - - - - - - - - - - -
-    # DEBUG: once MC is working, fix this
-    # if groomer == 'rsf1':
     print("\nGetting one emission MC pdf...\n", flush=True)
     one_em_mc_bins, one_em_mc_pdf = get_mc_crit(z_cut, beta,
-                                                groomer=groomer)
+                                                groomer=groomer,
+                                                nbins=num_bins)
     print("\nGetting all emissions MC pdf...\n", flush=True)
     mul_em_mc_bins, mul_em_mc_pdf = get_mc_all(z_cut, beta,
-                                                groomer=groomer)
+                                               groomer=groomer,
+                                               nbins=num_bins)
 
     # - - - - - - - - - - - - - - - - -
     # Get PS info
@@ -234,7 +234,6 @@ def compare_sudakov_emissions(z_cut, beta,
     # Make legends for color
     # - - - - - - - - - - - - - - - - -
     axes_pdf[0].legend(loc=legend_loc, prop={'size': 15}, frameon=False)
-
 
     # - - - - - - - - - - - - - - - - -
     # One Emission Plots

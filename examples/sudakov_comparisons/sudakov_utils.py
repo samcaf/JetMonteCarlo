@@ -461,7 +461,7 @@ def plot_mc_crit(axes_pdf, axes_cdf, z_cut, beta, f_soft, col):
     return pdfline, pdfband, cdfline, cdfband
 
 
-def get_mc_crit(z_cut, beta, groomer='rsf1'):
+def get_mc_crit(z_cut, beta, acc=obs_acc, groomer='rsf1', nbins=num_bins):
     theta_crits        = sudakov_inverse_transforms['critical']\
                         [z_cut][beta]['samples']
     theta_crit_weights = sudakov_inverse_transforms['critical']\
@@ -472,47 +472,22 @@ def get_mc_crit(z_cut, beta, groomer='rsf1'):
     z_crits = np.array([getLinSample(z_cut, 1./2.)
                         for i in range(num_mc_events)])
 
+    weights = splitting_functions[z_cut](z_crits, theta_crits)
+    weights = weights * theta_crit_weights
+
     if groomer == 'rsf1':
         obs = C_groomed(z_crits, theta_crits, z_cut, beta,
-                        z_pre=0., f=1, acc=obs_acc)
+                        z_pre=0., f=1, acc=acc)
     elif groomer == 'mmdt':
         # mMDT is functionally the same as P-RSF,  but with
         # all of the piranhas (additional grooming on the
         # critical emission) removed
         obs = C_groomed(z_crits, theta_crits, z_cut, beta,
-                        z_pre=z_cut, f=0, acc=obs_acc)
+                        z_pre=z_cut, f=0, acc=acc)
 
-
-    notfinite_info(obs, 'critical obs')
-    notfinite_info(theta_crit_weights, 'critical weights')
-
-    weights = splitting_functions[z_cut](z_crits, theta_crits)
-    notfinite_info(weights, 'splitting function weights')
-    weights = weights * theta_crit_weights
-    notfinite_info(weights, 'total critical weights')
-
-    xs, pdf = vals_to_pdf(obs, num_bins,
+    xs, pdf = vals_to_pdf(vals=obs, num_bins=nbins,
                           weights=weights,
                           log_cutoff=epsilon)
-
-    # sud_integrator = integrator()
-    # sud_integrator.setLastBinBndCondition([1., 'minus'])
-
-    # # Weights, binned observables, and area
-    # if bin_space == 'lin':
-    #     sud_integrator.bins = np.linspace(0, .5, num_bins)
-    #     bin_midpoints = .5*(sud_integrator.bins[1:] + sud_integrator.bins[:-1])
-    #     sud_integrator.binspacing = 'lin'
-    # if bin_space == 'log':
-    #     sud_integrator.bins = np.logspace(np.log10(epsilon)-1, np.log10(.5),
-    #                                       num_bins)
-    #     bin_midpoints = np.sqrt(sud_integrator.bins[1:] * sud_integrator.bins[:-1])
-    #     sud_integrator.binspacing = 'log'
-    # sud_integrator.hasBins = True
-
-    # sud_integrator.setDensity(obs, weights, 1./2.-z_cut)
-
-    # pdf = sud_integrator.density
 
     return xs, pdf
 
@@ -590,7 +565,7 @@ def plot_mc_all(axes_pdf, axes_cdf, z_cut, beta, f_soft, col):
     return pdfline, pdfband, cdfline, cdfband
 
 
-def get_mc_all(z_cut, beta, groomer='rsf1'):
+def get_mc_all(z_cut, beta, acc=obs_acc, groomer='rsf1', nbins=num_bins):
     theta_crits        = sudakov_inverse_transforms['critical']\
                         [z_cut][beta]['samples']
     theta_crit_weights = sudakov_inverse_transforms['critical']\
@@ -617,7 +592,7 @@ def get_mc_all(z_cut, beta, groomer='rsf1'):
                         for i in range(num_mc_events)])
 
     c_crits = C_groomed(z_crits, theta_crits, z_cut, beta,
-                        z_pre=z_pres, f=F_SOFT, acc=obs_acc)
+                        z_pre=z_pres, f=F_SOFT, acc=acc)
     c_crits = np.nan_to_num(c_crits)
 
     obs = np.maximum(c_crits, c_subs)
@@ -625,29 +600,8 @@ def get_mc_all(z_cut, beta, groomer='rsf1'):
     weights = splitting_functions[z_cut](z_crits, theta_crits)
     weights *= theta_crit_weights * c_sub_weights * z_pre_weights
 
-    xs, pdf = vals_to_pdf(obs, num_bins,
+    xs, pdf = vals_to_pdf(vals=obs, num_bins=nbins,
                           weights=weights,
                           log_cutoff=epsilon)
 
     return xs, pdf
-
-    # sud_integrator = integrator()
-    # sud_integrator.setLastBinBndCondition([1., 'minus'])
-
-    # # Weights, binned observables, and area
-    # if bin_space == 'lin':
-    #     sud_integrator.bins = np.linspace(0, .5, num_bins)
-    #     bin_midpoints = .5*(sud_integrator.bins[1:] + sud_integrator.bins[:-1])
-    #     sud_integrator.binspacing = 'lin'
-    # if bin_space == 'log':
-    #     sud_integrator.bins = np.logspace(np.log10(epsilon)-1, np.log10(.5),
-    #                                       num_bins)
-    #     bin_midpoints = np.sqrt(sud_integrator.bins[1:] * sud_integrator.bins[:-1])
-    #     sud_integrator.binspacing = 'log'
-    # sud_integrator.hasBins = True
-
-    # sud_integrator.setDensity(obs, weights, 1./2.-z_cut)
-
-    # pdf = sud_integrator.density
-
-    # return bin_midpoints, pdf
