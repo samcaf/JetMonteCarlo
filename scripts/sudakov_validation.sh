@@ -168,15 +168,14 @@ then
 # ============================
 \n
 "
-    # python3 examples/sudakov_comparisons/sudakov_comparison_new_numeric.py
+    # python3 examples/sudakov_comparisons/sudakov_comparison_zcut.py
+    # python3 examples/sudakov_comparisons/sudakov_comparison_softdrop_zcut.py
     python3 examples/sudakov_comparisons/sudakov_comparison_emissions.py
 
 printf "
 # Complete!
 "
 fi
-
-
 
 
 if [ "$supercloud_syntax" = true ] ;
