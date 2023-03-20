@@ -81,7 +81,7 @@ def get_axes(title_info, ratio_plot=False):
                                    ratio_plot=ratio_plot,
                                    labeltext=None)
 
-    axespdf[0].set_ylabel(ylabel, rotation=90, fontsize=21)
+    axespdf[0].set_ylabel(ylabel, rotation=90, fontsize=25)
     axespdf[0].set_xlabel(xlabel, fontsize=20)
     axespdf[0].set_title(None)
     axespdf[0].tick_params(axis='both', which='major', labelsize=12)
@@ -194,7 +194,7 @@ def plot_crit_analytic(axespdf, axescdf, z_cut, beta=BETA, f_soft=1.,
 
     # Preparing the appropriate cdf
     if 0 < z_cut < 1./2.:
-        cdf = critSudakov_fc_LL(xs, z_cut, beta,
+        cdf = critSudakov_fc_LL(xs*(1-z_cut)**2, z_cut, beta,
                                 jet_type=jet_type,
                                 f=f_soft)
         if extra_emission:

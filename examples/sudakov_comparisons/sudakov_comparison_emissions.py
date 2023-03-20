@@ -52,6 +52,9 @@ plt.rcParams['font.family'] = 'serif'
 plt.rc('text', usetex=True)
 plt.rcParams['text.latex.preamble']=r"\usepackage{amsmath}"
 
+stampsize=14
+legsize=14
+
 # ---------------------------------
 # Plotting flags
 # ---------------------------------
@@ -63,10 +66,16 @@ plot_mmdt = True
 plot_mc = True
 plot_ps = True
 
+# Pythia
+plot_pythia_partons = True
+plot_pythia_hadrons = True
+
 # ---------------------------------
 # Plotting colors 
 # ---------------------------------
-pythiacolor='black'
+pythiacolor_parton='grey'
+pythiacolor_hadron='black'
+
 analyticcolor='black'
 
 mccolor = {'dashed': 'darkorange',
@@ -78,10 +87,10 @@ pscolor = {'dashed': 'firebrick',
 # ---------------------------------
 # Legend info
 # ---------------------------------
-stamptext_loc = (0.03, .94)
+stamptext_loc = (0.94, .94)
 
-legend_loc = (0.019,.5) if fixed_coupling else (.575, .575)
-soliddashed_loc = (.03, .38) if fixed_coupling else (.55, .2)
+legend_loc = (.03, .75) if fixed_coupling else (.48, 0.0)
+soliddashed_loc = (.03, .5) if fixed_coupling else (.03, .94)
 
 
 # =====================================
@@ -100,12 +109,12 @@ def compare_sudakov_emissions(z_cut, beta,
         gname = 'rss'
         kwargs = {'f_soft': 1}
         params = (z_cut, 1)
-        groomer_tex = r'$\bf{P}$-$\bf{RSF_{1}}$'
+        groomer_tex = r'$\bf{P}$-$\bf{RSF_{f=1}}$'
     elif groomer == 'mmdt':
         gname = 'softdrop'
         kwargs = {'beta_sd': 0}
         params = (0, z_cut, 1)
-        groomer_tex = 'mMDT'
+        groomer_tex = r'$\bf{SD_{\beta=0}}$'
 
     # - - - - - - - - - - - - - - - - -
     # Analytic plot
@@ -135,34 +144,55 @@ def compare_sudakov_emissions(z_cut, beta,
     else:
         legend_info = 'MLL '
         try:
+            print("\nLoading Pythia data...\n", flush=True)
             pythia_data = get_pythia_data(include=['raw', gname],
-                                          levels=['hadrons'])
-            
+                                          levels=['partons', 'hadrons'])
+
+            # - - - - - - - - - - - - 
+            # Jet cuts
+            # - - - - - - - - - - - - 
             # Narrowing in on jets with P_T > 3 TeV
-            cond_floor = (3000 < np.array(pythia_data['raw']['hadrons']['pt'][beta]))
-            inds = np.where(cond_floor)[0]
-            # DEBUG: Using jets with pT > 3 TeV now, rather than 3 < pT < 3.5
+            p_cond_floor = (3000 < np.array(pythia_data['raw']['partons']['pt'][beta]))
             # Narrowing in on jets with P_T between 3 and 3.5 TeV
-            # cond_ceil = (np.array(pythia_data['raw']['hadrons']['pt'][beta]) < 3500)
-            # inds = np.where(cond_floor * cond_ceil)[0]
+            p_cond_ceil = (np.array(pythia_data['raw']['partons']['pt'][beta]) < 3500)
 
+            # Narrowing in on jets with P_T > 3 TeV
+            h_cond_floor = (3000 < np.array(pythia_data['raw']['hadrons']['pt'][beta]))
+            # Narrowing in on jets with P_T between 3 and 3.5 TeV
+            h_cond_ceil = (np.array(pythia_data['raw']['hadrons']['pt'][beta]) < 3500)
+
+            parton_inds = np.where(p_cond_floor * p_cond_ceil)[0]
+            hadron_inds = np.where(h_cond_floor * h_cond_ceil)[0]
+
+            # - - - - - - - - - - - - 
             # Getting substructure
-            pythia_vals = pythia_data[gname]['hadrons']\
-                            [params]['C1'][beta]
+            # - - - - - - - - - - - - 
+            pythia_parton_vals = pythia_data[gname]['partons']\
+                                    [params]['C1'][beta]
+            pythia_parton_vals = np.array(pythia_parton_vals)[parton_inds]
 
-            pythia_vals = np.array(pythia_vals)[inds]
+            pythia_hadron_vals = pythia_data[gname]['hadrons']\
+                                    [params]['C1'][beta]
+            pythia_hadron_vals = np.array(pythia_hadron_vals)[hadron_inds]
 
-            print("\nGetting Pythia pdf...\n")
-            pythia_xs, pythia_pdf = vals_to_pdf(pythia_vals,
-                num_bins, bin_space='log',
-                log_cutoff=1e-10)
+            # - - - - - - - - - - - - 
+            # Plotting
+            # - - - - - - - - - - - - 
+            print("\nGetting Pythia pdfs...\n", flush=True)
+            for add_plot, pythia_vals, pythiacolor, plot_type in zip(
+                    [plot_pythia_partons, plot_pythia_hadrons],
+                    [pythia_parton_vals, pythia_hadron_vals],
+                    [pythiacolor_parton, pythiacolor_hadron],
+                    ['Partons', 'Hadrons']):
+                pythia_xs, pythia_pdf = vals_to_pdf(pythia_vals,
+                    num_bins, bin_space='log',
+                    log_cutoff=1e-10)
 
-            axes_pdf[0].plot(pythia_xs, pythia_pdf,
-                     linewidth=2, linestyle='solid',
-                     # DEBUG: Wrong font for pythia in final plot
-                     # label='Pythia 8.244',
-                     label=r'$\texttt{Pythia 8.244}$',
-                     color=pythiacolor)
+                axes_pdf[0].plot(pythia_xs, pythia_pdf,
+                         linewidth=2, linestyle='solid',
+                         label=r'$\texttt{Pythia}$, '+plot_type,
+                         color=pythiacolor)
+
         except FileNotFoundError as error:
             print('Pythia data not found;'
                   'got FileNotFoundError\n'+tab+f'{error}.\n'
@@ -220,20 +250,21 @@ def compare_sudakov_emissions(z_cut, beta,
     if plot_mc:
         axes_pdf[0].plot(mul_em_mc_bins, mul_em_mc_pdf,
              linewidth=2, linestyle='solid',
-             label=f'{legend_info}MC',
+             label=f'{legend_info}Convolution',
              color=mccolor['solid'])
 
     # Plot ME PS
     if plot_ps:
         axes_pdf[0].plot(mul_em_ps_bins, mul_em_ps_pdf,
              linewidth=2, linestyle='solid',
-             label=f'{legend_info}PS',
+             label=f'{legend_info}Shower',
              color=pscolor['solid'])
 
     # - - - - - - - - - - - - - - - - -
     # Make legends for color
     # - - - - - - - - - - - - - - - - -
-    axes_pdf[0].legend(loc=legend_loc, prop={'size': 15}, frameon=False)
+    axes_pdf[0].legend(loc=legend_loc,
+                       prop={'size': legsize}, frameon=False)
 
     # - - - - - - - - - - - - - - - - -
     # One Emission Plots
@@ -253,22 +284,31 @@ def compare_sudakov_emissions(z_cut, beta,
     # Stamps
     # - - - - - - - - - - - - - - - - -
     # Informational stamp
-    coupling = r'$\bf{Fixed~Coupling}$' if fixed_coupling else\
-        r'$\bf{Running~Coupling}$'
-    obsname = r'$\mathbf{C_1^{(2)}}$' if beta == 2 else\
-        (r'$\mathbf{C_1^{(1)}}$' if beta == 1 else r'$C_1^{(XXX)}$')
-    line_0 = coupling+" "+obsname+', '+groomer_tex
-    line_1 = r'$p_T$ = 3 TeV, $R$ = 1, $z_{\rm cut}=$'+f' {z_cut:.1f}'
+    coupling = r'Fixed Coupling' if fixed_coupling else\
+        r'Running Coupling'
+    obsname = r'$\mathbf{C_1^{(2)}}$ $\textbf{Distribution}$' if beta == 2 else\
+        (r'$\mathbf{C_1^{(1)}}$ $\textbf{Distribution$}' if beta == 1 else\
+         r'$C_1^{(XXX)}$')
+    line_0 = groomer_tex+' '+obsname
+    line_1 = coupling
+    line_2 = r'$p_T$ = 3 TeV, $R$ = 1'
+    line_3 = r'$z_{\rm cut}=$'+f' {z_cut:.1f}'
 
     stamp(*stamptext_loc, axes_pdf[0],
-          line_0=line_0, line_1=line_1,
-          textops_update={'fontsize': 15})
+          line_0=line_0,
+          textops_update={'fontsize': stampsize,
+                          'horizontalalignment': 'right'})
+    stamp(*stamptext_loc, axes_pdf[0],
+          line_0='', line_1=line_1,
+          line_2=line_2, line_3=line_3,
+          textops_update={'fontsize': stampsize-2,
+                          'horizontalalignment': 'right'})
 
     # Extra solid-dashed legend stamp
     stamp(*soliddashed_loc, axes_pdf[0],
           line_0='Solid: Mult. Em.',
           line_1='Dashed: One Em.',
-          textops_update={'fontsize': 15})
+          textops_update={'fontsize': stampsize})
 
     # - - - - - - - - - - - - - - - - -
     # Saving and closing figure
@@ -295,12 +335,14 @@ if __name__ == '__main__':
     # RSF-1
     if plot_rsf1:
         compare_sudakov_emissions(z_cut=.1, beta=2, groomer='rsf1')
-        compare_sudakov_emissions(z_cut=.2, beta=2, groomer='rsf1')
-        compare_sudakov_emissions(z_cut=.1, beta=1, groomer='rsf1')
-        compare_sudakov_emissions(z_cut=.2, beta=1, groomer='rsf1')
+        compare_sudakov_emissions(z_cut=.1, beta=4, groomer='rsf1')
+        # compare_sudakov_emissions(z_cut=.2, beta=2, groomer='rsf1')
+        # compare_sudakov_emissions(z_cut=.1, beta=1, groomer='rsf1')
+        # compare_sudakov_emissions(z_cut=.2, beta=1, groomer='rsf1')
     # mMDT
     if plot_mmdt:
         compare_sudakov_emissions(z_cut=.1, beta=2, groomer='mmdt')
-        compare_sudakov_emissions(z_cut=.2, beta=2, groomer='mmdt')
-        compare_sudakov_emissions(z_cut=.1, beta=1, groomer='mmdt')
-        compare_sudakov_emissions(z_cut=.2, beta=1, groomer='mmdt')
+        compare_sudakov_emissions(z_cut=.1, beta=4, groomer='mmdt')
+        # compare_sudakov_emissions(z_cut=.2, beta=2, groomer='mmdt')
+        # compare_sudakov_emissions(z_cut=.1, beta=1, groomer='mmdt')
+        # compare_sudakov_emissions(z_cut=.2, beta=1, groomer='mmdt')
