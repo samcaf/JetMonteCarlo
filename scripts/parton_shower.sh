@@ -99,6 +99,10 @@ while getopts "t:l:v" OPTION; do
                 ./setup/set_params.sh "${_munp_params[@]}" --load_events False ;;
             LAMBDA)
                 ./setup/set_params.sh "${_lambda_params[@]}" --load_events False ;;
+            TEN_MeV)
+                ./setup/set_params.sh "${_tenmev_params[@]}" --load_events False ;;
+            ONE_MeV)
+                ./setup/set_params.sh "${_onemev_params[@]}" --load_events False ;;
             ME1)
                 ./setup/set_params.sh "${_me_munp_params[@]}" --load_events False ;;
             ME2)
