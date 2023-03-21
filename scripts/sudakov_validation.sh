@@ -108,6 +108,10 @@ while getopts "t:l:vkd" OPTION; do
                 ./setup/set_params.sh "${_munp_params[@]}" --load_events True ;;
             LAMBDA)
                 ./setup/set_params.sh "${_lambda_params[@]}" --load_events True ;;
+            TEN_MeV)
+                ./setup/set_params.sh "${_tenmev_params[@]}" --load_events True ;;
+            ONE_MeV)
+                ./setup/set_params.sh "${_onemev_params[@]}" --load_events True ;;
             ME1)
                 ./setup/set_params.sh "${_me_munp_params[@]}" --load_events True ;;
             ME2)

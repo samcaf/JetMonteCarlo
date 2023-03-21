@@ -229,7 +229,7 @@ def compare_sudakov_emissions(z_cut, beta,
         kwargs['emission type'] = 'precritsub'
 
     mul_em_ps_vals = load_partonshower_samples(gname,
-                               n_emissions='2',
+                               n_emissions='all',
                                z_cuts=[z_cut], betas=[beta],
                                **kwargs)[z_cut][beta]
 
@@ -335,14 +335,12 @@ if __name__ == '__main__':
     # RSF-1
     if plot_rsf1:
         compare_sudakov_emissions(z_cut=.1, beta=2, groomer='rsf1')
-        compare_sudakov_emissions(z_cut=.1, beta=4, groomer='rsf1')
         # compare_sudakov_emissions(z_cut=.2, beta=2, groomer='rsf1')
         # compare_sudakov_emissions(z_cut=.1, beta=1, groomer='rsf1')
         # compare_sudakov_emissions(z_cut=.2, beta=1, groomer='rsf1')
     # mMDT
     if plot_mmdt:
         compare_sudakov_emissions(z_cut=.1, beta=2, groomer='mmdt')
-        compare_sudakov_emissions(z_cut=.1, beta=4, groomer='mmdt')
         # compare_sudakov_emissions(z_cut=.2, beta=2, groomer='mmdt')
         # compare_sudakov_emissions(z_cut=.1, beta=1, groomer='mmdt')
         # compare_sudakov_emissions(z_cut=.2, beta=1, groomer='mmdt')

@@ -1,5 +1,6 @@
 # Local imports
-from jetmontecarlo.analytics.qcd_utils import MU_NP, LAMBDA_QCD
+from jetmontecarlo.analytics.qcd_utils import MU_NP, LAMBDA_QCD,\
+    TEN_MeV, ONE_MeV
 
 VERBOSE = 3
 
@@ -67,7 +68,7 @@ NUM_MC_EVENTS = int(5e6)
 NUM_SHOWER_EVENTS = int(5e5)
 
 # MC Sampling Switches:
-LOAD_MC_EVENTS = True
+LOAD_MC_EVENTS = False
 # Default True: phase space doesn't change, only weights do
 SAVE_MC_EVENTS = True
 
@@ -101,7 +102,7 @@ BIN_SPACE = 'log'
 # Parton showering
 # -----------------
 # Shower cutoff:
-SHOWER_CUTOFF = LAMBDA_QCD
+SHOWER_CUTOFF = TEN_MeV
 
 # Shower ordering variable (ordered by angularity e^{(beta)})
 SHOWER_BETA = None

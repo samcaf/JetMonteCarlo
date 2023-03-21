@@ -17,5 +17,9 @@ _munp_params=( --fixed_coupling False --type quark --obs MLL --split MLL --nmc 5
 
 _lambda_params=( --fixed_coupling False --type quark --obs MLL --split MLL --nmc 5e6 --nshowers 5e5 --nbins 5e3 --cutoff LAMBDA_QCD )
 
+_tenmev_params=( --fixed_coupling False --type quark --obs MLL --split MLL --nmc 5e6 --nshowers 5e5 --nbins 5e3 --cutoff TEN_MeV )
+
+_onemev_params=( --fixed_coupling False --type quark --obs MLL --split MLL --nmc 5e6 --nshowers 5e5 --nbins 5e3 --cutoff ONE_MeV )
+
 _me_munp_params=( --fixed_coupling False --multiple_emissions --type quark --obs MLL --split MLL --nmc 5e6 --nshowers 5e5 --nbins 5e3 --cutoff MU_NP )
 _me_lambda_params=( --fixed_coupling False --multiple_emissions --type quark --obs MLL --split MLL --nmc 5e6 --nshowers 5e5 --nbins 5e3 --cutoff LAMBDA_QCD )

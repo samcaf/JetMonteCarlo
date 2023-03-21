@@ -160,6 +160,8 @@ alpha_fixed = alpha1loop(P_T*R0)
 
 MU_NP = 1./(P_T*R0)  # Unitless non-perturbative scale, associated with the QCD Landau pole at 1 GeV
 LAMBDA_QCD = .3/(P_T*R0)  # Unitless constant associated with Lambda_QCD
+TEN_MeV = .01/(P_T*R0) # Unitless constant associated with 10 MeV
+ONE_MeV = .001/(P_T*R0) # Unitless constant associated with 10 MeV
 
 # For comparison to fixed coupling:
 # If an emission occurs with z*theta ~ 1/10, then the scale of the emission is ~1/10 the jet scale
