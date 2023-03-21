@@ -44,7 +44,7 @@ Z_CUTS = sorted(set([f*zc for zc in Z_CUTS for f in F_SOFTS]))
 
 # List of betas for the C_1^{(betas)} in which we are interested:
 # (use ints when possible for consistency across files)
-BETAS = [2, 1]
+BETAS = [2]
 # BETAS = [2, 1, 3, 4, 1./2.]
 
 # Setting up dictionaries to facilitate calling functions of z_cut and beta.
@@ -101,7 +101,7 @@ BIN_SPACE = 'log'
 # Parton showering
 # -----------------
 # Shower cutoff:
-SHOWER_CUTOFF = MU_NP
+SHOWER_CUTOFF = LAMBDA_QCD
 
 # Shower ordering variable (ordered by angularity e^{(beta)})
 SHOWER_BETA = None
