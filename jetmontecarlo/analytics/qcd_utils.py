@@ -68,12 +68,49 @@ P_T = 3000. # GeV
 # Euler constant "gamma", emerges for multiple emissions
 euler_constant = 0.5772156649
 
+
+def sum_square_quark_charges(energy):
+    """The sum of the square of the quark charges for quarks
+    which can be produced at a given energy, in units of e.
+
+    A bit rough, since matrix elements may be given for massless
+    quarks, but it's good enough for now.
+    """
+    square_charges = 0
+    # up and down
+    if energy > 0.01:
+        square_charges += (1/3)**2
+        square_charges += (2/3)**2
+    # strange
+    if energy > 0.05:
+        square_charges += (-1/3)**2
+    # charm
+    if energy > 2.5:
+        square_charges += (2/3)**2
+    # bottom
+    if energy > 10.0:
+        square_charges += (-1/3)**2
+    # top
+    # if energy > 400.0:
+    #     square_charges += (2/3)**2
+    return square_charges
+
+
 # ---------------------------------------------------
 # Strong Coupling
 # ---------------------------------------------------
 def alpha1loop(mu):
     """1-loop strong force coupling. Argument in GeV."""
-    return .12/(1 + 2*.12*beta_0*np.log(mu/M_Z))
+    alpha_s_zmass = 0.118
+    return alpha_s_zmass/(1 + 2*alpha_s_zmass*beta_0*np.log(mu/M_Z))
+
+
+def alpha_em_1loop(mu):
+    """1-loop electroweak force coupling. Argument in GeV."""
+    alpha_em_zmass = 1./127
+    beta0_em = 1./(3*np.pi)
+    return alpha_em_zmass/(1 + 2*alpha_em_zmass*beta0_em*np.log(mu/M_Z))
+
 
 def alpha_s(z, theta):
     """Non-perturbative value of alpha_S, using the scale
@@ -160,6 +197,8 @@ alpha_fixed = alpha1loop(P_T*R0)
 
 MU_NP = 1./(P_T*R0)  # Unitless non-perturbative scale, associated with the QCD Landau pole at 1 GeV
 LAMBDA_QCD = .3/(P_T*R0)  # Unitless constant associated with Lambda_QCD
+TEN_MeV = .01/(P_T*R0)  # Unitless constant associated with 10 MeV
+ONE_MeV = .001/(P_T*R0)  # Unitless constant associated with 1 MeV
 
 # For comparison to fixed coupling:
 # If an emission occurs with z*theta ~ 1/10, then the scale of the emission is ~1/10 the jet scale

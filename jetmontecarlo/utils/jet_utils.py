@@ -1,11 +1,40 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from typing import Callable
+
 
 @dataclass
 class JetAlgorithm(ABC):
     """Class for keeping track of jet algorithms."""
     radius: float
     description: str
+
+
+@dataclass
+class TwoParticleJetAlgorithm():
+    """Class for keeping track of very simple jet algorithms
+    which can simply take in two particles and decide whether
+    they are in a jet (i.e. without any global information)"""
+    radius: float
+    description: str
+
+    # Adding a method which takes in an angle, and perhaps some
+    # other information, and returns whether the two particles
+    # are in the jet
+    is_in_jet: Callable[[float, ...], bool]
+
+
+class AlgorithmAgnosticApproximation(TwoParticleJetAlgorithm):
+    def __init__(self, radius):
+        description = "Algorithm Agnostic Approximation (AAA):"\
+            " A simple algorithm which approximates two particles"\
+            " as being in the same jet if they are within an angular"\
+            " distance R (the jet radius) of one another."
+
+        def is_in_jet(angle):
+            return angle < radius
+
+        super().__init__(radius, description, is_in_jet)
 
 
 def alg_to_string(jet_alg, latex=True):

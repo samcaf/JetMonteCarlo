@@ -1,11 +1,16 @@
-import numpy as np
 from dataclasses import dataclass
+import numpy as np
 
 from jetmontecarlo.montecarlo.process import MonteCarloProcess
 from jetmontecarlo.montecarlo.process import MonteCarloObservable
-from jetmontecarlo.analytics.qcd_utils import alpha1loop  #, alpha_em
 
+# Diff. xsec prefactor
+from jetmontecarlo.analytics.ewocs.eec import\
+    ee2hadrons_LO_prefactor
 
+# =====================================
+# Process Class
+# =====================================
 class ee2hadrons_LO(MonteCarloProcess):
     """A Monte Carlo process for $e^+ e^- \to$ hadrons (at LO)"""
     def _phasespace_constraints(self, **kwargs):
@@ -17,15 +22,7 @@ class ee2hadrons_LO(MonteCarloProcess):
 
     def _differential_xsec(self, **kwargs):
         """The LO differential cross section for e+e- -> hadrons."""
-        Q = self.energy
-
-        # DEBUG: Include alpha_s and alpha_em
-        # alpha_s = alpha1loop(Q)
-        prefactor = Q**2. / (2.*np.pi)**3.
-        # * alpha_s * alpha_em(Q)**2. * (...)
-
-        # DEBUG: Prefactor is 1 for now
-        prefactor = 1.
+        prefactor = ee2hadrons_LO_prefactor(self.energy)
 
         x_1, x_2 = 1 - kwargs['1 - x_1'], kwargs['1 - x_2']
 
@@ -102,6 +99,13 @@ def costheta_ij(x_i, x_j):
     return 2./(x_i*x_j) - 2./x_i - 2./x_j + 1
 
 
+def theta_ij(x_i, x_j):
+    """The functional form of the costheta_ij observable for
+    e+e- -> hadrons at LO.
+    """
+    return np.arccos(costheta_ij(x_i, x_j))
+
+
 # ---------------------------------
 # Mass-Squared
 # ---------------------------------
@@ -109,7 +113,7 @@ def m2_ij(x_i, x_j):
     """The functional form of the mass-squared observable
     between particles i and j, for e+e- -> hadrons at LO.
     """
-    return 1 - x_i - x_j
+    return -(1 - x_i - x_j)
 
 
 # ---------------------------------

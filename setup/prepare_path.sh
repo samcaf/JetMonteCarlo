@@ -8,8 +8,8 @@
 # computing cluster.
 # They should also be changed depending on whether one is
 # using MacOS or Linux.
-supercloud_syntax=true
-linux_or_macos="linux"
+supercloud_syntax=false
+linux_or_macos="macos"
 
 # Changing syntax based on operating system.
 # In particular, the syntax of `sed` changes between linux and macos

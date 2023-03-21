@@ -1,6 +1,21 @@
 import numpy as np
 
-from jetmontecarlo.analytics.qcd_utils import alpha1loop
+from jetmontecarlo.analytics.qcd_utils import alpha1loop, alpha_em_1loop, sum_square_quark_charges
+
+
+# ---------------------------------
+# Prefactor for LO EEC/EWOC
+# ---------------------------------
+def ee2hadrons_LO_prefactor(energy):
+    """A prefactor for the LO EEC/EWOC,
+    which emerges in the calculation of the
+    (differential) cross section for
+    e+ e- -> q qbar g
+    """
+    alpha_s = alpha1loop(energy)
+    prefactor = 8 * energy**2. * alpha_s * alpha_em_1loop(energy)**2.\
+               * sum_square_quark_charges(energy)
+    return prefactor
 
 
 # ---------------------------------
@@ -10,14 +25,13 @@ from jetmontecarlo.analytics.qcd_utils import alpha1loop
 # - - - - - - - - - - - - - - - - -
 # Analytic Expressions
 # - - - - - - - - - - - - - - - - -
-def eec(z, mu,
-        acc: str = 'nnlo'):
+def eec(z, mu, acc: str = 'nnlo', **kwargs):
     """The energy energy correlator as a function of
       z = (1-cos chi)/2
     .
     """
     if acc == 'lo':
-        return eec_lo(z, mu)
+        return eec_lo(z, mu, **kwargs)
 
     if acc == 'nnlo':
         return eec_nnlo(z, mu)
@@ -25,12 +39,42 @@ def eec(z, mu,
     raise AssertionError(f"Invalid accuracy {acc}")
 
 
-def eec_lo(z, mu):
+def eec_lo(z, mu, Rjet=None, rsub=None,
+           singular_only=False):
     """The energy energy correlator as a function of
       z = (1-cos chi)/2
-    .
+    Note that the normalization is different here
     """
-    raise AssertionError("Not implemented yet.")
+    # Prefactor
+    prefactor = ee2hadrons_LO_prefactor(mu)
+
+    if singular_only:
+        eec_val = (prefactor/2) * (\
+            (3/2)/z + (-3 +(-2)*np.log(1-z))/(1-z)\
+            + (-10)*np.log(1-z)
+        )
+
+    else:
+        # Pieces
+        J12_log = np.log(1-z)/(1-z) * (-8/z**5 + 6/z**4)
+        J12_pole = 1/(1-z) * (-8/z**4 + 2/z**3 + (1/3)/z**2)
+        J12 = J12_log + J12_pole
+
+        J13_log = np.log(1-z) * (13/z**5 + (-14)/z**4 + 4/z**3)
+        J13_pole = 1/(1-z) * (13/z**4 + (-41/2)/z**3 + (53/6)/z**3)
+        J13 = J13_log + J13_pole
+
+        J23 = J13
+
+        # Final
+        eec_val = (prefactor/2) * (J12 + J13 + J23)
+
+    if Rjet is not None:
+        eec_val *= (2 - 2*z > np.cos(Rjet))
+    if rsub is not None:
+        eec_val *= (2 - 2*z < np.cos(rsub))
+
+    return eec_val
 
 
 def eec_nnlo(z, mu):

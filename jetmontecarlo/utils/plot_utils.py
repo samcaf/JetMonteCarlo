@@ -1,8 +1,11 @@
 from datetime import date
 from math import atan2, degrees
 
-import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.pyplot as plt
+
+import matplotlib.colors as mcolors
+import matplotlib.cm as cm
 
 from matplotlib import container
 from matplotlib.lines import Line2D
@@ -221,6 +224,36 @@ def stamp(left_x, top_y, ax=None, delta_y=0.075, textops_update=None, **kwargs):
         t = kwargs.get('line_' + str(i))
         if t is not None:
             ax.text(left_x, y, t, **textops)
+
+
+def get_colors_colorbar(vals):
+    """
+    Sets up a colorbar for a set of values to be plotted;
+    See, e.g., https://stackoverflow.com/a/30781043.
+
+    Parameters
+    ----------
+        vals : Values to be plotted
+
+    Returns
+    -------
+        Colors for each value and a
+
+    """
+    # See, e.g., https://stackoverflow.com/a/30781043
+    # setup the normalization and the colormap
+    normalize = mcolors.Normalize(vmin=np.min(vals), vmax=np.max(vals))
+    colormap = cm.jet
+
+    # List of colors
+    colors = [colormap(normalize(rad)) for rad in vals]
+
+    # Associated colorbar (usage: plt.colorbar(scalarmappaple))
+    scalarmappaple = cm.ScalarMappable(norm=normalize, cmap=colormap)
+    scalarmappaple.set_array(vals)
+
+    return colors, scalarmappaple
+
 
 #########################################################
 # Error Bands
